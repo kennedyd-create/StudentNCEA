@@ -18,6 +18,7 @@
   --int-bg:rgba(245,158,11,.14); --int-ink:#92400e;
   --ext-bg:rgba(14,165,233,.14); --ext-ink:#075985;
   --shadow:0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.12);
+  --fac-dark:#002066; --fac-light:#f1f5fc; --tint-a:4%; --tint-b:9%; --tint-in:3%;
 }
 body.dark-mode{
   --page:#070d1a; --surface:#101a2e; --surface-2:#16233c; --surface-3:#1b2a46;
@@ -28,6 +29,7 @@ body.dark-mode{
   --int-bg:rgba(245,158,11,.16); --int-ink:#fcd34d;
   --ext-bg:rgba(56,189,248,.16); --ext-ink:#7dd3fc;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  --fac-dark:#4d7fd6; --fac-light:#16233c; --tint-a:8%; --tint-b:15%; --tint-in:7%;
 }
 
 body{font-family:'Manrope',sans-serif;line-height:1.6;background:var(--page);color:var(--ink);}
@@ -36,24 +38,36 @@ body{font-family:'Manrope',sans-serif;line-height:1.6;background:var(--page);col
 body.dark-mode .whs-gradient-bg{background:linear-gradient(135deg,#0a1730 0%,#050c1c 100%);}
 
 /* ---- 1. Section shading ---- */
+/* Every box is tinted with the active faculty colour and edged with it. */
 .panel{
-  background:linear-gradient(178deg,var(--surface) 0%,var(--surface-2) 55%,var(--surface-3) 100%);
-  border:1px solid var(--line); border-radius:1rem; box-shadow:var(--shadow);
+  background:linear-gradient(178deg,
+    color-mix(in srgb, var(--fac-dark) var(--tint-a), var(--surface)) 0%,
+    color-mix(in srgb, var(--fac-dark) var(--tint-b), var(--surface-2)) 100%);
+  border:1px solid color-mix(in srgb, var(--fac-dark) 22%, var(--line));
+  border-left:5px solid var(--fac-dark);
+  border-radius:1rem; box-shadow:var(--shadow); transition:background .25s ease, border-color .25s ease;
 }
 .panel-out{
-  background:linear-gradient(178deg,var(--out-a) 0%,var(--out-b) 100%);
-  border:2px solid var(--brand-ink); border-radius:1rem; box-shadow:var(--shadow);
+  background:linear-gradient(178deg,
+    color-mix(in srgb, var(--fac-dark) calc(var(--tint-a) + 4%), var(--surface)) 0%,
+    color-mix(in srgb, var(--fac-dark) calc(var(--tint-b) + 6%), var(--surface-2)) 100%);
+  border:1px solid color-mix(in srgb, var(--fac-dark) 40%, var(--line));
+  border-left:5px solid var(--fac-dark);
+  border-radius:1rem; box-shadow:var(--shadow); transition:background .25s ease, border-color .25s ease;
 }
-.tile{background:var(--surface);border:2px solid var(--line);border-radius:.75rem;color:var(--ink);
+.tile{background:color-mix(in srgb, var(--fac-dark) var(--tint-in), var(--surface));
+  border:2px solid color-mix(in srgb, var(--fac-dark) 14%, var(--line));border-radius:.75rem;color:var(--ink);
+  border-top:3px solid color-mix(in srgb, var(--fac-dark) 45%, transparent);
   transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease;}
-.tile:hover{transform:translateY(-2px);border-color:var(--gold);}
+.tile:hover{transform:translateY(-2px);border-color:var(--fac-dark);border-top-color:var(--fac-dark);}
 .tile[aria-pressed="true"]{border-color:var(--fac-dark,var(--brand-ink));background:var(--surface-3);
   box-shadow:0 0 0 3px color-mix(in srgb,var(--fac-dark,var(--brand-ink)) 22%,transparent);}
-.inset{background:var(--surface);border:1px solid var(--line);border-radius:.75rem;}
+.inset{background:color-mix(in srgb, var(--fac-dark) var(--tint-in), var(--surface));
+  border:1px solid color-mix(in srgb, var(--fac-dark) 16%, var(--line));border-radius:.75rem;}
 .field{background:var(--surface);border:2px solid var(--line);color:var(--ink);border-radius:.5rem;padding:.5rem .75rem;}
 .field:disabled{opacity:.5}
 .hd{color:var(--brand-ink);} .soft{color:var(--ink-soft);} .faint{color:var(--ink-faint);}
-.eyebrow{color:var(--gold);}
+.eyebrow{color:var(--fac-dark);}
 
 .badge-int{background:var(--int-bg);color:var(--int-ink);}
 .badge-ext{background:var(--ext-bg);color:var(--ext-ink);}
@@ -61,11 +75,24 @@ body.dark-mode .whs-gradient-bg{background:linear-gradient(135deg,#0a1730 0%,#05
 /* ---- Faculty tabs and subject pills (colours from the WHS teacher site) ---- */
 .fac-pill, .subj-pill{
   font-weight:700; font-size:.8125rem; white-space:nowrap; border-radius:9999px;
-  padding:.55rem 1rem; border:2px solid var(--line); background:var(--surface);
-  color:var(--ink-soft); transition:all .15s ease; cursor:pointer;
+  padding:.55rem 1rem; transition:all .15s ease; cursor:pointer;
+  /* unselected: a light wash of the faculty's own colour */
+  background:color-mix(in srgb, var(--fac-dark) 13%, var(--surface));
+  border:2px solid color-mix(in srgb, var(--fac-dark) 28%, transparent);
+  color:color-mix(in srgb, var(--fac-dark) 88%, #000);
 }
-.fac-pill:hover, .subj-pill:hover{ border-color:var(--fac-dark); color:var(--fac-dark); }
-body.dark-mode .fac-pill:hover, body.dark-mode .subj-pill:hover{ color:var(--ink); }
+.fac-pill:hover, .subj-pill:hover{
+  background:color-mix(in srgb, var(--fac-dark) 24%, var(--surface));
+  border-color:color-mix(in srgb, var(--fac-dark) 55%, transparent);
+}
+/* dark mode: same idea, but lift the text off the dark surface */
+body.dark-mode .fac-pill, body.dark-mode .subj-pill{
+  background:color-mix(in srgb, var(--fac-dark) 20%, var(--surface));
+  color:color-mix(in srgb, var(--fac-dark) 45%, #ffffff);
+}
+body.dark-mode .fac-pill:hover, body.dark-mode .subj-pill:hover{
+  background:color-mix(in srgb, var(--fac-dark) 34%, var(--surface));
+}
 .fac-pill[aria-pressed="true"], .subj-pill[aria-pressed="true"]{
   background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; font-weight:800;
   box-shadow:0 2px 8px -2px var(--fac-dark);
@@ -829,6 +856,291 @@ subjects:{
       'No named sources or groups behind the positions.'] }
   ]},
 
+'Physical Education':{
+  lens:'Hauora and the four dimensions of well-being — taha tinana, taha hinengaro, taha whānau, taha wairua — plus the underlying concepts of socio-ecological perspective, health promotion and attitudes and values.',
+  discipline:'Level 3 Physical Education is almost entirely about evaluation and justification rather than description. Every standard asks you to take your own experience or evidence, judge it against criteria, and defend the judgement. Personal reflection only earns credit when it is analysed.',
+  verifyNote:'All Level 3 Physical Education standards are internally assessed — there is no exam. Credit values here are drafted and should be confirmed against NZQA.',
+  standards:[
+  { code:'91498', ref:'3.1', credits:4, creditsUnverified:true, mode:'internal', verified:true,
+    title:'Evaluate physical activity experiences to devise strategies for lifelong well-being',
+    bigIdea:'Look honestly at your own physical activity history, work out what actually shaped it, and design strategies you would realistically keep doing.',
+    format:'Internally assessed. Conditions of assessment are set by your teacher and published on NCEA on TKI.',
+    evidence:'Specific personal experiences with detail — what, when, with whom, how it felt — plus named influences and strategies tied to those experiences.',
+    criteria:{achieved:'Evaluate physical activity experiences and devise strategies for lifelong well-being.',
+      merit:'Evaluate in depth — explain how the experiences and influences shaped your participation, and link strategies to them.',
+      excellence:'Evaluate critically — justify the strategies against the specific influences and consider their long-term viability.'},
+    bandShift:{aToM:'Explain how each experience influenced your participation, rather than recounting what happened.',
+      mToE:'Justify why these strategies suit you specifically, and assess honestly whether you would sustain them over a lifetime.'},
+    verbs:['describe','explain','evaluate','justify','devise'],
+    topics:['Personal physical activity history','Influences: personal, interpersonal, societal','Hauora and the four dimensions','Barriers and enablers','Devising realistic strategies','Lifelong participation'],
+    contexts:['Your own physical activity experiences across your life'],
+    misconceptions:['Treating "evaluate" as "describe in detail" — evaluation requires a judgement against criteria.',
+      'Listing generic strategies (exercise more, join a gym) rather than ones derived from your own analysed influences.',
+      'Reading well-being as physical fitness only, when hauora has four dimensions.'],
+    pitfalls:['A narrative of your sporting life with no analysis of influence.',
+      'Strategies that are not connected to anything identified earlier in the report.',
+      'No consideration of whether the strategies are actually sustainable.'] },
+
+  { code:'91499', ref:'3.2', credits:3, creditsUnverified:true, mode:'internal', verified:true,
+    title:'Analyse a physical skill performed by self or others',
+    bigIdea:'Break a physical skill down properly — biomechanics, phases, technique — and explain what makes the difference between doing it and doing it well.',
+    format:'Internally assessed. Conditions of assessment are set by your teacher and published on NCEA on TKI.',
+    evidence:'Video or observational evidence of the actual performance, phases identified, biomechanical principles named and applied to what you can see.',
+    criteria:{achieved:'Analyse a physical skill, identifying its components and the principles involved.',
+      merit:'Analyse in depth — explain how the biomechanical principles operate within the skill and affect performance.',
+      excellence:'Analyse critically — evaluate the performance against the principles and justify recommendations for improvement.'},
+    bandShift:{aToM:'Explain how the biomechanical principle actually affects the outcome of the skill, not just that it applies.',
+      mToE:'Evaluate the specific performance against the principles and justify what should change and why.'},
+    verbs:['identify','describe','analyse','explain','evaluate','justify'],
+    topics:['Phases of a skill: preparation, execution, follow-through','Biomechanics: force, levers, momentum, stability','Summation of forces','Angle of release and projectile motion','Observational analysis','Recommendations for improvement'],
+    contexts:['A physical skill you or a classmate perform, agreed with your teacher'],
+    misconceptions:['Naming biomechanical principles without connecting them to the observed movement.',
+      'Assuming a technique is wrong because it differs from the textbook model, when body type and context matter.'],
+    pitfalls:['Analysis of the skill in general rather than of the actual performance recorded.',
+      'Recommendations with no biomechanical justification.',
+      'Phases described but never linked to performance outcome.'] },
+
+  { code:'91500', ref:'3.3', credits:4, creditsUnverified:true, mode:'internal', verified:true,
+    title:'Evaluate the effectiveness of a performance improvement programme',
+    bigIdea:'Run a training programme on yourself, then judge honestly whether it worked and why — using data, not impressions.',
+    format:'Internally assessed over an extended period. Conditions of assessment are set by your teacher and published on NCEA on TKI.',
+    evidence:'Pre- and post-testing data, training logs kept as you go, and the programme design linked to recognised training principles.',
+    criteria:{achieved:'Evaluate the effectiveness of the programme using evidence.',
+      merit:'Evaluate in depth — explain why the programme produced the results it did, using training principles and data.',
+      excellence:'Evaluate critically — justify your judgement about effectiveness and account for factors that affected the outcome.'},
+    bandShift:{aToM:'Explain why the results happened by reference to training principles, rather than reporting the numbers.',
+      mToE:'Justify an overall judgement about effectiveness, including what compromised it and what you would change.'},
+    verbs:['describe','analyse','evaluate','justify'],
+    topics:['Training principles: specificity, overload, progression, reversibility','Programme design','Pre- and post-testing','Training logs and adherence','Interpreting performance data','Factors affecting outcomes'],
+    contexts:['Your own performance improvement programme, agreed with your teacher'],
+    misconceptions:['Assuming improvement proves the programme worked, when maturation, motivation or testing error may explain it.',
+      'Treating the training log as an admin task rather than as the evidence base for the evaluation.'],
+    pitfalls:['Logs reconstructed at the end instead of kept throughout.',
+      'Results reported without explaining them through training principles.',
+      'No acknowledgement of confounding factors, which is the usual Excellence gap.'] },
+
+  { code:'91501', ref:'3.4', credits:4, creditsUnverified:true, mode:'internal', verified:true,
+    title:'Demonstrate quality performance of a physical activity in an applied setting',
+    bigIdea:'Perform the activity well in a real, applied setting — not in a drill.',
+    format:'Internally assessed practical performance in an applied setting, observed by your teacher over time.',
+    evidence:'Sustained performance across multiple observed occasions in genuine game or applied conditions, not isolated skill tests.',
+    criteria:{achieved:'Demonstrate quality performance of the physical activity in an applied setting.',
+      merit:'Demonstrate effective performance — consistent technique and decision-making under applied conditions.',
+      excellence:'Demonstrate accomplished performance — refined technique, sound tactical decisions and consistency under pressure.'},
+    bandShift:{aToM:'Apply the skills consistently under real conditions, with decision-making that fits the situation.',
+      mToE:'Sustain refined performance under genuine pressure, adapting tactically as the situation changes.'},
+    verbs:['perform','apply','adapt'],
+    topics:['Technique under pressure','Decision-making in applied settings','Tactical awareness','Consistency across occasions','Adapting to opponents and conditions'],
+    contexts:['The physical activity agreed with your teacher'],
+    misconceptions:['Believing skill in isolation transfers automatically to applied settings.',
+      'Assuming one strong performance is enough, when consistency across occasions is what is assessed.'],
+    pitfalls:['Inconsistent attendance, which removes the evidence base entirely.',
+      'Technique that holds in drills but not under pressure.',
+      'Decision-making not adapting as the game changes.'] },
+
+  { code:'91502', ref:'3.5', credits:4, creditsUnverified:true, mode:'internal', verified:true,
+    title:'Examine a current physical activity event, trend, or issue and its impact on New Zealand society',
+    bigIdea:'Take something happening now in New Zealand sport or physical activity and analyse what it is actually doing to our society.',
+    format:'Internally assessed. Conditions of assessment are set by your teacher and published on NCEA on TKI.',
+    evidence:'The event, trend or issue named and dated, with participation data, media coverage, named groups affected and documented consequences.',
+    criteria:{achieved:'Examine the event, trend or issue and describe its impact on New Zealand society.',
+      merit:'Examine in depth — explain how and why the impacts occur, with detailed evidence.',
+      excellence:'Examine critically — evaluate the significance of the impacts and justify your conclusions.'},
+    bandShift:{aToM:'Explain the mechanism by which the event or trend produces its impacts, not just that impacts followed.',
+      mToE:'Evaluate how significant those impacts really are, weighing them against each other and justifying your position.'},
+    verbs:['describe','examine','analyse','explain','evaluate','justify'],
+    topics:['Current events, trends and issues in NZ physical activity','Societal impacts: cultural, economic, health, political','Participation data','Media and commercialisation','Equity and access','Socio-ecological perspective'],
+    contexts:['A current New Zealand physical activity event, trend or issue agreed with your teacher'],
+    misconceptions:['Treating "impact on society" as impact on athletes.',
+      'Assuming a high-profile event automatically has significant societal impact — that has to be argued.'],
+    pitfalls:['A summary of media coverage rather than an examination of impact.',
+      'No data on participation or reach to support impact claims.',
+      'Significance asserted rather than evaluated.'] },
+
+  { code:'91503', ref:'3.6', credits:4, creditsUnverified:true, mode:'internal', verified:true,
+    title:'Evaluate the use of health promotion to influence participation in physical activity',
+    bigIdea:'Take a health promotion initiative, work out which model it uses, and judge whether it actually changed participation.',
+    format:'Internally assessed. Conditions of assessment are set by your teacher and published on NCEA on TKI.',
+    evidence:'The initiative named with its aims and target group, the health promotion model identified, and participation data before and after where available.',
+    criteria:{achieved:'Evaluate the use of health promotion to influence participation.',
+      merit:'Evaluate in depth — explain how the approach works and why it produced the results it did.',
+      excellence:'Evaluate critically — justify a judgement about effectiveness against the model and the evidence.'},
+    bandShift:{aToM:'Explain how the health promotion approach was supposed to work and why it produced these results.',
+      mToE:'Justify a judgement about effectiveness against the model used, including what a different model might have achieved.'},
+    verbs:['describe','analyse','evaluate','justify'],
+    topics:['Health promotion models: behaviour change, self-empowerment, collective action','Socio-ecological perspective','Designing or analysing an initiative','Measuring participation change','Barriers to participation','Equity of access'],
+    contexts:['A health promotion initiative agreed with your teacher — school, community or national'],
+    misconceptions:['Treating all health promotion as behaviour change, when collective action operates on the environment rather than the individual.',
+      'Assuming an initiative that raised awareness therefore raised participation.'],
+    pitfalls:['The health promotion model never explicitly identified.',
+      'Effectiveness claimed with no participation evidence.',
+      'Only individual-level factors considered, ignoring the socio-ecological perspective.'] },
+
+  { code:'91504', ref:'3.7', credits:3, creditsUnverified:true, mode:'internal', verified:true,
+    title:'Analyse issues in safety management for outdoor activity to devise safety management strategies',
+    bigIdea:'Work out honestly what could go wrong outdoors, how likely and how serious, and build strategies that would actually prevent it.',
+    format:'Internally assessed, usually connected to an actual outdoor activity or trip. Conditions of assessment are set by your teacher and published on NCEA on TKI.',
+    evidence:'Specific hazards for the actual environment and group, risk assessed for likelihood and consequence, and strategies matched to each identified risk.',
+    criteria:{achieved:'Analyse safety management issues and devise strategies for an outdoor activity.',
+      merit:'Analyse in depth — explain the risks and how the strategies address them.',
+      excellence:'Analyse critically — justify the strategies against the specific risks and evaluate their practicality.'},
+    bandShift:{aToM:'Explain how each strategy actually addresses the specific hazard identified, rather than listing safety measures.',
+      mToE:'Justify the strategies against likelihood and consequence, and assess whether they are practical for this group in this environment.'},
+    verbs:['identify','analyse','explain','evaluate','justify','devise'],
+    topics:['Hazard identification: people, equipment, environment','Risk assessment: likelihood and consequence','Dynamic risk management','Emergency planning','Group management','Legal and duty-of-care responsibilities'],
+    contexts:['An outdoor activity or trip agreed with your teacher'],
+    misconceptions:['Confusing a hazard (the thing that could cause harm) with a risk (how likely and how serious).',
+      'Assuming risk can be eliminated rather than managed to an acceptable level.',
+      'Treating safety planning as static when conditions change during an activity.'],
+    pitfalls:['Generic hazard lists not specific to the actual environment or group.',
+      'Strategies that do not map onto the hazards identified.',
+      'No assessment of whether the strategies could realistically be carried out.'] },
+
+  { code:'91505', ref:'3.8', credits:4, creditsUnverified:true, mode:'internal', verified:true,
+    title:'Examine contemporary leadership principles applied in physical activity contexts',
+    bigIdea:'Lead something real, then analyse the leadership itself — the styles, the decisions, and their effect on the group.',
+    format:'Internally assessed, usually involving an actual leadership experience plus written analysis.',
+    evidence:'Specific leadership situations described with what you did and what followed, leadership theory named and applied, plus feedback from the group where available.',
+    criteria:{achieved:'Examine leadership principles applied in a physical activity context.',
+      merit:'Examine in depth — explain how the principles operated and affected the group.',
+      excellence:'Examine critically — evaluate the leadership against the principles and justify conclusions about its effectiveness.'},
+    bandShift:{aToM:'Explain how the leadership approach affected the group, rather than describing what you did.',
+      mToE:'Evaluate the effectiveness of the leadership against recognised principles and justify what you would change.'},
+    verbs:['describe','examine','analyse','evaluate','justify'],
+    topics:['Leadership styles: autocratic, democratic, laissez-faire','Situational and transformational leadership','Servant leadership and manaakitanga','Group dynamics and motivation','Decision-making under pressure','Reflecting on leadership practice'],
+    contexts:['A leadership experience in a physical activity context, agreed with your teacher'],
+    misconceptions:['Equating leadership with being in charge rather than with influencing a group toward a goal.',
+      'Believing one leadership style is best, when situational appropriateness is the point.'],
+    pitfalls:['A diary of what you did with no leadership theory applied.',
+      'Theory named in a separate section and never connected to your practice.',
+      'No evidence of the effect your leadership had on the group.'] },
+
+  { code:'91789', ref:'3.9', credits:4, creditsUnverified:true, mode:'internal', verified:true,
+    title:'Devise strategies for a physical activity outcome',
+    bigIdea:'Set a physical activity goal, design a plan to reach it, and defend the choices you made.',
+    format:'Internally assessed. Conditions of assessment are set by your teacher and published on NCEA on TKI. This is a newer standard, so check with your teacher whether your course includes it.',
+    evidence:'A clearly defined outcome, strategies designed for it with reasoning, and evidence of implementation and review.',
+    criteria:{achieved:'Devise strategies to achieve a physical activity outcome.',
+      merit:'Devise them in depth — strategies that clearly fit the outcome and the context, with reasoning.',
+      excellence:'Devise them comprehensively — justify the strategies and evaluate their effectiveness against the outcome.'},
+    bandShift:{aToM:'Make each strategy clearly fit the specific outcome and context, with the reasoning shown.',
+      mToE:'Justify the strategies over alternatives and evaluate how well they achieved the outcome.'},
+    verbs:['devise','explain','justify','evaluate'],
+    topics:['Defining a physical activity outcome','Designing strategies','Implementation','Monitoring progress','Reviewing and adapting','Evaluating against the outcome'],
+    contexts:['A physical activity outcome agreed with your teacher'],
+    misconceptions:['Setting an outcome so vague that no strategy can be judged against it.',
+      'Treating strategies as a to-do list rather than as reasoned choices.'],
+    pitfalls:['Strategies not clearly linked to the stated outcome.',
+      'No monitoring evidence, so effectiveness cannot be evaluated.',
+      'Review that describes what happened rather than judging it.'] }
+  ]},
+
+'Health':{
+  lens:'Underlying health concepts: hauora and the four dimensions of well-being, the socio-ecological perspective, health promotion, and attitudes and values. Only the concepts relevant to the issue should be discussed, not all four for the sake of it.',
+  discipline:'Health at Level 3 argues from research evidence about people. Every claim about an issue needs data and a source, every analysis works across personal, interpersonal and societal levels, and personal opinion only counts once it is grounded in evidence.',
+  verifyNote:'Only AS91464 is confirmed by NZQA as internally assessed. The internal/external status and credit values for the other four standards are drafted from school course documents — confirm against NZQA before students rely on them.',
+  standards:[
+  { code:'91461', ref:'3.1', credits:5, creditsUnverified:true, mode:'internal', verified:true,
+    title:'Analyse a New Zealand health issue',
+    bigIdea:'Take a real New Zealand health issue and analyse it across every level — the individual, the people around them, and the society that shapes both.',
+    format:'Internally assessed. Conditions of assessment are set by your teacher and published on NCEA on TKI. The current version asks for the major FACTORS behind the issue, and only the underlying health concepts RELEVANT to the issue.',
+    evidence:'New Zealand data with sources and dates, named population groups, and documented consequences at personal, interpersonal and societal levels.',
+    criteria:{achieved:'Analyse a New Zealand health issue, describing the factors involved and the consequences for well-being.',
+      merit:'Analyse in depth — explain how the factors produce the consequences across the socio-ecological levels.',
+      excellence:'Analyse critically — evaluate the issue using relevant health concepts and justify recommendations for addressing it.'},
+    bandShift:{aToM:'Explain how the factors actually produce the consequences, working across personal, interpersonal and societal levels rather than listing them.',
+      mToE:'Evaluate using the relevant underlying health concepts and justify recommended strategies against the evidence.'},
+    verbs:['describe','analyse','explain','evaluate','justify'],
+    topics:['Identifying a NZ health issue','Major factors behind the issue','Socio-ecological perspective: personal, interpersonal, societal','Consequences for hauora','Relevant underlying health concepts','Strategies for addressing the issue'],
+    contexts:['A New Zealand health issue agreed with your teacher — commonly alcohol, methamphetamine, mental health, or nutrition'],
+    misconceptions:['Reading a health issue as a personal failing rather than as something with societal determinants.',
+      'Discussing all four underlying concepts regardless of relevance — the standard now asks only for the relevant ones.',
+      'Confusing a factor (a cause) with a consequence.'],
+    pitfalls:['Analysis that stays at the personal level and never reaches societal factors.',
+      'Statistics quoted without a source or date.',
+      'Recommendations not connected to the factors identified.'] },
+
+  { code:'91462', ref:'3.2', credits:5, creditsUnverified:true, mode:'external', verified:true,
+    title:'Analyse an international health issue',
+    bigIdea:'Take a health issue playing out beyond New Zealand and analyse its determinants and consequences with real international evidence.',
+    format:'End-of-year examination, available in paper or digital format. You apply learning to scenarios and stimulus material in a separate resource booklet, and must use specific relevant research evidence to support your analysis. Marking is based on quality of content rather than length, and planning space is not marked. Candidates should be familiar with health issues related to poverty.',
+    evidence:'Specific international research evidence — figures, countries, dates, organisations — used alongside the supplied resource material.',
+    criteria:{achieved:'Analyse an international health issue, describing its determinants and consequences.',
+      merit:'Analyse in depth — explain how the determinants produce the consequences, supported by research evidence.',
+      excellence:'Analyse critically — evaluate the issue and justify strategies, integrating evidence and health concepts.'},
+    bandShift:{aToM:'Explain how the determinants produce the consequences, using specific research evidence rather than general statements.',
+      mToE:'Evaluate the issue and justify strategies, drawing the resource material and your own research evidence together.'},
+    verbs:['describe','analyse','explain','evaluate','justify'],
+    topics:['International health issues and determinants','Health issues related to poverty','Global inequities in health','Socio-ecological analysis at international scale','Using research evidence','Strategies and their justification'],
+    contexts:['International health issues studied in class, plus the scenarios supplied in the resource booklet'],
+    misconceptions:['Assuming an international issue can be analysed with New Zealand data.',
+      'Treating poverty as one determinant rather than a cluster of interacting ones.',
+      'Believing a longer answer scores better — assessment is based on quality of content.'],
+    pitfalls:['Ignoring the supplied resource material and answering purely from memory.',
+      'Research evidence referred to vaguely rather than specifically.',
+      'Analysis that describes the issue without reaching evaluation.'] },
+
+  { code:'91463', ref:'3.3', credits:5, creditsUnverified:true, mode:'internal', verified:true,
+    title:'Evaluate health practices currently used in New Zealand',
+    bigIdea:'Compare how different medical traditions approach the same health need, and judge their significant advantages and disadvantages fairly.',
+    format:'Internally assessed. Conditions of assessment are set by your teacher and published on NCEA on TKI. The current version requires TWO health practices: one from Western Scientific Medicine, and one from either Complementary and Integrated Medicine or Traditional Medicine. Advantages and disadvantages must be significant ones.',
+    evidence:'Each practice described accurately on its own terms, with evidence of effectiveness, accessibility and cost, and named sources for both.',
+    criteria:{achieved:'Evaluate health practices used in New Zealand, describing their advantages and disadvantages.',
+      merit:'Evaluate in depth — explain the significant advantages and disadvantages and how they affect well-being.',
+      excellence:'Evaluate critically — justify a reasoned judgement about the practices in relation to well-being.'},
+    bandShift:{aToM:'Explain why each advantage or disadvantage is significant and how it affects well-being, rather than listing them.',
+      mToE:'Justify a reasoned overall judgement, acknowledging what each practice does well rather than defending one throughout.'},
+    verbs:['describe','compare','evaluate','justify'],
+    topics:['Western Scientific Medicine','Complementary and Integrated Medicine','Traditional Medicine, including rongoā Māori','Evidence of effectiveness','Accessibility, cost and cultural fit','Evaluating against well-being'],
+    contexts:['Two health practices agreed with your teacher, one of which must be from Western Scientific Medicine'],
+    misconceptions:['Assuming Western Scientific Medicine is the neutral standard against which others are measured.',
+      'Dismissing traditional practice as belief rather than evaluating it on evidence and cultural fit.',
+      'Thinking three practices are required — the current version asks for two.'],
+    pitfalls:['A practice described inaccurately or in caricature.',
+      'Advantages and disadvantages that are not significant ones.',
+      'A judgement made without justification against well-being.'] },
+
+  { code:'91464', ref:'3.4', credits:4, creditsUnverified:true, mode:'internal', verified:true,
+    title:'Analyse a contemporary ethical issue in relation to well-being',
+    bigIdea:'Take a genuinely contested ethical issue in health and analyse the arguments, values and consequences on all sides.',
+    format:'Internally assessed. Conditions of assessment are set by your teacher and published on NCEA on TKI.',
+    evidence:'The positions of named groups with the values behind them, relevant legal and policy context, and consequences for well-being identified across the socio-ecological levels.',
+    criteria:{achieved:'Analyse a contemporary ethical issue and its implications for well-being.',
+      merit:'Analyse in depth — explain the values and arguments behind the different positions and their consequences.',
+      excellence:'Analyse critically — evaluate the positions and justify a reasoned personal stance.'},
+    bandShift:{aToM:'Explain the values underlying each position, not just what each side wants.',
+      mToE:'Evaluate the positions against consequences for well-being and justify your own reasoned stance.'},
+    verbs:['describe','analyse','explain','evaluate','justify'],
+    topics:['Identifying an ethical issue','Values and beliefs behind positions','Legal and policy context','Consequences for well-being','Rights, autonomy and responsibility','Reaching a justified stance'],
+    contexts:['A contemporary ethical issue agreed with your teacher — commonly end-of-life choice, reproductive health, or drug policy'],
+    misconceptions:['Framing an ethical issue as two opposed sides when most have several positions.',
+      'Treating your own stance as self-evident rather than something to justify.',
+      'Confusing a legal question with an ethical one.'],
+    pitfalls:['Positions described without the values that produce them.',
+      'A personal stance asserted in the conclusion with no justification.',
+      'Consequences for well-being not analysed across the socio-ecological levels.'] },
+
+  { code:'91465', ref:'3.5', credits:5, creditsUnverified:true, mode:'external', verified:true,
+    title:'Evaluate models for health promotion',
+    bigIdea:'Judge which health promotion approach actually works for which problem, and be able to say why.',
+    format:'End-of-year examination, available in paper or digital format, with a separate resource booklet of scenarios and stimulus material. You must use specific relevant research evidence, and marking is based on quality of content rather than length. Planning space is not marked.',
+    evidence:'The models named and correctly distinguished, applied to the scenarios supplied, with research evidence about what has actually worked.',
+    criteria:{achieved:'Evaluate models for health promotion, describing how they work.',
+      merit:'Evaluate in depth — explain how each model operates and its likely effectiveness for the situation.',
+      excellence:'Evaluate critically — justify which model best suits the situation, using evidence and health concepts.'},
+    bandShift:{aToM:'Explain how each model operates and why it would or would not work in the situation given.',
+      mToE:'Justify which model best suits this situation, weighing the alternatives against evidence.'},
+    verbs:['describe','compare','evaluate','justify'],
+    topics:['Behaviour change model','Self-empowerment model','Collective action model','Ottawa Charter','Socio-ecological perspective','Matching model to issue','Evaluating effectiveness'],
+    contexts:['Health promotion scenarios supplied in the resource booklet, plus initiatives studied in class'],
+    misconceptions:['Treating behaviour change as the default model for every problem.',
+      'Assuming collective action means group activity rather than action on the conditions causing the issue.',
+      'Evaluating a model in the abstract rather than for a specific situation.'],
+    pitfalls:['Models described but not evaluated against the scenario given.',
+      'The supplied resource material left unused.',
+      'No research evidence about what has actually worked.'] }
+  ]},
+
 'Business Studies':{
   lens:'Key Concepts to weave through every answer: enterprise, globalisation, citizenship, sustainability. Māori business concepts that may be assessed: pūtake, tūranga, tikanga, kaitiakitanga, rangatiratanga — where these appear in an exam a definition is supplied, and you apply it to a specific business context.',
   discipline:'Business Studies reasons from theory to a real named business and back again. A model on its own earns little; a model applied to a specific business with evidence, and a recommendation justified against consequences, is the whole game.',
@@ -1509,6 +1821,7 @@ function pickFaculty(i){
   sel.subject = null; sel.std = null;
   document.querySelectorAll('.fac-pill').forEach(b=>b.setAttribute('aria-pressed', +b.dataset.i===i));
   document.documentElement.style.setProperty('--fac-dark', sel.faculty.dark);
+  document.documentElement.style.setProperty('--fac-light', sel.faculty.light);
   $('subject-wrap').classList.remove('hidden');
   $('subjects').innerHTML = sel.faculty.subjects.map(n=>`
     <button class="subj-pill" data-n="${n}" aria-pressed="false" ${isLive(n)?'':'data-pending="1"'}
@@ -1545,7 +1858,9 @@ function pickSubject(name){
 function renderStandards(){
   const list = stds();
   const ext = list.filter(s=>s.mode==='external').length;
-  $('std-count').textContent = `${list.length} standards — ${list.length-ext} internal, ${ext} external, ${list.reduce((a,b)=>a+b.credits,0)} credits in total.`;
+  const note = subj().verifyNote;
+  $('std-count').innerHTML = `${list.length} standards — ${list.length-ext} internal, ${ext} external, ${list.reduce((a,b)=>a+b.credits,0)} credits in total.`
+    + (note ? `<span class="block mt-2 rounded-lg px-3 py-2" style="background:color-mix(in srgb,var(--gold) 16%,transparent);color:var(--ink)">${note}</span>` : '');
   const max = Math.max(...list.map(s=>s.credits));
   $('standards').innerHTML = list.map((s,i)=>`
     <button class="tile text-left p-4" aria-pressed="false" data-i="${i}">
@@ -1647,7 +1962,7 @@ What actually lifts the grade in this standard:
   Achieved to Merit:    ${s.bandShift.aToM}
   Merit to Excellence:  ${s.bandShift.mToE}
 
-Command verbs used in this standard: ${s.verbs.join(', ')}
+Command verbs used in this standard: ${s.verbs.join(', ')}${subj().verifyNote ? '\nSubject note: ' + subj().verifyNote : ''}
 ${subj().lens}
 How this subject reasons: ${subj().discipline}
 
