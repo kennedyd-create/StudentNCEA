@@ -190,8 +190,8 @@ const SUBJECTS = {
   { code:'92027', ref:'1.4', credits:5, mode:'external', verified:true,
     title:'Demonstrate understanding of perspectives on a historical context',
     bigIdea:'People living through the same events saw them completely differently. Work out who saw what, and why.',
-    format:'End-of-year examination. Sources presenting different perspectives are supplied in the paper.',
-    evidence:'Perspectives attributed to named people or groups and dated, with what shaped each one identified from the sources.',
+    format:'End-of-year examination. You write a structured explanation of differing perspectives on a historical context you have STUDIED — a place, event, person or group. There is no resource booklet for this standard, so the detail has to come from your own learning. Note that differing perspectives can mean opposing views between individuals or groups, OR differences of perspective WITHIN a single group. The wider historical context — the ideas, assumptions and historical factors of the time — is part of the explanation.',
+    evidence:'Perspectives attributed to named people or groups from the context you studied, with the ideas, assumptions and historical factors of the time that shaped them.',
     criteria:{achieved:'Demonstrate understanding of perspectives on a historical context, describing them.',
       merit:'Demonstrate in-depth understanding — explain what shaped the different perspectives.',
       excellence:'Demonstrate comprehensive understanding — explain how and why perspectives differ, using evidence.'},
@@ -199,13 +199,14 @@ const SUBJECTS = {
       mToE:'Explain how and why the perspectives differ from each other, and what that reveals about the context.'},
     verbs:['identify','describe','explain'],
     topics:['What a perspective is','What shapes a perspective','Perspectives of people at the time','Later interpretations','Comparing perspectives','Perspectives in mātauranga Māori'],
-    contexts:['A historical context of significance to Aotearoa New Zealand, with sources supplied in the examination'],
+    contexts:['A historical context of significance to Aotearoa New Zealand studied in class — for example the 1981 Springbok tour, or the Mau movement'],
     misconceptions:['Treating perspective as personal opinion rather than a position shaped by circumstance and interest.',
       'Judging people of the past by present-day values without acknowledging you are doing it.',
-      'Assuming there were only two perspectives on any event.'],
+      'Assuming there were only two perspectives on any event, or that a group held one shared view.'],
     pitfalls:['Perspectives listed side by side with no explanation of why they differ.',
       'Positions described without saying whose they were.',
-      'Answering from memory instead of from the sources supplied.'] }
+      'The wider historical context left out — the ideas, assumptions and factors of the time are part of the explanation.',
+      'Only opposing perspectives between groups covered, missing differences WITHIN a group.'] }
   ]},
 
 'Science':{
