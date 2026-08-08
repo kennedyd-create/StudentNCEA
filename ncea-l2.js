@@ -20,8 +20,8 @@ const FACULTIES = [
  { name:'Science',         dark:'#007040', light:'#E4F4E5', subjects:['Biology','Chemistry','Physics','Earth & Space Science'] },
  { name:'Maths',           dark:'#9F1559', light:'#F8E7EE', subjects:['Mathematics and Statistics'] },
  { name:'English',         dark:'#22229D', light:'#EBF5FA', subjects:['English','Media Studies'] },
- { name:'Māori',           dark:'#1A6ABE', light:'#ECFBFF', subjects:['Te Reo Māori','Te Ao Haka'] },
- { name:'Technology',      dark:'#DB2026', light:'#FDECE7', subjects:[] },
+ { name:'Māori',           dark:'#1A6ABE', light:'#ECFBFF', subjects:['Te Reo Māori'] },
+ { name:'Technology',      dark:'#DB2026', light:'#FDECE7', subjects:['Digital Technologies'] },
  { name:'Arts',            dark:'#9A6300', light:'#FFF7EE', subjects:['Art History','Drama','Music'] },
  { name:'PE & Health',     dark:'#BF0000', light:'#FFEDED', subjects:['Physical Education','Health'] }
 ];
@@ -2300,6 +2300,34 @@ When the work is genuinely academic, treat these topics as the serious curriculu
     pitfalls:['Sources reported in sequence with no argument of your own.',
       'Musical examples mentioned but never analysed.',
       'Note: this is assessed work, so an AI must not draft or reword it. Where the topic touches waiata or taonga puoro, the tikanga around them belongs to the people they come from — ask your kaiako or the community, not an AI.'] }
+  ]},
+
+'Digital Technologies':{
+  lens:'Only the written and examined standard is loaded here. Level 2 Digital Technologies is otherwise a build subject, and an AI cannot usefully support developing a database, network, program or media outcome that must be the student\u2019s own.',
+  discipline:'This standard is assessed on reasoning about technology rather than on producing it. Precision of terminology and concrete examples do the work, and the questions are set in real contexts — often school ones — rather than in the abstract.',
+  verifyNote:'One of the ten Level 2 standards is loaded. The build standards (AS91890–AS91897, covering inquiry, user experience, databases, digital media, electronics, networks, programming and digital outcomes) are excluded as practical work. AS91899 is also excluded on purpose: NZQA requires the digital outcome it reflects on to be the student\u2019s own and states it must not be selected or sourced from AI, so no AI study tool should be involved with that standard at all.',
+  standards:[
+  { code:'91898', ref:'2.9', credits:3, mode:'external', verified:true,
+    title:'Demonstrate understanding of a computer science concept',
+    bigIdea:'Pick one computer science concept — computer security or encryption — and show you really understand how it works and what it does to people.',
+    format:'Online digital examination requiring a laptop or desktop computer. You respond in matching lists, short and/or extended answers totalling 800–1500 words, on your choice of ONE concept: computer security OR encryption. For 2026, questions on impacts focus on human factors and social impact. Several topics are specified as focusing on use in schools.',
+    evidence:'Correct technical terminology, concrete examples of the technology in use, and impacts discussed in terms of real people and real settings rather than in general.',
+    criteria:{achieved:'Demonstrate understanding of the computer science concept, describing key ideas with examples.',
+      merit:'Demonstrate in-depth understanding — explain how the concept works and why it is used.',
+      excellence:'Demonstrate comprehensive understanding — evaluate the concept and its human and social impacts.'},
+    bandShift:{aToM:'Explain how the technology actually works and why it is used in that situation, rather than defining it.',
+      mToE:'Evaluate the trade-offs and the human and social impacts — who benefits, who is inconvenienced, and what the limitations are.'},
+    verbs:['identify','describe','explain','compare','evaluate'],
+    topics:['COMPUTER SECURITY: authentication','Antivirus and malware','User education','VLANs (school use)','VPNs — uses and limitations','School network security','Password management','ENCRYPTION: symmetric, asymmetric and hashing','VPNs and their use of encryption','WPA2 and WPA3 Personal and Enterprise Wi-Fi (school use)','Device encryption such as BitLocker','Password managers','Digital signatures','Human factors and social impact'],
+    contexts:['Your chosen concept — computer security or encryption — with several topics set specifically in school contexts'],
+    misconceptions:['Confusing hashing with encryption — hashing is one-way and cannot be reversed.',
+      'Believing a VPN makes a user anonymous rather than encrypting traffic between two points.',
+      'Treating a longer password as automatically better without considering how people actually manage passwords.',
+      'Assuming stronger security is always better, when usability and human behaviour decide whether it is used at all.'],
+    pitfalls:['Definitions recited with no concrete example of the technology in use.',
+      'Impacts discussed in the abstract when the 2026 specifications focus on human factors and social impact.',
+      'Exceeding 1500 words — NZQA encourages clear, concise responses within the limit.',
+      'Preparing both concepts thinly instead of one thoroughly, when only one is examined.'] }
   ]},
 
 'Psychology':{
