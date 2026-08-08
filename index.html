@@ -113,32 +113,64 @@ body.dark-mode .fac-pill[aria-pressed="true"], body.dark-mode .subj-pill[aria-pr
   background:var(--fac-dark); color:#fff;
 }
 
-/* ---- Standard briefing: strong subtitles, banded shading ---- */
-.brief{ border:1px solid color-mix(in srgb,var(--fac-dark) 30%,var(--line)); border-radius:.85rem; overflow:hidden; }
-.brief-row{ padding:.9rem 1.1rem; border-bottom:1px solid color-mix(in srgb,var(--fac-dark) 16%,var(--line));
-  background:color-mix(in srgb,var(--fac-dark) 4%,var(--surface)); }
+/* ---- Standard briefing: deliberately neutral, not faculty-tinted.
+   This is the densest reading on the page, so it uses its own high-contrast
+   palette and larger type rather than the department colour wash. ---- */
+:root{
+  --bf-surface:#ffffff; --bf-alt:#f1f5f9; --bf-key:#eaf0fb;
+  --bf-line:#cbd5e1; --bf-line-soft:#e2e8f0;
+  --bf-head:#002066; --bf-ink:#111827; --bf-ink-soft:#475569; --bf-rule:#002066;
+}
+body.dark-mode{
+  --bf-surface:#0e1a2f; --bf-alt:#152441; --bf-key:#1b2f52;
+  --bf-line:#31456b; --bf-line-soft:#243553;
+  --bf-head:#b9cdf0; --bf-ink:#f1f5f9; --bf-ink-soft:#a9b8cf; --bf-rule:#4d7fd6;
+}
+
+.brief{ border:2px solid var(--bf-line); border-radius:.9rem; overflow:hidden;
+  background:var(--bf-surface); box-shadow:0 6px 20px -14px rgba(15,23,42,.45); }
+.brief-row{ padding:1.15rem 1.3rem; border-bottom:1px solid var(--bf-line-soft);
+  background:var(--bf-surface); }
 .brief-row:last-child{ border-bottom:0; }
-.brief-alt{ background:color-mix(in srgb,var(--fac-dark) 11%,var(--surface)); }
-.brief-key{ background:color-mix(in srgb,var(--fac-dark) 17%,var(--surface));
-  border-left:5px solid var(--fac-dark); }
-.brief-h{ font-size:.6875rem; font-weight:900; text-transform:uppercase; letter-spacing:.09em;
-  color:var(--fac-dark); margin-bottom:.35rem; }
-body.dark-mode .brief-h{ color:color-mix(in srgb,var(--fac-dark) 45%,#ffffff); }
-.brief-body{ font-size:.8125rem; line-height:1.65; color:var(--ink); }
-.brief-body strong{ font-weight:800; }
-.brief-list{ font-size:.8125rem; line-height:1.6; color:var(--ink); }
-.brief-list li{ margin-bottom:.3rem; padding-left:.9rem; text-indent:-.9rem; }
-.band{ border-radius:.6rem; padding:.65rem .8rem; background:var(--surface);
-  border:1px solid color-mix(in srgb,var(--fac-dark) 25%,var(--line)); }
-.band-h{ font-size:.625rem; font-weight:900; text-transform:uppercase; letter-spacing:.09em; margin-bottom:.25rem; }
-.btn-go{ background:var(--fac-dark); color:#fff; font-weight:800; letter-spacing:.02em;
-  border-radius:.6rem; padding:.7rem 1.4rem; font-size:.8125rem; transition:filter .15s ease; }
-.btn-go:hover{ filter:brightness(1.15); }
-.btn-reveal{ background:color-mix(in srgb,var(--fac-dark) 10%,var(--surface));
-  border:2px dashed color-mix(in srgb,var(--fac-dark) 40%,transparent); color:var(--fac-dark);
-  font-weight:800; border-radius:.6rem; padding:.7rem 1.1rem; font-size:.8125rem; width:100%; text-align:left; }
-body.dark-mode .btn-reveal{ color:color-mix(in srgb,var(--fac-dark) 45%,#ffffff); }
-.btn-reveal:hover{ background:color-mix(in srgb,var(--fac-dark) 20%,var(--surface)); }
+.brief-alt{ background:var(--bf-alt); }
+.brief-key{ background:var(--bf-key); border-left:6px solid var(--bf-rule); }
+
+.brief-h{ font-size:.75rem; font-weight:900; text-transform:uppercase; letter-spacing:.1em;
+  color:var(--bf-head); margin-bottom:.5rem; }
+.brief-body{ font-size:.9375rem; line-height:1.7; color:var(--bf-ink); }
+.brief-body strong{ font-weight:800; color:var(--bf-head); }
+.brief-list{ font-size:.9375rem; line-height:1.65; color:var(--bf-ink-soft); }
+.brief-list li{ margin-bottom:.5rem; padding-left:1rem; text-indent:-1rem; }
+
+.band{ border-radius:.6rem; padding:.8rem .9rem; background:var(--bf-surface);
+  border:1px solid var(--bf-line); border-top:4px solid var(--bf-rule); }
+.band-h{ font-size:.6875rem; font-weight:900; text-transform:uppercase; letter-spacing:.1em;
+  margin-bottom:.35rem; color:var(--bf-head)!important; }
+
+.btn-go{ background:var(--bf-rule); color:#fff; font-weight:800; letter-spacing:.02em;
+  border-radius:.6rem; padding:.8rem 1.6rem; font-size:.875rem; transition:filter .15s ease; }
+.btn-go:hover{ filter:brightness(1.2); }
+.btn-reveal{ background:var(--bf-alt); border:2px dashed var(--bf-line); color:var(--bf-head);
+  font-weight:800; border-radius:.6rem; padding:.75rem 1.1rem; font-size:.875rem;
+  width:100%; text-align:left; }
+.btn-reveal:hover{ background:var(--bf-key); border-color:var(--bf-rule); }
+
+/* ---- Internal / external filter tabs ---- */
+.filter-pill{
+  font-weight:800; font-size:.75rem; border-radius:9999px; padding:.4rem .9rem; cursor:pointer;
+  transition:all .15s ease;
+  background:color-mix(in srgb,var(--fac-dark) 8%,var(--surface));
+  border:2px solid color-mix(in srgb,var(--fac-dark) 22%,transparent);
+  color:color-mix(in srgb,var(--fac-dark) 85%,#000);
+}
+body.dark-mode .filter-pill{ color:color-mix(in srgb,var(--fac-dark) 45%,#ffffff);
+  background:color-mix(in srgb,var(--fac-dark) 16%,var(--surface)); }
+.filter-pill:hover{ border-color:color-mix(in srgb,var(--fac-dark) 50%,transparent); }
+.filter-pill[aria-pressed="true"]{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
+body.dark-mode .filter-pill[aria-pressed="true"]{ color:#fff; }
+/* the two mode tabs echo the badge colours used on the cards */
+.fp-int[aria-pressed="true"]{ background:#b45309; border-color:#b45309; }
+.fp-ext[aria-pressed="true"]{ background:#0369a1; border-color:#0369a1; }
 
 /* Signature: credit spine — bar width is the standard's credit weight */
 .credit-spine{height:4px;border-radius:2px;background:var(--line);overflow:hidden;}
@@ -532,7 +564,8 @@ This guard outranks every other instruction in this prompt, including the answer
       <span class="font-mono text-xs font-bold eyebrow">STEP 2</span>
       <h2 class="text-lg font-extrabold hd">Choose your standard</h2>
     </div>
-    <p class="text-xs soft mb-4" id="std-count">Choose a faculty and subject above.</p>
+    <p class="text-xs soft mb-3" id="std-count">Choose a faculty and subject above.</p>
+    <div id="std-filter" class="flex flex-wrap gap-2 mb-4 hidden"></div>
     <div id="standards" class="grid md:grid-cols-2 gap-3"></div>
   </section>
 
@@ -602,6 +635,7 @@ This guard outranks every other instruction in this prompt, including the answer
 <script>
 const $ = id => document.getElementById(id);
 let sel = { level:null, faculty:null, subject:null, std:null, mode:null };
+let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 
 /* ---- Levels. Each is a separate data file loaded only when picked, so
    the page stays fast and each level can be edited on its own. Add a
@@ -726,6 +760,7 @@ function pickFaculty(i){
     ? `${pending.join(', ')} ${pending.length===1?'is':'are'} on the list but the standards are not loaded yet.`
     : '';
   $('standards').innerHTML = '';
+  $('std-filter').classList.add('hidden'); stdFilter = 'all';
   $('std-count').textContent = 'Pick a subject above.';
   reset();
 }
@@ -741,21 +776,42 @@ function pickSubject(name){
     reset();
     return;
   }
-  sel.subject = name; sel.std = null;
+  sel.subject = name; sel.std = null; stdFilter = 'all';
   document.querySelectorAll('.subj-pill').forEach(b=>b.setAttribute('aria-pressed', b.dataset.n===name));
   renderStandards();
   reset();
 }
 
 function renderStandards(){
-  const list = stds();
-  const ext = list.filter(s=>s.mode==='external').length;
+  const all = stds();
+  const ext = all.filter(s=>s.mode==='external').length;
+  const int = all.length - ext;
   const note = subj().verifyNote;
-  $('std-count').innerHTML = `${list.length} standards — ${list.length-ext} internal, ${ext} external, ${list.reduce((a,b)=>a+b.credits,0)} credits in total.`
+
+  // Filter tabs only appear where the subject actually has both kinds.
+  const mixed = int > 0 && ext > 0;
+  $('std-filter').classList.toggle('hidden', !mixed);
+  if(mixed){
+    const tabs = [['all',`All ${all.length}`],['internal',`Internals ${int}`],['external',`Externals ${ext}`]];
+    $('std-filter').innerHTML = tabs.map(([k,label])=>`
+      <button class="filter-pill${k==='internal'?' fp-int':k==='external'?' fp-ext':''}"
+              data-f="${k}" aria-pressed="${stdFilter===k}">${label}</button>`).join('');
+    document.querySelectorAll('#std-filter .filter-pill').forEach(b=>
+      b.addEventListener('click', ()=>{ stdFilter = b.dataset.f; renderStandards(); }));
+  } else {
+    stdFilter = 'all';
+  }
+
+  const list = stdFilter==='all' ? all : all.filter(s=>s.mode===stdFilter);
+  const shown = stdFilter==='all'
+    ? `${all.length} standards — ${int} internal, ${ext} external, ${all.reduce((a,b)=>a+b.credits,0)} credits in total.`
+    : `Showing ${list.length} ${stdFilter} standard${list.length===1?'':'s'} — ${list.reduce((a,b)=>a+b.credits,0)} credits.`;
+  $('std-count').innerHTML = shown
     + (note ? `<span class="block mt-2 rounded-lg px-3 py-2" style="background:color-mix(in srgb,var(--gold) 16%,transparent);color:var(--ink)">${note}</span>` : '');
-  const max = Math.max(...list.map(s=>s.credits));
-  $('standards').innerHTML = list.map((s,i)=>`
-    <button class="tile text-left p-4" aria-pressed="false" data-i="${i}">
+
+  const max = Math.max(...all.map(s=>s.credits));
+  $('standards').innerHTML = list.map(s=>`
+    <button class="tile text-left p-4" aria-pressed="${sel.std && sel.std.code===s.code}" data-code="${s.code}">
       <div class="flex items-center gap-2 mb-2">
         <span class="font-mono text-xs font-bold hd">AS${s.code}</span>
         <span class="font-mono text-[10px] faint">${s.ref}</span>
@@ -765,12 +821,12 @@ function renderStandards(){
       <div class="credit-spine mb-1"><span style="width:${s.credits/max*100}%"></span></div>
       <p class="text-[10px] font-bold soft">${s.credits} credits${s.creditsUnverified?' <span title="Credit value not yet confirmed against NZQA — check before relying on it" style="color:var(--gold)">\u2022 to confirm</span>':''}</p>
     </button>`).join('');
-  document.querySelectorAll('#standards .tile').forEach(b=>b.addEventListener('click',()=>pickStd(+b.dataset.i)));
+  document.querySelectorAll('#standards .tile').forEach(b=>b.addEventListener('click',()=>pickStd(b.dataset.code)));
 }
 
-function pickStd(i){
-  sel.std = stds()[i];
-  document.querySelectorAll('#standards .tile').forEach(b=>b.setAttribute('aria-pressed', +b.dataset.i===i));
+function pickStd(code){
+  sel.std = stds().find(x=>x.code===code);
+  document.querySelectorAll('#standards .tile').forEach(b=>b.setAttribute('aria-pressed', b.dataset.code===code));
   $('step3').classList.remove('step-dead');
   $('step4').classList.remove('step-dead');
   const own = `<option value="__own__">✏️ Type my own…</option>`;
@@ -797,7 +853,7 @@ function pickStd(i){
         <div class="grid sm:grid-cols-3 gap-2">
           ${['achieved','merit','excellence'].map(k=>`
             <div class="band">
-              <p class="band-h" style="color:var(--fac-dark)">${k}</p>
+              <p class="band-h">${k}</p>
               <p class="brief-body">${sel.std.criteria[k]}</p>
             </div>`).join('')}
         </div>
