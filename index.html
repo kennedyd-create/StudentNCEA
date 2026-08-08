@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WHS: NCEA Level 3 Standard Engine</title>
+<title>WHS: NCEA Standard Engine</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
@@ -112,6 +112,33 @@ body.dark-mode .fac-pill[aria-pressed="true"], body.dark-mode .subj-pill[aria-pr
   padding:.1rem .4rem; border-radius:9999px; vertical-align:middle; margin-left:.25rem;
   background:var(--fac-dark); color:#fff;
 }
+
+/* ---- Standard briefing: strong subtitles, banded shading ---- */
+.brief{ border:1px solid color-mix(in srgb,var(--fac-dark) 30%,var(--line)); border-radius:.85rem; overflow:hidden; }
+.brief-row{ padding:.9rem 1.1rem; border-bottom:1px solid color-mix(in srgb,var(--fac-dark) 16%,var(--line));
+  background:color-mix(in srgb,var(--fac-dark) 4%,var(--surface)); }
+.brief-row:last-child{ border-bottom:0; }
+.brief-alt{ background:color-mix(in srgb,var(--fac-dark) 11%,var(--surface)); }
+.brief-key{ background:color-mix(in srgb,var(--fac-dark) 17%,var(--surface));
+  border-left:5px solid var(--fac-dark); }
+.brief-h{ font-size:.6875rem; font-weight:900; text-transform:uppercase; letter-spacing:.09em;
+  color:var(--fac-dark); margin-bottom:.35rem; }
+body.dark-mode .brief-h{ color:color-mix(in srgb,var(--fac-dark) 45%,#ffffff); }
+.brief-body{ font-size:.8125rem; line-height:1.65; color:var(--ink); }
+.brief-body strong{ font-weight:800; }
+.brief-list{ font-size:.8125rem; line-height:1.6; color:var(--ink); }
+.brief-list li{ margin-bottom:.3rem; padding-left:.9rem; text-indent:-.9rem; }
+.band{ border-radius:.6rem; padding:.65rem .8rem; background:var(--surface);
+  border:1px solid color-mix(in srgb,var(--fac-dark) 25%,var(--line)); }
+.band-h{ font-size:.625rem; font-weight:900; text-transform:uppercase; letter-spacing:.09em; margin-bottom:.25rem; }
+.btn-go{ background:var(--fac-dark); color:#fff; font-weight:800; letter-spacing:.02em;
+  border-radius:.6rem; padding:.7rem 1.4rem; font-size:.8125rem; transition:filter .15s ease; }
+.btn-go:hover{ filter:brightness(1.15); }
+.btn-reveal{ background:color-mix(in srgb,var(--fac-dark) 10%,var(--surface));
+  border:2px dashed color-mix(in srgb,var(--fac-dark) 40%,transparent); color:var(--fac-dark);
+  font-weight:800; border-radius:.6rem; padding:.7rem 1.1rem; font-size:.8125rem; width:100%; text-align:left; }
+body.dark-mode .btn-reveal{ color:color-mix(in srgb,var(--fac-dark) 45%,#ffffff); }
+.btn-reveal:hover{ background:color-mix(in srgb,var(--fac-dark) 20%,var(--surface)); }
 
 /* Signature: credit spine — bar width is the standard's credit weight */
 .credit-spine{height:4px;border-radius:2px;background:var(--line);overflow:hidden;}
@@ -466,15 +493,15 @@ This guard outranks every other instruction in this prompt, including the answer
         <div class="text-white shrink-0"><svg class="whs-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2050 1754" role="img" aria-label="WHS logo"><g transform="translate(0,1754) scale(.1,-.1)" fill="currentColor"><path d="M9610 17519 c-656-18-1406-84-2045-179-38-6-99-15-135-20-36-5-92-14-125-19-33-6-88-15-122-21-93-15-171-29-230-40-29-5-77-15-105-20-29-6-78-14-108-20-30-5-75-14-100-20-25-5-67-15-95-20-27-5-68-14-90-19-22-5-56-12-75-16-19-3-51-10-70-15-19-5-55-13-80-19-74-16-223-51-260-61-19-5-46-12-60-15-35-8-248-65-285-75-16-4-57-16-90-25-33-9-98-27-145-41-47-14-98-29-115-34-109-30-552-173-590-190-11-5-40-16-65-24-25-8-65-22-90-31-25-9-70-26-100-37-30-11-64-24-75-28-11-5-96-38-190-75-172-67-192-76-277-114-26-11-50-21-53-21-2 0-28-11-57-24-29-13-75-34-103-46-231-102-662-319-828-416-32-19-60-34-63-34-2 0-21-11-42-24-20-13-89-54-152-91-832-493-1554-1144-1988-1792-45-67-90-137-101-155-10-18-41-71-68-118-75-130-163-314-212-445-13-33-27-69-32-80-24-56-87-269-110-370-94-414-101-883-20-1285 31-155 95-383 131-465 4-11 20-51 35-90 71-186 177-394 315-620 291-476 819-1027 1380-1441 30-22 82-61 116-85 72-53 394-268 444-296 19-11 71-42 115-70 79-48 200-118 325-187 81-45 599-304 660-330 25-11 74-33 110-48 135-61 186-82 225-98 11-4 36-15 55-23 19-8 89-36 155-62 66-26 131-52 145-57 33-14 55-22 120-46 30-11 75-28 100-37 203-78 352-105 577-105 95 0 194 4 220 9 26 5 77 15 113 21 36 7 76 15 90 20 14 4 45 13 70 20 173 49 404 147 595 254 33 18 83 46 110 61 142 79 514 321 766 499 216 152 512 322 674 385 11 5 31 13 45 19 571 235 1185 21 1344-470 44-135 62-380 35-482-27-103-34-125-61-181-115-244-391-415-672-415-377 0-644 259-523 508 12 24 27 29 27 9 0-144 271-265 433-193 152 67 243 273 181 407-6 13-22 47-35 74-88 185-330 278-565 215-72-19-94-29-184-76-270-141-379-614-208-899 25-42 7-66-27-37-6 5-44 19-85 32-41 12-100 31-130 41-50 16-96 30-250 75-59 17-182 50-242 65-21 5-55 13-75 18-60 15-223 50-281 61-30 5-63 12-74 15-10 4-34 0-51-8-67-31-186-83-222-97-11-4-31-12-45-18-92-38-245-88-377-123-18-5-48-13-66-19-18-6-41-10-50-10-34 0-16-18 26-24 49-9 108-19 190-35 31-6 82-15 112-21 30-5 81-15 113-20 31-6 82-15 112-20 30-5 81-14 113-20 31-5 83-15 115-20 31-6 84-15 117-21 33-5 85-14 115-19 30-5 87-14 125-20 39-6 97-16 130-21 33-6 87-14 120-19 33-5 89-14 125-20 36-5 97-15 135-20 141-21 201-30 265-40 36-6 101-15 145-21 44-6 112-15 150-20 492-68 734-81 870-47 140 34 153 39 262 89 306 141 537 409 621 724 32 119 37 160 37 340 0 474-171 814-537 1063-56 38-237 132-256 132-7 0-20 4-30 9-44 25-187 59-330 80-289 43-672-42-1037-230-194-99-400-224-575-348-124-88-439-303-465-317-11-6-74-44-140-84-689-419-1135-505-1575-302-418 192-469 761-85 949 63 31 131 46 181 40 70-7 72-18 16-71-141-132-145-323-9-463 159-165 452-102 561 122 241 491-324 986-873 766-383-154-609-559-537-966 15-83 11-87-61-54-267 121-593 286-806 408-20 11-52 29-70 40-86 49-248 148-299 182-31 22-59 39-63 39-3 0-29 17-58 37-28 20-101 71-160 112-164 114-186 130-283 206-903 705-1463 1523-1603 2340-6 33-16 92-23 130-19 105-15 573 5 695 41 243 92 452 137 555 4 11 25 63 45 115 81 208 237 496 366 675 266 370 529 652 882 948 121 102 144 120 287 227 47 35 101 75 120 90 19 15 96 67 170 117 114 75 188 123 377 239 12 8 38 23 57 34 20 11 53 30 74 41 20 12 60 34 87 50 28 15 79 43 115 63 36 20 169 87 295 150 227 112 292 143 390 186 28 12 74 33 103 46 29 13 55 24 57 24 3 0 27 9 53 21 26 12 56 25 67 29 11 4 36 15 55 23 19 9 55 23 80 32 25 9 56 22 70 27 14 6 34 14 45 18 11 4 31 12 45 18 14 5 50 19 80 30 30 11 75 28 100 37 25 9 65 23 90 31 25 8 54 19 65 24 32 14 445 150 520 170 17 5 62 18 100 30 39 12 86 26 105 31 19 6 49 14 65 19 17 5 65 18 108 29 42 12 112 30 155 42 42 11 93 25 112 29 19 5 53 14 75 19 22 6 58 15 80 20 59 15 113 27 175 41 30 7 71 16 90 20 52 13 217 49 280 61 30 6 73 15 95 19 118 24 243 48 320 61 33 6 83 15 110 19 205 36 488 80 653 101 39 5 107 13 150 19 1242 160 2793 183 4072 60 345-33 532-55 845-100 225-32 389-58 510-80 33-6 85-15 115-20 30-4 66-10 80-13 14-3 52-11 85-17 33-6 78-15 100-20 22-5 67-14 100-20 68-13 119-24 188-39 26-6 67-15 92-21 25-5 64-14 88-19 67-15 219-51 257-61 19-5 46-12 60-15 146-36 462-122 530-144 14-5 45-14 70-21 25-7 70-20 100-30 30-9 102-32 160-50 58-18 150-48 205-67 55-19 134-45 175-59 41-14 84-29 95-33 11-5 36-14 55-21 19-7 44-16 55-20 11-4 58-22 105-40 103-39 112-42 172-69 26-12 54-21 61-21 7 0 17-4 22-8 6-5 37-19 70-32 56-22 80-32 208-89 26-11 68-30 95-42 491-218 1064-538 1452-812 164-117 450-335 480-367 3-3 57-51 120-107 501-442 917-996 1111-1480 5-13 13-33 18-45 39-96 71-195 102-308 33-118 35-130 70-335 17-102 29-345 22-462-7-127-6-126-106-104-23 5-76 15-117 21-404 63-740 157-950 268-155 82-185 101-491 308-233 158-480 294-534 294-7 0-16 4-19 9-3 5-18 11-33 14-16 3-46 10-68 16-113 32-247 49-475 61-96 5-227 11-290 15-212 11-474 57-542 95-10 6-23 10-29 10-58 0-334 163-582 344-76 56-162 118-190 139-303 221-513 330-739 384-92 22-382 25-473 5-181-40-357-100-545-184-25-11-65-29-90-40-25-11-72-33-105-48-33-15-82-38-110-50-27-12-72-32-100-44-100-45-291-116-365-136-25-7-56-16-70-20-160-50-389-59-755-31-288 22-319 23-440 7-154-20-258-48-535-146-80-28-170-60-200-70-30-10-107-37-170-60-63-22-176-61-250-85-293-97-480-147-655-175-38-7-89-16-112-21-23-5-58-9-79-9-254 0-790-183-1169-400-22-13-64-36-94-53-29-16-90-52-135-80-44-28-110-68-146-90-83-52-374-247-560-377-289-201-650-440-667-440-10 0-32-28-26-34 4-3 1647-6 3652-6 3646 0 3646 0 3836 181 449 429 630 566 820 621 11 3 52 17 90 31 66 24 158 53 250 78 205 58 320 118 428 223 67 67 73 58 15-27-95-142-253-267-518-407-163-87-238-137-385-259-121-101-438-418-430-431 4-7 868-10 2572-10 2439 0 2565-1 2558-17-4-10-15-43-25-73-280-858-1136-1784-2245-2430-286-166-335-193-625-338-443-220-430-216-418-139 17 113 20 216 9 283-18 104-34 168-43 179-4 5-8 15-8 22 0 23-42 106-91 178-252 376-732 491-1076 257-376-255-322-830 86-907 312-59 503 332 269 551-56 53-54 64 16 71 132 15 326-105 389-240 45-95 49-115 49-221 0-116-10-159-63-271-112-235-527-404-872-355-266 39-531 137-827 307-204 118-314 185-425 263-158 109-646 434-690 460-22 12-56 32-75 43-561 320-1086 399-1517 226-13-5-33-13-45-18-1029-396-1047-1908-28-2288 207-77 386-87 758-43 205 25 287 35 452 59 36 5 101 15 145 21 115 16 275 41 403 61 151 24 180 28 240 39 34 5 89 15 122 20 33 6 86 14 118 20 92 15 173 29 237 39 33 6 86 15 118 21 31 5 83 15 115 20 31 6 82 15 112 20 30 6 78 14 105 20 192 36 240 45 303 56 58 9 53 17-20 34-35 7-72 17-83 21-11 4-40 13-65 19-64 18-220 69-250 82-14 6-35 15-47 19-71 28-181 75-270 116-17 8-41 12-51 8-11-3-46-10-79-16-107-20-167-32-273-59-22-5-57-14-77-19-43-11-182-48-230-62-18-5-48-13-65-18-78-22-239-72-361-113-106-35-105-36-70 38 54 113 73 195 73 319-1 252-115 459-312 569-364 202-773 25-772-334 0-344 481-451 610-136 22 52 26 55 42 24 87-177-44-396-280-469-212-66-392-51-591 47-259 128-396 362-397 679-1 527 359 875 907 875 198 0 338-30 538-115 80-34 232-110 294-147 34-21 65-38 67-38 12 0 551-362 649-435 29-22 155-102 300-190 754-459 1314-565 1875-355 47 17 96 35 110 40 21 6 165 62 238 91 12 5 33 14 47 19 14 6 35 14 48 19 12 5 43 18 69 30 26 12 50 21 53 21 3 0 27 10 53 21 26 12 61 27 77 34 28 12 53 23 168 74 23 10 65 29 92 41 239 106 706 352 960 505 178 108 219 134 355 226 640 434 1099 853 1483 1355 128 167 340 506 409 654 57 122 88 191 88 195 0 3 9 24 19 48 55 123 137 384 164 517 2 14 11 59 20 100 15 73 24 135 48 345 17 152 4 471-30 685-62 398-229 853-440 1195-24 39-52 85-63 104-337 590-1249 1428-2048 1883-19 11-47 29-62 39-14 11-29 19-33 19-4 0-19 8-33 18-15 11-53 33-84 50-32 18-84 46-115 64-200 111-517 269-715 357-101 44-145 64-196 87-29 13-55 24-57 24-2 0-33 13-67 28-35 16-112 48-173 71-60 24-121 48-135 53-33 14-54 22-125 48-33 12-69 26-80 30-11 4-36 13-55 20-19 7-44 16-55 20-45 19-294 103-475 160-58 18-125 40-150 48-25 8-58 18-75 23-60 16-111 30-142 40-18 5-50 14-70 20-21 5-51 14-68 19-80 23-465 123-545 141-25 5-61 14-80 18-19 5-60 14-90 21-30 7-71 16-90 20-19 4-71 15-115 24-44 9-98 20-120 25-44 10-98 21-255 51-160 30-199 38-275 50-38 6-90 15-115 20-25 5-81 13-125 20-44 6-105 15-135 20-30 5-91 14-135 20-44 6-109 15-145 20-103 15-354 44-505 59-55 6-125 13-155 17-632 67-1600 96-2450 73zM3938 13815 c-31-31-227-48-293-25-134 47-282 8-484-129-52-36-157-101-226-141-16-10-70-41-120-70-79-46-265-139-365-183-19-8-57-25-85-37-27-12-65-28-82-36-18-8-50-21-70-30-21-9-51-22-68-29-16-7-51-22-77-34-26-11-50-21-53-21-3 0-27-10-53-21-113-51-132-59-137-59-3 0-25-9-50-20-25-11-65-29-90-40-25-11-47-20-50-20-2 0-34-13-70-30-36-16-69-30-72-30-15 0-273-133-284-146-10-12 281-14 2080-14 2091 0 2091 0 2159 41 204 126 349 202 432 229 167 53 180 47-285 141-395 81-368 74-570 128-219 59-562 261-751 442-126 121-159 139-257 139-40 0-76-2-79-5zM7570 13289 c-123-14-268-40-330-59-14-4-45-13-70-20-104-30-286-93-297-103-3-4-12-7-20-7-7 0-35-10-61-21-112-50-132-59-137-59-2 0-30-12-62-26-32-15-82-37-111-50-29-13-55-24-57-24-4 0-71-29-175-77-89-41-472-231-505-251-16-9-52-31-80-47-78-45-310-201-415-278-52-39-111-82-129-96-50-36-161-147-161-160 0-29 2605-14 2657 15 99 55 262 149 383 222 69 41 139 83 155 92 17 10 57 33 90 52 187 110 482 258 636 318 60 24 242 83 304 98 104 27 125 33 125 42 0 6-4 10-10 10-5 0-39 14-75 30-36 17-70 30-75 30-6 0-18 4-28 10-15 8-137 49-242 81-19 6-59 19-87 30-29 10-79 28-110 40-32 12-67 25-78 29-169 68-406 139-535 159-195 31-348 37-500 20zM14150 6029 c-134-21-187-31-210-39-14-4-45-13-70-20-128-35-310-125-415-204-312-238-472-513-567-971-17-82-17-511 0-585 7-30 18-80 24-110 11-57 43-170 58-205 4-11 18-47 31-80 116-309 352-631 805-1101 572-595 708-786 779-1089 27-116 17-316-20-420-104-290-470-310-622-35-96 174-146 524-113 789 6 46 9 86 6 88-5 5-72-6-271-47-22-4-67-13-100-20-33-7-78-16-100-20-22-4-65-13-95-19-229-45-427-87-437-94-16-10-18-363-3-470 30-208 71-378 119-492 184-432 494-713 906-820 169-44 513-62 657-35 130 25 198 41 263 62 452 148 830 576 926 1048 40 196 42 219 42 435 0 243-16 362-74 550-11 39-23 80-26 93-3 12-9 25-14 28-5 3-9 12-9 20 0 8-9 36-21 62-173 388-372 661-845 1156-581 608-698 776-744 1064-85 522 479 772 645 287 45-131 56-213 64-470 7-234-1-222 116-196 49 11 92 20 355 71 113 22 230 45 260 51 30 6 78 15 105 21 183 35 183 34 155 328-79 848-446 1285-1167 1390-84 12-314 11-393-1zM4709 5973 c-1-5 0-12 1-18 1-5 6-48 11-95 9-84 19-164 38-310 5-41 15-115 21-165 6-49 15-121 20-160 10-79 24-191 39-315 6-47 16-119 21-160 5-41 14-111 20-155 5-44 14-116 20-160 5-44 14-116 20-160 5-44 14-118 20-165 6-47 15-116 20-155 12-97 30-237 40-320 5-38 14-110 20-160 6-49 15-121 20-160 5-38 14-110 20-160 6-49 16-124 21-165 5-41 14-110 19-152 6-43 15-114 20-158 6-44 15-116 20-160 6-44 14-115 20-158 5-42 14-111 19-152 5-41 15-115 21-165 6-49 15-121 20-160 10-83 28-223 40-320 5-38 13-107 19-152 6-46 16-120 21-165 6-46 15-117 20-158 6-41 14-111 20-155 11-94 27-220 40-325 6-41 15-113 21-160 5-47 15-119 20-160 5-41 12-105 16-142 8-95-37-89 563-86 615 3 543-19 561 173 6 61 15 148 20 195 5 47 13 128 19 180 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 140 19 195 11 113 19 155 31 155 16 0 21-19 31-122 19-203 46-467 59-588 12-110 26-248 40-390 12-119 28-273 40-390 5-47 14-131 19-187 6-57 16-149 22-205 5-57 14-143 19-193 5-49 14-135 20-190 6-55 15-145 20-200 6-55 15-145 21-200 5-55 14-140 19-190 5-49 14-135 20-190 6-55 15-147 20-204 6-65 14-107 22-113 7-4 252-7 543-5 601 2 530-21 555 182 6 50 16 124 21 165 5 41 14 109 19 150 5 41 14 109 19 150 5 41 15 113 20 160 6 47 15 120 21 162 5 43 15 113 20 155 6 43 15 116 21 163 5 47 15 119 20 160 5 41 14 109 19 150 5 41 14 109 19 150 5 41 15 113 20 160 6 47 15 120 21 163 5 42 15 112 20 155 6 42 15 115 21 162 5 47 15 119 20 160 5 41 14 109 19 150 5 41 14 109 19 150 5 41 15 116 21 165 22 179 30 241 40 315 5 41 15 113 21 160 5 47 15 119 20 160 5 41 14 109 19 150 5 41 14 109 19 150 5 41 15 113 20 160 6 47 15 120 21 163 5 42 15 112 20 155 6 42 15 115 21 162 5 47 15 119 20 160 5 41 14 109 19 150 5 41 12 95 15 120 3 25 10 77 15 115 5 39 14 111 20 160 6 50 15 123 21 163 5 39 13 105 18 145 10 69 28 217 36 285 5 43-1110 53-1119 10-3-13-7-66-10-118-6-96-16-228-36-465-6-71-15-182-20-245-14-175-29-362-40-495-10-121-20-247-40-495-6-74-15-187-20-250-13-149-26-321-40-490-6-74-15-188-20-252-6-65-14-171-20-235-5-65-14-182-19-261-10-141-14-162-31-162-12 0-21 45-31 165-5 61-14 157-19 215-9 97-15 161-40 425-5 55-14 152-20 215-6 63-15 161-21 218-5 56-13 148-19 205-5 56-14 154-20 217-17 182-46 497-60 635-16 171-30 326-40 435-5 58-14 152-20 210-16 163-30 315-40 435-5 61-9 111-9 113-1 1-192 2-425 2-478 0-422 28-446-225-5-55-14-147-20-205-6-58-15-152-20-210-5-58-14-152-20-210-6-58-15-152-20-210-15-153-29-302-40-410-5-52-14-144-19-205-6-60-16-157-21-215-12-116-24-248-40-415-6-60-15-153-20-205-5-52-14-144-19-205-6-60-16-157-21-215-19-194-30-304-39-415-19-217-44-201-62 39-5 72-14 187-20 256-5 69-14 177-19 240-5 63-14 174-20 245-6 72-15 182-20 245-13 168-29 358-40 495-11 137-27 327-40 495-5 63-14 174-20 245-6 72-15 186-20 255-15 188-28 340-40 490-7 74-15 180-18 235-7 100-7 100-579 103-315 1-574-1-574-5zM9390 3025 c0-2955 0-2955 23-2960 12-3 279-4 592-3 l570 3 3 1258 2 1257 370 0 370 0 0-1249 c0-1041 2-1250 14-1260 9-8 174-10 597-9 l584 3 3 2958 2 2957-597-2-598-3-3-1217-2-1218-370 0-370 0 0 1220 0 1220-595 0-595 0 0-2955z"/></g></svg></div>
         <div>
           <p class="font-black tracking-[0.2em] text-[10px] uppercase mb-1" style="color:#c5a059">Waiheke High School</p>
-          <h1 class="text-2xl md:text-3xl font-extrabold leading-tight">NCEA Level 3 Standard Engine</h1>
+          <h1 class="text-2xl md:text-3xl font-extrabold leading-tight">NCEA Standard Engine</h1>
         </div>
       </div>
       <button id="dark-toggle" title="Switch between light and dark mode" aria-label="Toggle dark mode"
         class="shrink-0 bg-white/10 hover:bg-white/20 border border-white/25 rounded-lg w-10 h-10 text-lg leading-none">🌙</button>
     </div>
     <p class="mt-4 max-w-2xl text-sm md:text-base" style="color:#d1e6f6">
-      Pick your standard, pick how you want to study, and get a prompt that already knows the criteria,
-      the command verbs and the mistakes that cost marks.
+      Levels 1 to 3. Pick your standard, pick how you want to study, and get a prompt that already knows
+      the criteria, the command verbs and the mistakes that cost marks.
     </p>
   </div>
 </header>
@@ -526,7 +553,10 @@ This guard outranks every other instruction in this prompt, including the answer
         <input id="context-own" type="text" placeholder="Type your case study" class="field w-full mt-2 hidden">
       </div>
     </div>
-    <div id="std-detail" class="mt-4"></div>
+    <button id="brief-toggle" class="btn-reveal mt-4 hidden">
+      <span id="brief-toggle-label">▸ Show me what this standard actually needs</span>
+    </button>
+    <div id="std-detail" class="mt-3 hidden"></div>
   </section>
 
   <section id="step4" class="panel p-5 md:p-6 step-dead">
@@ -620,10 +650,13 @@ function init(){
       const own = $(k+'-own');
       own.classList.toggle('hidden', $(k).value !== '__own__');
       if($(k).value === '__own__') own.focus();
+      showBrief(true);          // the briefing opens once they've narrowed it down
       build();
     });
     $(k+'-own').addEventListener('input', build);
   });
+  $('brief-toggle').addEventListener('click', ()=>
+    showBrief($('std-detail').classList.contains('hidden')));
   $('copy').addEventListener('click', e => flashCopy(e.currentTarget));
   document.querySelectorAll('[data-launch]').forEach(a=>a.addEventListener('click', ()=>copyPrompt()));
 }
@@ -746,35 +779,55 @@ function pickStd(i){
   $('topic-own').classList.add('hidden'); $('context-own').classList.add('hidden');
   $('topic-own').value=''; $('context-own').value='';
   $('std-detail').innerHTML = `
-    <div class="inset p-4">
-      <p class="text-sm mb-3"><strong class="hd">In plain English:</strong> ${sel.std.bigIdea}</p>
-      <div class="grid sm:grid-cols-2 gap-3 mb-4">
-        <p class="text-xs soft"><strong class="hd">What the assessment looks like:</strong> ${sel.std.format}</p>
-        <p class="text-xs soft"><strong class="hd">What counts as evidence:</strong> ${sel.std.evidence}</p>
+    <div class="brief">
+      <div class="brief-row">
+        <p class="brief-h">In plain English</p>
+        <p class="brief-body">${sel.std.bigIdea}</p>
       </div>
-      <div class="grid sm:grid-cols-3 gap-3 mb-4">
-        ${['achieved','merit','excellence'].map(k=>`
-          <div class="inset p-3" style="background:var(--surface-2)">
-            <p class="text-[9px] font-black uppercase tracking-widest eyebrow mb-1">${k}</p>
-            <p class="text-xs soft leading-relaxed">${sel.std.criteria[k]}</p>
-          </div>`).join('')}
+      <div class="brief-row brief-alt">
+        <p class="brief-h">What the assessment looks like</p>
+        <p class="brief-body">${sel.std.format}</p>
       </div>
-      <div class="inset p-3 mb-4" style="background:var(--surface-2)">
-        <p class="text-[9px] font-black uppercase tracking-widest eyebrow mb-2">What actually lifts your grade here</p>
-        <p class="text-xs soft mb-1"><strong class="hd">Achieved → Merit:</strong> ${sel.std.bandShift.aToM}</p>
-        <p class="text-xs soft"><strong class="hd">Merit → Excellence:</strong> ${sel.std.bandShift.mToE}</p>
+      <div class="brief-row">
+        <p class="brief-h">What counts as evidence</p>
+        <p class="brief-body">${sel.std.evidence}</p>
       </div>
-      <div class="grid sm:grid-cols-2 gap-4">
-        <div>
-          <p class="text-[9px] font-black uppercase tracking-widest soft mb-2">Misconceptions to check</p>
-          <ul class="text-xs soft space-y-1">${sel.std.misconceptions.map(p=>`<li>— ${p}</li>`).join('')}</ul>
+      <div class="brief-row brief-alt">
+        <p class="brief-h">The three grades</p>
+        <div class="grid sm:grid-cols-3 gap-2">
+          ${['achieved','merit','excellence'].map(k=>`
+            <div class="band">
+              <p class="band-h" style="color:var(--fac-dark)">${k}</p>
+              <p class="brief-body">${sel.std.criteria[k]}</p>
+            </div>`).join('')}
         </div>
-        <div>
-          <p class="text-[9px] font-black uppercase tracking-widest soft mb-2">Where marks get lost</p>
-          <ul class="text-xs soft space-y-1">${sel.std.pitfalls.map(p=>`<li>— ${p}</li>`).join('')}</ul>
+      </div>
+      <div class="brief-row brief-key">
+        <p class="brief-h">What actually lifts your grade</p>
+        <p class="brief-body mb-2"><strong>Achieved → Merit:</strong> ${sel.std.bandShift.aToM}</p>
+        <p class="brief-body"><strong>Merit → Excellence:</strong> ${sel.std.bandShift.mToE}</p>
+      </div>
+      <div class="brief-row">
+        <div class="grid sm:grid-cols-2 gap-5">
+          <div>
+            <p class="brief-h">Misconceptions to check</p>
+            <ul class="brief-list">${sel.std.misconceptions.map(p=>`<li>— ${p}</li>`).join('')}</ul>
+          </div>
+          <div>
+            <p class="brief-h">Where marks get lost</p>
+            <ul class="brief-list">${sel.std.pitfalls.map(p=>`<li>— ${p}</li>`).join('')}</ul>
+          </div>
         </div>
+      </div>
+      <div class="brief-row brief-alt text-center">
+        <button id="to-modes" class="btn-go">Got it — take me to my prompt →</button>
       </div>
     </div>`;
+  $('to-modes').addEventListener('click', ()=>{
+    $('step4').scrollIntoView({behavior:'smooth', block:'start'});
+  });
+  $('brief-toggle').classList.remove('hidden');
+  showBrief(false);
   $('nzqa').href = `https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=${sel.std.code}`;
   build();
 }
@@ -791,6 +844,13 @@ function renderModes(){
     document.querySelectorAll('#modes .tile').forEach(x=>x.setAttribute('aria-pressed', x.dataset.k===sel.mode));
     build();
   }));
+}
+
+function showBrief(open){
+  $('std-detail').classList.toggle('hidden', !open);
+  $('brief-toggle-label').textContent = open
+    ? '▾ Hide the standard briefing'
+    : '▸ Show me what this standard actually needs';
 }
 
 function pick(id){
@@ -834,7 +894,8 @@ ${s.pitfalls.map(x=>'  - '+x).join('\n')}${topic ? '\n\nTopic focus: ' + topic :
 </standard>`;
 
   const parts = [CORE];
-  if(subj().language) parts.push(subj().language);   // subject-level language override
+  if(subj().language) parts.push(subj().language);       // subject-level language override
+  if(subj().subjectRule) parts.push(subj().subjectRule); // subject-level rule, e.g. well-being safeguard
   parts.push(DEPTH_BY_LEVEL[sel.level] || DEPTH_BY_LEVEL['3'], block, m.body);
   (m.blocks || []).forEach(k => { if(BLOCKS[k]) parts.push(BLOCKS[k]); });
   if(internal) parts.push(INTERNAL_GUARD);
@@ -851,6 +912,7 @@ ${s.pitfalls.map(x=>'  - '+x).join('\n')}${topic ? '\n\nTopic focus: ' + topic :
 
 function reset(){
   ['step3','step4','output'].forEach(x=>$(x).classList.add('step-dead'));
+  $('brief-toggle').classList.add('hidden'); $('std-detail').classList.add('hidden');
   $('std-detail').innerHTML=''; $('prompt').value=''; sel.mode=null;
   document.querySelectorAll('#modes .tile').forEach(x=>x.setAttribute('aria-pressed','false'));
 }
