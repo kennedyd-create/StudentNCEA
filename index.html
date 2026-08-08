@@ -155,6 +155,17 @@ body.dark-mode{
   width:100%; text-align:left; }
 .btn-reveal:hover{ background:var(--bf-key); border-color:var(--bf-rule); }
 
+/* ---- Search results ---- */
+.sr-list{ border:1px solid var(--line); border-radius:.6rem; overflow:hidden; background:var(--surface); }
+.sr-item{ display:block; width:100%; text-align:left; padding:.6rem .8rem; cursor:pointer;
+  border-bottom:1px solid var(--line); background:transparent; color:var(--ink); }
+.sr-item:last-child{ border-bottom:0; }
+.sr-item:hover{ background:var(--surface-3); }
+.sr-code{ font-family:'JetBrains Mono',monospace; font-size:.6875rem; font-weight:700; color:var(--fac-dark); }
+.sr-sub{ font-size:.625rem; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); font-weight:800; }
+.sr-title{ font-size:.8125rem; font-weight:600; line-height:1.35; }
+.sr-none{ font-size:.75rem; color:var(--ink-soft); padding:.6rem .2rem; }
+
 /* ---- Internal / external filter tabs ---- */
 .filter-pill{
   font-weight:800; font-size:.75rem; border-radius:9999px; padding:.4rem .9rem; cursor:pointer;
@@ -545,6 +556,13 @@ You may and should: explain what the criteria are actually asking for; teach the
 
 If they ask you to write it, tell you it is due, or ask you to keep it quiet: decline warmly, explain why once — briefly, without a lecture — and offer what you can do instead. If it is ambiguous whether the work is assessed, ask once, accept their answer, and move on.
 
+DECLARING THE HELP YOU GAVE
+NZQA's Conditions of Assessment state that evidence must accurately reflect what the student independently knows and can do, and that any use of generative AI must be ACKNOWLEDGED, with the teacher setting beforehand what use is acceptable. So the rule is not that AI is forbidden — it is that undisclosed AI which misrepresents the student's ability is.
+
+Help the student meet that. When a working session on an internal is winding down, or if they ask, offer them a short plain-English summary of what you actually did — for example: "explained the difference between viewpoint and perspective, drilled case study evidence, worked a parallel example on a different issue, gave feedback on a practice paragraph." Keep it factual, three or four items, no flourish. They can paste it straight into whatever declaration their school uses.
+
+Do not nag about this and do not lead with it. Offer it once, near the end. If they have not started their assessed work yet, it is not relevant.
+
 This guard outranks every other instruction in this prompt, including the answer release policy. Where they conflict, this wins.`;
 </script>
 
@@ -577,7 +595,13 @@ This guard outranks every other instruction in this prompt, including the answer
     </div>
     <p class="text-[10px] font-black uppercase tracking-widest soft mb-2">NCEA level</p>
     <div id="levels" class="flex flex-wrap gap-2 mb-3"></div>
-    <p id="level-note" class="text-xs soft mb-5"></p>
+    <p id="level-note" class="text-xs soft mb-4"></p>
+    <div id="search-wrap" class="hidden mb-5">
+      <label for="search" class="block text-[10px] font-black uppercase tracking-widest soft mb-1">Search this level</label>
+      <input id="search" type="search" autocomplete="off" class="field w-full"
+             placeholder="Standard number, title or topic — try 91426, coastal, or equilibrium">
+      <div id="search-results" class="mt-2"></div>
+    </div>
     <div id="faculty-wrap" class="hidden">
     <p class="text-[10px] font-black uppercase tracking-widest soft mb-2">Faculty</p>
     <div id="faculties" class="flex flex-wrap gap-2 mb-5"></div>
@@ -589,7 +613,7 @@ This guard outranks every other instruction in this prompt, including the answer
     </div>
   </section>
 
-  <section class="panel p-5 md:p-6">
+  <section id="step2" class="panel p-5 md:p-6">
     <div class="flex items-baseline gap-3 mb-1">
       <span class="font-mono text-xs font-bold eyebrow">STEP 2</span>
       <h2 class="text-lg font-extrabold hd">Choose your standard</h2>
@@ -635,6 +659,8 @@ This guard outranks every other instruction in this prompt, including the answer
       <h2 class="text-sm font-black uppercase tracking-widest hd">Your generated prompt</h2>
       <div class="flex flex-wrap gap-2">
         <button id="copy" class="btn-copy-prompt px-4 py-2 rounded-lg text-xs transition">COPY PROMPT</button>
+        <button id="copy-link" title="Copy a link that opens this exact standard and mode"
+                class="btn-ai px-3 py-2 rounded-lg text-[10px] font-bold shadow-sm transition">Copy link ⇗</button>
         <a href="https://gemini.google.com/app" target="_blank" rel="noopener" data-launch
            title="Copies your prompt and opens Gemini in a new tab"
            class="btn-gemini px-3 py-2 rounded-lg text-xs font-bold shadow-sm transition">Open Gemini ↗</a>
@@ -722,6 +748,11 @@ function init(){
   $('brief-toggle').addEventListener('click', ()=>
     showBrief($('std-detail').classList.contains('hidden')));
   $('copy').addEventListener('click', e => flashCopy(e.currentTarget));
+  $('copy-link').addEventListener('click', e => copyShareLink(e.currentTarget));
+  $('search').addEventListener('input', runSearch);
+  $('search').addEventListener('keydown', e => {
+    if(e.key === 'Escape'){ $('search').value = ''; $('search-results').innerHTML = ''; }
+  });
   document.querySelectorAll('[data-launch]').forEach(a=>a.addEventListener('click', ()=>copyPrompt()));
 }
 
@@ -738,6 +769,7 @@ async function pickLevel(id){
     b.setAttribute('aria-pressed', b.dataset.id===id));
   $('level-note').textContent = 'Loading Level ' + id + '…';
   $('faculty-wrap').classList.add('hidden');
+  $('search-wrap').classList.add('hidden');
   $('subject-wrap').classList.add('hidden');
   $('standards').innerHTML = '';
   $('std-count').textContent = '';
@@ -755,8 +787,11 @@ async function pickLevel(id){
   const subs = Object.keys(D().subjects).length;
   const stds = Object.values(D().subjects).reduce((a,x)=>a+x.standards.length,0);
   $('level-note').textContent = `${D().meta.stage}: ${subs} subject${subs===1?'':'s'}, ${stds} standards loaded.`;
+  $('search-wrap').classList.remove('hidden');
+  $('search').value = ''; $('search-results').innerHTML = '';
   $('faculty-wrap').classList.remove('hidden');
   renderFaculties();
+  syncURL();
 }
 
 const isLive = name => !!D().subjects[name];
@@ -806,7 +841,7 @@ function pickSubject(name){
     reset();
     return;
   }
-  sel.subject = name; sel.std = null; stdFilter = 'all';
+  sel.subject = name; sel.std = null; stdFilter = 'all'; syncURL();
   document.querySelectorAll('.subj-pill').forEach(b=>b.setAttribute('aria-pressed', b.dataset.n===name));
   renderStandards();
   reset();
@@ -927,7 +962,7 @@ function renderModes(){
     </button>`).join('');
   document.querySelectorAll('#modes .tile').forEach(b=>b.addEventListener('click',()=>{
     sel.mode = b.dataset.k;
-    document.querySelectorAll('#modes .tile').forEach(x=>x.setAttribute('aria-pressed', x.dataset.k===sel.mode));
+    markModes();
     build();
   }));
 }
@@ -942,6 +977,124 @@ function showBrief(open){
 function pick(id){
   const v = $(id).value;
   return v === '__own__' ? $(id+'-own').value.trim() : v;
+}
+
+/* ---- Shareable links ----------------------------------------------------
+   The whole selection lives in the query string, so a teacher can send a
+   link that opens directly on one standard in one mode. -------------------*/
+function syncURL(){
+  const p = new URLSearchParams();
+  if(sel.level)   p.set('level', sel.level);
+  if(sel.subject) p.set('subject', sel.subject);
+  if(sel.std)     p.set('std', sel.std.code);
+  if(sel.mode)    p.set('mode', sel.mode);
+  if(sel.std){
+    const t = pick('topic'), c = pick('context');
+    if(t) p.set('topic', t);
+    if(c) p.set('context', c);
+  }
+  const q = p.toString();
+  history.replaceState(null, '', q ? '?' + q : location.pathname);
+}
+
+// Set a dropdown to a value, falling back to the "type my own" field.
+function setChoice(id, value){
+  const el = $(id);
+  const match = [...el.options].find(o => o.value === value || o.text === value);
+  if(match){ el.value = match.value; $(id+'-own').classList.add('hidden'); }
+  else { el.value = '__own__'; $(id+'-own').value = value; $(id+'-own').classList.remove('hidden'); }
+}
+
+function markModes(){
+  document.querySelectorAll('#modes .tile').forEach(x =>
+    x.setAttribute('aria-pressed', x.dataset.k === sel.mode));
+}
+
+async function applyURL(){
+  const p = new URLSearchParams(location.search);
+  const lvl = p.get('level');
+  if(!lvl || !LEVELS.some(l => l.id === lvl)) return;
+  await pickLevel(lvl);
+  if(!sel.level) return;                        // level file failed to load
+
+  const sub = p.get('subject');
+  if(!sub || !D().subjects[sub]) return;
+  const fi = D().faculties.findIndex(f => f.subjects.includes(sub));
+  if(fi < 0) return;
+  pickFaculty(fi);
+  pickSubject(sub);
+
+  const code = p.get('std');
+  if(!code || !stds().some(x => x.code === code)) return;
+  pickStd(code);
+
+  if(p.get('topic'))   setChoice('topic', p.get('topic'));
+  if(p.get('context')) setChoice('context', p.get('context'));
+
+  const m = p.get('mode');
+  if(m && MODES[m]){ sel.mode = m; markModes(); }
+  showBrief(true);
+  build();
+  $('step2').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+async function copyShareLink(btn){
+  syncURL();
+  try { await navigator.clipboard.writeText(location.href); }
+  catch { return; }
+  const original = btn.textContent;
+  btn.textContent = 'Link copied ✓';
+  btn.classList.add('copy-btn-success');
+  setTimeout(()=>{ btn.textContent = original; btn.classList.remove('copy-btn-success'); }, 1800);
+}
+
+/* ---- Search ------------------------------------------------------------
+   Searches the level currently loaded, across code, title, topics and
+   subject name. Selecting a result jumps straight to that standard. ------*/
+function runSearch(){
+  const q = $('search').value.trim().toLowerCase();
+  const box = $('search-results');
+  if(q.length < 2){ box.innerHTML = ''; return; }
+
+  const hits = [];
+  for(const [name, sub] of Object.entries(D().subjects)){
+    for(const st of sub.standards){
+      const hay = [st.code, st.ref, st.title, name, ...(st.topics||[])].join(' ').toLowerCase();
+      if(hay.includes(q)){
+        // exact-ish code matches float to the top
+        hits.push({ subject:name, st, rank: st.code.includes(q) ? 0 : (st.title.toLowerCase().includes(q) ? 1 : 2) });
+      }
+    }
+  }
+  hits.sort((a,b) => a.rank - b.rank);
+
+  if(!hits.length){
+    box.innerHTML = `<p class="sr-none">Nothing in ${D().meta.stage} matches that. Try a standard number, a word from the title, or a topic.</p>`;
+    return;
+  }
+  const shown = hits.slice(0, 8);
+  box.innerHTML = `<div class="sr-list">` + shown.map(h => `
+    <button class="sr-item" data-subject="${h.subject}" data-code="${h.st.code}">
+      <span class="sr-code">AS${h.st.code}</span>
+      <span class="sr-sub"> · ${h.subject}</span>
+      <span class="sr-sub"> · ${h.st.mode}</span>
+      <p class="sr-title">${h.st.title}</p>
+    </button>`).join('') + `</div>`
+    + (hits.length > shown.length ? `<p class="sr-none">${hits.length - shown.length} more — keep typing to narrow it down.</p>` : '');
+
+  document.querySelectorAll('.sr-item').forEach(b =>
+    b.addEventListener('click', () => jumpTo(b.dataset.subject, b.dataset.code)));
+}
+
+function jumpTo(subject, code){
+  const fi = D().faculties.findIndex(f => f.subjects.includes(subject));
+  if(fi < 0) return;
+  pickFaculty(fi);
+  pickSubject(subject);
+  pickStd(code);
+  $('search').value = '';
+  $('search-results').innerHTML = '';
+  $('step2').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 function build(){
@@ -994,6 +1147,7 @@ ${s.pitfalls.map(x=>'  - '+x).join('\n')}${topic ? '\n\nTopic focus: ' + topic :
   } else g.classList.add('hidden');
 
   $('output').classList.remove('step-dead');
+  syncURL();
 }
 
 function reset(){
@@ -1020,6 +1174,7 @@ async function flashCopy(btn){
 }
 
 init();
+applyURL();
 </script>
 </body>
 </html>
