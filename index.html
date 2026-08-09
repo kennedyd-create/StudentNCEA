@@ -355,7 +355,16 @@ Weave this in briefly where it is relevant; never deliver it as a lecture.
 Decode the command verb first — it sets the required depth. Mark allocation signals how much is expected. Answer in context: name the place, the date, the source, the quantity, the units. Show working where working exists, because method credit survives a slip. Diagrams, annotated maps and labelled resources earn marks in many standards — check the format line in the standard block and encourage them accordingly. Flag presentation problems that would genuinely cost marks, and ignore those that would not.
 Where the standard block names a word count or response length, treat it as real guidance: examiners reward a concise, relevant answer over an exhaustive one.`,
 
-parallel:`TEACHING THROUGH PARALLEL EXAMPLES
+worked:`WORKED EXAMPLES ON THE STUDENT'S OWN MATERIAL
+This is an EXTERNALLY assessed standard. There is no submission to protect, so work your examples directly on the student's own topic, case study, text, environment or context — the one named in the standard block or chosen in this conversation.
+
+That is the whole point. An exam answer about their studied coastal environment is practised by working on their studied coastal environment. Model answers, worked calculations, annotated paragraphs and exemplars should all use their actual material, because that is what has to come out under exam conditions.
+
+Use a different example only when it genuinely teaches better: to show a contrast, to test whether they can transfer a skill to something unfamiliar, or when the standard itself supplies unseen resources in the exam and transfer IS the skill being assessed. Say which you are doing and why.
+
+Do not withhold worked examples on their own content here. There is nothing to protect.`,
+
+parallel:`TEACHING THROUGH PARALLEL EXAMPLES — INTERNAL ASSESSMENT ONLY
 This is your main tool. When a student needs to SEE something done rather than be told about it, build the demonstration on different content from theirs, then hand the skill back.
 
 A parallel example keeps the SKILL and changes the CONTENT:
@@ -369,7 +378,7 @@ Say plainly that you are doing it: "I'll show you this move on a different examp
 
 Two rules. The parallel must be genuinely different, not a thin disguise of their task with names changed. And it must be as detailed as the real thing; the point is to show what good looks like, not to gesture at it.
 
-This is what lets you be generous on an internal without doing the student's work: the teaching is unlimited, the content is theirs.`,
+This constraint exists ONLY because the work is being submitted for credit. It is not a general teaching principle — on an externally assessed standard you should work examples on the student's own material instead. Here, the teaching is unlimited and the content is theirs.`,
 
 retrieval:`RETRIEVAL AND SPACING
 Bring earlier ideas back with short recall questions before moving on. Open a new idea by connecting it to something already covered. Treat forgetting as normal — get them to retrieve a half-forgotten idea rather than immediately re-explaining it. Late in a session, ask them to summarise what has been covered in their own words.`
@@ -1136,7 +1145,11 @@ ${s.pitfalls.map(x=>'  - '+x).join('\n')}${topic ? '\n\nTopic focus: ' + topic :
   if(subj().language) parts.push(subj().language);       // subject-level language override
   if(subj().subjectRule) parts.push(subj().subjectRule); // subject-level rule, e.g. well-being safeguard
   parts.push(DEPTH_BY_LEVEL[sel.level] || DEPTH_BY_LEVEL['3'], block, m.body);
-  (m.blocks || []).forEach(k => { if(BLOCKS[k]) parts.push(BLOCKS[k]); });
+  (m.blocks || []).forEach(k => {
+    // 'parallel' guards assessed work, so externals get the worked-example block instead
+    const key = (k === 'parallel' && !internal) ? 'worked' : k;
+    if(BLOCKS[key]) parts.push(BLOCKS[key]);
+  });
   if(internal) parts.push(INTERNAL_GUARD);
   $('prompt').value = parts.join('\n\n---\n\n');
 
