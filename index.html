@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="ncea-exams-2026.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -186,6 +187,74 @@ body.dark-mode .sec-h{ color:var(--fac-dark); }
   backdrop-filter:blur(6px);
 }
 body.dark-mode #actionbar{ background:color-mix(in srgb,var(--fac-dark) 18%,var(--surface)); }
+
+/* ---- Top-level view tabs ---- */
+.mode-tab{
+  font-weight:800; font-size:.8125rem; padding:.55rem 1.1rem; cursor:pointer;
+  border-radius:.6rem .6rem 0 0; border:1px solid var(--line); border-bottom:0;
+  background:color-mix(in srgb,var(--fac-dark) 8%,var(--surface)); color:var(--ink-soft);
+  transition:all .15s ease;
+}
+.mode-tab:hover{ color:var(--fac-dark); }
+.mode-tab[aria-pressed="true"]{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
+
+/* ---- Study timetable ---- */
+.tt-basket{ border:2px dashed var(--line); border-radius:.6rem; padding:.6rem .75rem;
+  display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; min-height:2.6rem; }
+.tt-chip{ display:inline-flex; align-items:center; gap:.35rem; font-size:.75rem; font-weight:800;
+  background:var(--fac-dark); color:#fff; border-radius:9999px; padding:.25rem .6rem; }
+.tt-x{ font-weight:900; opacity:.75; cursor:pointer; }
+.tt-x:hover{ opacity:1; }
+
+.tt-stdgroup{ border-top:1px solid var(--line); padding:.6rem 0; }
+.tt-stdsub{ font-size:.75rem; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--fac-dark); margin-bottom:.35rem; }
+.tt-check{ display:flex; gap:.5rem; align-items:flex-start; font-size:.8125rem; padding:.15rem 0; cursor:pointer; }
+.tt-check input{ margin-top:.25rem; }
+
+.tt-examrow{ display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; padding:.35rem 0; }
+.tt-examsub{ font-size:.8125rem; font-weight:800; min-width:11rem; }
+.tt-date, .tt-sess{ padding:.35rem .5rem; font-size:.8125rem; }
+.tt-warn{ font-size:.6875rem; color:#b45309; font-weight:700; }
+body.dark-mode .tt-warn{ color:#fcd34d; }
+
+.tt-hours{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.4rem; }
+.tt-hour{ text-align:center; font-size:.6875rem; font-weight:800; color:var(--ink-soft); }
+.tt-hour input{ width:100%; text-align:center; padding:.3rem; margin-top:.15rem; }
+.tt-note{ font-size:.75rem; border-radius:.5rem; padding:.5rem .7rem; margin-top:.4rem; }
+.tt-note.warn{ background:var(--int-bg); color:var(--int-ink); }
+.tt-note.bad{ background:rgba(185,28,28,.12); color:#b91c1c; font-weight:700; }
+body.dark-mode .tt-note.bad{ color:#fca5a5; }
+
+.tt-scroll{ overflow-x:auto; }
+.tt-table{ width:100%; border-collapse:collapse; font-size:.75rem; }
+.tt-table th, .tt-table td{ border:1px solid var(--line); padding:.35rem .5rem; text-align:center; }
+.tt-table thead th{ background:var(--fac-dark); color:#fff; font-weight:800; }
+.tt-wk{ display:block; font-size:.5625rem; font-weight:600; opacity:.8; }
+.tt-sub{ text-align:left!important; font-weight:800; white-space:nowrap; background:var(--surface-2); }
+.tt-has{ background:color-mix(in srgb,var(--fac-dark) 18%,var(--surface)); font-weight:800; }
+.tt-none{ color:var(--ink-faint); }
+.tt-exam{ font-weight:800; background:var(--surface-2); white-space:nowrap; }
+
+.tt-day{ margin-top:.9rem; }
+.tt-date{ font-size:.75rem; font-weight:900; text-transform:uppercase; letter-spacing:.06em;
+  color:var(--fac-dark); border-bottom:2px solid var(--line); padding-bottom:.2rem; margin-bottom:.35rem; }
+.tt-flag{ margin-left:.5rem; font-size:.625rem; background:#b91c1c; color:#fff; padding:.1rem .45rem; border-radius:9999px; }
+.tt-flag.tt-eve{ background:var(--gold); color:#3b2a06; }
+.tt-block{ display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; border:1px solid var(--line);
+  border-left:4px solid var(--fac-dark); border-radius:.5rem; padding:.45rem .6rem; margin-bottom:.3rem;
+  background:var(--surface); }
+.tt-block.tt-free{ border-left-color:var(--line); color:var(--ink-faint); font-size:.75rem; justify-content:center; }
+.tt-meta{ font-size:.75rem; }
+.tt-title{ font-size:.75rem; color:var(--ink-soft); flex:1 1 14rem; }
+.tt-acts{ margin-left:auto; display:flex; gap:.35rem; }
+.tt-copy, .tt-open{ font-size:.6875rem; font-weight:800; border:1px solid var(--line-strong);
+  border-radius:.4rem; padding:.25rem .5rem; cursor:pointer; color:var(--ink-soft); }
+.tt-copy:hover, .tt-open:hover{ background:var(--fac-dark); color:#fff; border-color:var(--fac-dark); }
+
+@media print{
+  header, #modetabs, #actionbar, main, .tt-acts, #tt-ics, #tt-print, #tt-regen { display:none!important; }
+  .panel{ box-shadow:none; border:1px solid #999; }
+}
 
 /* ---- Search results ---- */
 .sr-list{ border:1px solid var(--line); border-radius:.6rem; overflow:hidden; background:var(--surface); }
@@ -623,6 +692,15 @@ This guard outranks every other instruction in this prompt, including the answer
   </div>
 </header>
 
+<div class="max-w-6xl mx-auto px-5 pt-4">
+  <div id="modetabs" class="flex gap-2">
+    <button class="mode-tab" data-view="builder" aria-pressed="true">Prompt builder</button>
+    <button class="mode-tab" data-view="timetable" aria-pressed="false">Study timetable</button>
+  </div>
+</div>
+
+<div id="tt-root" class="max-w-6xl mx-auto px-5 py-5 space-y-4 pb-32 hidden"></div>
+
 <main class="max-w-6xl mx-auto px-5 py-5 space-y-4 pb-32">
 
   <section id="step1" class="panel p-4 md:p-5">
@@ -769,6 +847,14 @@ function init(){
     });
     $(k+'-own').addEventListener('input', build);
   });
+  document.querySelectorAll('.mode-tab').forEach(b=>b.addEventListener('click', ()=>{
+    const v = b.dataset.view;
+    document.querySelectorAll('.mode-tab').forEach(x=>x.setAttribute('aria-pressed', x.dataset.view===v));
+    document.querySelector('main').classList.toggle('hidden', v!=='builder');
+    $('tt-root').classList.toggle('hidden', v!=='timetable');
+    $('actionbar').classList.toggle('hidden', v!=='builder' || !$('prompt').value);
+    if(v==='timetable' && window.Timetable) window.Timetable.open();
+  }));
   $('crumb1').addEventListener('click', ()=>setStep(1,false));
   $('crumb2').addEventListener('click', ()=>setStep(2,false));
   $('brief-toggle').addEventListener('click', ()=>
@@ -1140,15 +1226,21 @@ function jumpTo(subject, code){
   $('step2').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
-function build(){
-  if(!sel.std || !sel.mode) return;
-  const s = sel.std, m = MODES[sel.mode];
-  const topic = pick('topic'), ctx = pick('context');
+/* Compose a prompt from plain values, independent of any UI state.
+   build() uses it, and so does the study timetable. */
+function composePrompt({ level, subject, code, mode, topic, context }){
+  const d = window.NCEA_DATA && window.NCEA_DATA[level];
+  if(!d) return '';
+  const sub = d.subjects[subject];
+  if(!sub) return '';
+  const s = sub.standards.find(x => x.code === code);
+  const m = MODES[mode];
+  if(!s || !m) return '';
   const internal = s.mode === 'internal';
 
   const block =
 `<standard>
-Qualification: ${D().meta.qualification} ${D().meta.stage} ${sel.subject} (${D().meta.year})
+Qualification: ${d.meta.qualification} ${d.meta.stage} ${subject} (${d.meta.year})
 Standard: AS${s.code} (${s.ref}) — ${s.credits} credits${s.creditsUnverified?' (credit value not yet confirmed against NZQA)':''} — ${s.mode}ly assessed
 Title: ${s.title}
 What it asks for: ${s.bigIdea}
@@ -1164,28 +1256,37 @@ What actually lifts the grade in this standard:
   Achieved to Merit:    ${s.bandShift.aToM}
   Merit to Excellence:  ${s.bandShift.mToE}
 
-Command verbs used in this standard: ${s.verbs.join(', ')}${subj().verifyNote ? '\nSubject note: ' + subj().verifyNote : ''}
-${subj().lens}
-How this subject reasons: ${subj().discipline}
+Command verbs used in this standard: ${s.verbs.join(', ')}${sub.verifyNote ? '\nSubject note: ' + sub.verifyNote : ''}
+${sub.lens}
+How this subject reasons: ${sub.discipline}
 
 Misconceptions to watch for in this student:
 ${s.misconceptions.map(x=>'  - '+x).join('\n')}
 
 Where students lose marks in this standard:
-${s.pitfalls.map(x=>'  - '+x).join('\n')}${topic ? '\n\nTopic focus: ' + topic : ''}${ctx ? '\nCase study / context: ' + ctx : ''}
+${s.pitfalls.map(x=>'  - '+x).join('\n')}${topic ? '\n\nTopic focus: ' + topic : ''}${context ? '\nCase study / context: ' + context : ''}
 </standard>`;
 
   const parts = [CORE];
-  if(subj().language) parts.push(subj().language);       // subject-level language override
-  if(subj().subjectRule) parts.push(subj().subjectRule); // subject-level rule, e.g. well-being safeguard
-  parts.push(DEPTH_BY_LEVEL[sel.level] || DEPTH_BY_LEVEL['3'], block, m.body);
+  if(sub.language)    parts.push(sub.language);
+  if(sub.subjectRule) parts.push(sub.subjectRule);
+  parts.push(DEPTH_BY_LEVEL[level] || DEPTH_BY_LEVEL['3'], block, m.body);
   (m.blocks || []).forEach(k => {
-    // 'parallel' guards assessed work, so externals get the worked-example block instead
     const key = (k === 'parallel' && !internal) ? 'worked' : k;
     if(BLOCKS[key]) parts.push(BLOCKS[key]);
   });
   if(internal) parts.push(INTERNAL_GUARD);
-  $('prompt').value = parts.join('\n\n---\n\n');
+  return parts.join('\n\n---\n\n');
+}
+window.composePrompt = composePrompt;
+
+function build(){
+  if(!sel.std || !sel.mode) return;
+  const internal = sel.std.mode === 'internal';
+  $('prompt').value = composePrompt({
+    level: sel.level, subject: sel.subject, code: sel.std.code,
+    mode: sel.mode, topic: pick('topic'), context: pick('context')
+  });
 
   const g = $('guard-note');
   if(internal){
@@ -1225,5 +1326,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
+<script src="timetable.js"></script>
 </body>
 </html>
