@@ -1,1556 +1,1103 @@
-<!DOCTYPE html>
-<html lang="en-NZ">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WHS: NCEA Master Tutor</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=7"></script>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
-
-/* ---- Theme tokens. Dark mode swaps these and nothing else. ---- */
-:root{
-  --page:#eef2f7; --surface:#ffffff; --surface-2:#f6f9fc; --surface-3:#eef3f9;
-  --ink:#1e293b; --ink-soft:#64748b; --ink-faint:#94a3b8;
-  --line:#e2e8f0; --line-strong:#cbd5e1;
-  --brand:#002066; --brand-ink:#002066; --gold:#c5a059;
-  --out-a:#f0f7ff; --out-b:#e6f1fb;
-  --int-bg:rgba(245,158,11,.14); --int-ink:#92400e;
-  --ext-bg:rgba(14,165,233,.14); --ext-ink:#075985;
-  --shadow:0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.12);
-  --fac-dark:#002066; --fac-light:#f1f5fc; --tint-a:4%; --tint-b:9%; --tint-in:3%;
-}
-body.dark-mode{
-  --page:#070d1a; --surface:#101a2e; --surface-2:#16233c; --surface-3:#1b2a46;
-  --ink:#e2e8f0; --ink-soft:#94a3b8; --ink-faint:#64748b;
-  --line:#22334f; --line-strong:#2e4265;
-  --brand:#0a1f4d; --brand-ink:#a8c0ea; --gold:#dbbb7d;
-  --out-a:#132340; --out-b:#0e1b33;
-  --int-bg:rgba(245,158,11,.16); --int-ink:#fcd34d;
-  --ext-bg:rgba(56,189,248,.16); --ext-ink:#7dd3fc;
-  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
-  --fac-dark:#4d7fd6; --fac-light:#16233c; --tint-a:8%; --tint-b:15%; --tint-in:7%;
-}
-
-body{font-family:'Manrope',sans-serif;line-height:1.6;background:var(--page);color:var(--ink);}
-.font-mono{font-family:'JetBrains Mono',monospace;}
-.whs-gradient-bg{background:linear-gradient(135deg,#002066 0%,#001033 100%);}
-body.dark-mode .whs-gradient-bg{background:linear-gradient(135deg,#0a1730 0%,#050c1c 100%);}
-
-/* ---- 1. Section shading ---- */
-/* Every box is tinted with the active faculty colour and edged with it. */
-.panel{
-  background:linear-gradient(178deg,
-    color-mix(in srgb, var(--fac-dark) var(--tint-a), var(--surface)) 0%,
-    color-mix(in srgb, var(--fac-dark) var(--tint-b), var(--surface-2)) 100%);
-  border:1px solid color-mix(in srgb, var(--fac-dark) 22%, var(--line));
-  border-left:5px solid var(--fac-dark);
-  border-radius:1rem; box-shadow:var(--shadow); transition:background .25s ease, border-color .25s ease;
-}
-.panel-out{
-  background:linear-gradient(178deg,
-    color-mix(in srgb, var(--fac-dark) calc(var(--tint-a) + 4%), var(--surface)) 0%,
-    color-mix(in srgb, var(--fac-dark) calc(var(--tint-b) + 6%), var(--surface-2)) 100%);
-  border:1px solid color-mix(in srgb, var(--fac-dark) 40%, var(--line));
-  border-left:5px solid var(--fac-dark);
-  border-radius:1rem; box-shadow:var(--shadow); transition:background .25s ease, border-color .25s ease;
-}
-.tile{background:color-mix(in srgb, var(--fac-dark) var(--tint-in), var(--surface));
-  border:2px solid color-mix(in srgb, var(--fac-dark) 14%, var(--line));border-radius:.75rem;color:var(--ink);
-  border-top:3px solid color-mix(in srgb, var(--fac-dark) 45%, transparent);
-  transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease;}
-.tile:hover{transform:translateY(-2px);border-color:var(--fac-dark);border-top-color:var(--fac-dark);}
-.tile[aria-pressed="true"]{border-color:var(--fac-dark,var(--brand-ink));background:var(--surface-3);
-  box-shadow:0 0 0 3px color-mix(in srgb,var(--fac-dark,var(--brand-ink)) 22%,transparent);}
-.inset{background:color-mix(in srgb, var(--fac-dark) var(--tint-in), var(--surface));
-  border:1px solid color-mix(in srgb, var(--fac-dark) 16%, var(--line));border-radius:.75rem;}
-.field{background:var(--surface);border:2px solid var(--line);color:var(--ink);border-radius:.5rem;padding:.5rem .75rem;}
-.field:disabled{opacity:.5}
-.hd{color:var(--brand-ink);} .soft{color:var(--ink-soft);} .faint{color:var(--ink-faint);}
-.eyebrow{color:var(--fac-dark);}
-
-.badge-int{background:var(--int-bg);color:var(--int-ink);}
-.badge-ext{background:var(--ext-bg);color:var(--ext-ink);}
-
-/* ---- Faculty tabs and subject pills (colours from the WHS teacher site) ---- */
-.fac-pill, .subj-pill{
-  font-weight:700; font-size:.8125rem; white-space:nowrap; border-radius:9999px;
-  padding:.55rem 1rem; transition:all .15s ease; cursor:pointer;
-  /* unselected: a light wash of the faculty's own colour */
-  background:color-mix(in srgb, var(--fac-dark) 13%, var(--surface));
-  border:2px solid color-mix(in srgb, var(--fac-dark) 28%, transparent);
-  color:color-mix(in srgb, var(--fac-dark) 88%, #000);
-}
-.fac-pill:hover, .subj-pill:hover{
-  background:color-mix(in srgb, var(--fac-dark) 24%, var(--surface));
-  border-color:color-mix(in srgb, var(--fac-dark) 55%, transparent);
-}
-/* dark mode: same idea, but lift the text off the dark surface */
-body.dark-mode .fac-pill, body.dark-mode .subj-pill{
-  background:color-mix(in srgb, var(--fac-dark) 20%, var(--surface));
-  color:color-mix(in srgb, var(--fac-dark) 45%, #ffffff);
-}
-body.dark-mode .fac-pill:hover, body.dark-mode .subj-pill:hover{
-  background:color-mix(in srgb, var(--fac-dark) 34%, var(--surface));
-}
-.fac-pill[aria-pressed="true"], .subj-pill[aria-pressed="true"]{
-  background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; font-weight:800;
-  box-shadow:0 2px 8px -2px var(--fac-dark);
-}
-body.dark-mode .fac-pill[aria-pressed="true"], body.dark-mode .subj-pill[aria-pressed="true"]{ color:#fff; }
-.fac-count{ font-size:.625rem; opacity:.75; font-weight:800; }
-.subj-pill[data-pending]{ opacity:.6; border-style:dashed; }
-.fac-empty{ opacity:.45; border-style:dashed; }
-.subj-soon{ font-size:.5625rem; text-transform:uppercase; letter-spacing:.08em; opacity:.7; }
-
-/* Accented mode tile — visually distinct from the faculty palette */
-.tile-accent{ border-style:dashed; }
-.tile-accent .hd{ color:var(--fac-dark); }
-.tile-accent[aria-pressed="true"]{ border-style:solid; }
-.mode-badge{
-  font-size:.5625rem; font-weight:900; text-transform:uppercase; letter-spacing:.08em;
-  padding:.1rem .4rem; border-radius:9999px; vertical-align:middle; margin-left:.25rem;
-  background:var(--fac-dark); color:#fff;
-}
-
-/* ---- Standard briefing: deliberately neutral, not faculty-tinted.
-   This is the densest reading on the page, so it uses its own high-contrast
-   palette and larger type rather than the department colour wash. ---- */
-:root{
-  --bf-surface:#ffffff; --bf-alt:#f1f5f9; --bf-key:#eaf0fb;
-  --bf-line:#cbd5e1; --bf-line-soft:#e2e8f0;
-  --bf-head:#002066; --bf-ink:#111827; --bf-ink-soft:#475569; --bf-rule:#002066;
-}
-body.dark-mode{
-  --bf-surface:#0e1a2f; --bf-alt:#152441; --bf-key:#1b2f52;
-  --bf-line:#31456b; --bf-line-soft:#243553;
-  --bf-head:#b9cdf0; --bf-ink:#f1f5f9; --bf-ink-soft:#a9b8cf; --bf-rule:#4d7fd6;
-}
-
-.brief{ border:2px solid var(--bf-line); border-radius:.9rem; overflow:hidden;
-  background:var(--bf-surface); box-shadow:0 6px 20px -14px rgba(15,23,42,.45); }
-.brief-row{ padding:1.15rem 1.3rem; border-bottom:1px solid var(--bf-line-soft);
-  background:var(--bf-surface); }
-.brief-row:last-child{ border-bottom:0; }
-.brief-alt{ background:var(--bf-alt); }
-.brief-key{ background:var(--bf-key); border-left:6px solid var(--bf-rule); }
-
-.brief-h{ font-size:.75rem; font-weight:900; text-transform:uppercase; letter-spacing:.1em;
-  color:var(--bf-head); margin-bottom:.5rem; }
-.brief-body{ font-size:.9375rem; line-height:1.7; color:var(--bf-ink); }
-.brief-body strong{ font-weight:800; color:var(--bf-head); }
-.brief-list{ font-size:.9375rem; line-height:1.65; color:var(--bf-ink-soft); }
-.brief-list li{ margin-bottom:.5rem; padding-left:1rem; text-indent:-1rem; }
-
-.band{ border-radius:.6rem; padding:.8rem .9rem; background:var(--bf-surface);
-  border:1px solid var(--bf-line); border-top:4px solid var(--bf-rule); }
-.band-h{ font-size:.6875rem; font-weight:900; text-transform:uppercase; letter-spacing:.1em;
-  margin-bottom:.35rem; color:var(--bf-head)!important; }
-
-.btn-go{ background:var(--bf-rule); color:#fff; font-weight:800; letter-spacing:.02em;
-  border-radius:.6rem; padding:.8rem 1.6rem; font-size:.875rem; transition:filter .15s ease; }
-.btn-go:hover{ filter:brightness(1.2); }
-.btn-reveal{ background:var(--bf-alt); border:2px dashed var(--bf-line); color:var(--bf-head);
-  font-weight:800; border-radius:.6rem; padding:.75rem 1.1rem; font-size:.875rem;
-  width:100%; text-align:left; }
-.btn-reveal:hover{ background:var(--bf-key); border-color:var(--bf-rule); }
-
-/* ---- Compact layout: section headings, breadcrumbs, sticky bar ---- */
-.sec-h{ font-size:.9375rem; font-weight:800; color:var(--brand-ink); letter-spacing:-.01em; }
-body.dark-mode .sec-h{ color:var(--fac-dark); }
-
-/* A completed step collapses to one clickable line. */
-.crumb{
-  display:flex; align-items:center; gap:.5rem; width:100%; text-align:left; cursor:pointer;
-  font-size:.8125rem; font-weight:700; color:var(--ink); padding:.15rem 0;
-}
-.crumb:hover{ color:var(--fac-dark); }
-.crumb .crumb-tag{ font-size:.5625rem; font-weight:900; text-transform:uppercase; letter-spacing:.09em;
-  color:#fff; background:var(--fac-dark); border-radius:9999px; padding:.12rem .5rem; }
-.crumb .crumb-edit{ margin-left:auto; font-size:.6875rem; font-weight:800; color:var(--fac-dark);
-  border:1px solid color-mix(in srgb,var(--fac-dark) 40%,transparent); border-radius:.4rem; padding:.15rem .5rem; }
-.crumb:hover .crumb-edit{ background:var(--fac-dark); color:#fff; }
-
-/* Standard cards: two lines instead of five, spine pinned to the bottom edge */
-.tile-compact{ position:relative; padding:.6rem .75rem .7rem; }
-.tile-compact .spine{ position:absolute; left:0; bottom:0; height:3px; background:var(--gold);
-  border-bottom-left-radius:.75rem; }
-.tile-compact[aria-pressed="true"] .spine{ background:var(--fac-dark); }
-
-/* Sticky action bar, shown once a prompt exists */
-#actionbar{
-  position:fixed; left:0; right:0; bottom:0; z-index:40;
-  background:color-mix(in srgb,var(--fac-dark) 8%,var(--surface));
-  border-top:2px solid var(--fac-dark);
-  box-shadow:0 -6px 20px -10px rgba(15,23,42,.4);
-  backdrop-filter:blur(6px);
-}
-body.dark-mode #actionbar{ background:color-mix(in srgb,var(--fac-dark) 18%,var(--surface)); }
-
-/* ---- Top-level view tabs ---- */
-.mode-tab{
-  font-weight:800; font-size:.8125rem; padding:.55rem 1.1rem; cursor:pointer;
-  border-radius:.6rem .6rem 0 0; border:1px solid var(--line); border-bottom:0;
-  background:color-mix(in srgb,var(--fac-dark) 8%,var(--surface)); color:var(--ink-soft);
-  transition:all .15s ease;
-}
-.mode-tab:hover{ color:var(--fac-dark); }
-.mode-tab[aria-pressed="true"]{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
-
-/* Level pills keep the school navy whatever faculty is open, so the
-   selected level is always obvious in both views. */
-.lvl-pill{ --fac-dark:#002066; }
-.lvl-pill[aria-pressed="true"]{
-  background:#002066!important; border-color:#002066!important; color:#fff!important;
-  box-shadow:0 0 0 3px rgba(0,32,102,.22);
-}
-body.dark-mode .lvl-pill{ --fac-dark:#4d7fd6; }
-body.dark-mode .lvl-pill[aria-pressed="true"]{
-  background:#2f5fae!important; border-color:#5f8ede!important; color:#fff!important;
-  box-shadow:0 0 0 3px rgba(93,141,222,.3);
-}
-
-/* ---- Study timetable ---- */
-.tt-basket{ border:2px dashed var(--line); border-radius:.6rem; padding:.6rem .75rem;
-  display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; min-height:2.6rem; }
-.tt-chip{ display:inline-flex; align-items:center; gap:.35rem; font-size:.75rem; font-weight:800;
-  color:#fff; border-radius:9999px; padding:.25rem .6rem; }
-.tt-x, .tt-prem{ font-weight:900; opacity:.7; cursor:pointer; }
-.tt-x:hover, .tt-prem:hover{ opacity:1; }
-.tt-dot{ display:inline-block; width:.6rem; height:.6rem; border-radius:9999px; margin-right:.4rem; vertical-align:middle; }
-
-.tt-stdgroup{ border-top:1px solid var(--line); padding:.6rem 0; }
-.tt-stdsub{ font-size:.75rem; font-weight:900; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.35rem; }
-.tt-check{ display:flex; gap:.5rem; align-items:flex-start; font-size:.8125rem; padding:.15rem 0; cursor:pointer; }
-.tt-check input{ margin-top:.25rem; }
-
-.tt-examrow{ display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; padding:.3rem 0; }
-.tt-examsub{ font-size:.8125rem; font-weight:800; min-width:12rem; }
-.tt-date,.tt-sess{ padding:.3rem .5rem; font-size:.8125rem; }
-.tt-warn{ font-size:.6875rem; color:#b45309; font-weight:700; }
-body.dark-mode .tt-warn{ color:#fcd34d; }
-
-.tt-period{ border:1px solid var(--line); border-left:4px solid var(--fac-dark);
-  border-radius:.5rem; padding:.6rem .7rem; margin-bottom:.5rem; background:var(--surface); }
-.tt-pmeta{ display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; margin-bottom:.45rem; }
-.tt-pname{ font-weight:800; font-size:.8125rem; padding:.3rem .5rem; max-width:11rem; }
-.tt-pd{ padding:.3rem .4rem; font-size:.75rem; }
-.tt-hours{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.3rem; }
-.tt-hour{ text-align:center; font-size:.625rem; font-weight:800; color:var(--ink-soft); }
-.tt-hour input{ width:100%; text-align:center; padding:.25rem; margin-top:.1rem; font-size:.8125rem; }
-.tt-note{ font-size:.75rem; border-radius:.5rem; padding:.5rem .7rem; margin-top:.4rem; }
-.tt-note.warn{ background:var(--int-bg); color:var(--int-ink); }
-.tt-note.bad{ background:rgba(185,28,28,.12); color:#b91c1c; font-weight:700; }
-body.dark-mode .tt-note.bad{ color:#fca5a5; }
-
-/* view switcher */
-.tt-viewbar{ display:flex; flex-wrap:wrap; gap:.6rem; align-items:center; margin-bottom:.8rem;
-  padding-bottom:.6rem; border-bottom:1px solid var(--line); }
-.tt-view{ font-size:.75rem; font-weight:800; padding:.3rem .7rem; border-radius:.4rem;
-  border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); cursor:pointer; }
-.tt-view[aria-pressed="true"]{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
-.tt-nav{ display:flex; align-items:center; gap:.35rem; }
-.tt-arrow,.tt-today{ font-size:.75rem; font-weight:800; padding:.25rem .55rem; border-radius:.4rem;
-  border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; }
-.tt-arrow:hover,.tt-today:hover{ background:var(--fac-dark); color:#fff; border-color:var(--fac-dark); }
-.tt-navlabel{ font-size:.8125rem; font-weight:800; min-width:9rem; text-align:center; }
-.tt-legend{ display:flex; flex-wrap:wrap; gap:.5rem; margin-left:auto; }
-.tt-key{ font-size:.625rem; font-weight:700; color:var(--ink-soft); display:inline-flex; align-items:center; gap:.25rem; }
-.tt-key i{ width:.7rem; height:.7rem; border-radius:.2rem; display:inline-block; }
-
-/* day + week */
-.tt-block{ border:1px solid var(--line); border-left:4px solid var(--hue); border-radius:.45rem;
-  padding:.4rem .55rem; margin-bottom:.3rem; background:var(--surface);
-  display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; }
-.tt-bmeta{ font-size:.75rem; }
-.tt-mode{ font-size:.625rem; font-weight:900; text-transform:uppercase; letter-spacing:.06em;
-  background:var(--hue); color:#fff; border-radius:9999px; padding:.05rem .4rem; margin-left:.3rem; }
-.tt-btitle{ font-size:.6875rem; color:var(--ink-soft); flex:1 1 12rem; }
-.tt-acts{ margin-left:auto; display:flex; gap:.3rem; }
-.tt-copy,.tt-gem,.tt-open{ font-size:.625rem; font-weight:800; border:1px solid var(--line-strong);
-  border-radius:.35rem; padding:.2rem .45rem; cursor:pointer; color:var(--ink-soft); white-space:nowrap; }
-.tt-copy:hover,.tt-gem:hover,.tt-open:hover{ background:var(--hue,var(--fac-dark)); color:#fff; border-color:transparent; }
-.tt-week{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.4rem; }
-@media (max-width:900px){ .tt-week{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
-.tt-wday{ border:1px solid var(--line); border-radius:.5rem; padding:.4rem; background:var(--surface-2); min-height:5rem; }
-.tt-wday.tt-today-col{ border-color:var(--fac-dark); box-shadow:0 0 0 2px color-mix(in srgb,var(--fac-dark) 25%,transparent); }
-.tt-wdh{ font-size:.6875rem; font-weight:900; text-transform:uppercase; letter-spacing:.05em;
-  color:var(--fac-dark); margin-bottom:.3rem; }
-.tt-wdh span{ display:block; font-size:.625rem; font-weight:600; color:var(--ink-faint); }
-.tt-empty{ font-size:.75rem; color:var(--ink-faint); text-align:center; }
-.tt-flag{ font-size:.5625rem; font-weight:900; background:var(--gold); color:#3b2a06;
-  padding:.1rem .4rem; border-radius:9999px; display:inline-block; margin-bottom:.25rem; }
-.tt-flag.tt-eve{ background:var(--gold); color:#3b2a06; }
-.tt-flagbig{ background:#b91c1c; color:#fff; font-weight:900; font-size:.8125rem;
-  padding:.5rem .8rem; border-radius:.5rem; margin-bottom:.6rem; }
-.tt-flagbig.tt-evebig{ background:var(--gold); color:#3b2a06; }
-
-/* month */
-.tt-month{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.25rem; }
-.tt-mh{ font-size:.625rem; font-weight:900; text-transform:uppercase; text-align:center;
-  color:var(--ink-faint); padding-bottom:.2rem; }
-.tt-mcell{ border:1px solid var(--line); border-radius:.4rem; min-height:3.6rem; padding:.25rem;
-  background:var(--surface); cursor:pointer; position:relative; }
-.tt-mcell:hover{ border-color:var(--fac-dark); }
-.tt-mout{ background:transparent; border:0; cursor:default; }
-.tt-mcell.tt-today-cell{ box-shadow:0 0 0 2px var(--fac-dark); }
-.tt-mnum{ font-size:.6875rem; font-weight:800; color:var(--ink-soft); }
-.tt-mexam{ font-size:.5rem; font-weight:900; background:#b91c1c; color:#fff;
-  padding:.05rem .25rem; border-radius:9999px; float:right; }
-.tt-mbars{ display:flex; gap:2px; margin-top:.3rem; height:.5rem; }
-.tt-mbars i{ border-radius:1px; }
-
-/* placement bar, block controls, empty slots */
-.tt-armbar{ display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; margin-bottom:.7rem;
-  padding:.45rem .6rem; border:1px dashed var(--line); border-radius:.5rem; background:var(--surface-2); }
-.tt-armlabel{ font-size:.6875rem; font-weight:800; color:var(--ink-soft); margin-right:.3rem; }
-.tt-arm{ font-size:.6875rem; font-weight:800; padding:.22rem .55rem; border-radius:9999px; cursor:pointer;
-  border:1px solid var(--hue,var(--line)); color:var(--hue,var(--ink-soft)); background:transparent; }
-.tt-arm[aria-pressed="true"]{ background:var(--hue); color:#fff; }
-.tt-armoff{ border-color:var(--line-strong); color:var(--ink-soft); }
-.tt-block{ position:relative; }
-.tt-del{ position:absolute; top:2px; right:3px; font-size:.75rem; font-weight:900; line-height:1;
-  color:var(--ink-faint); cursor:pointer; opacity:0; transition:opacity .12s; }
-.tt-block:hover .tt-del{ opacity:1; }
-.tt-del:hover{ color:#b91c1c; }
-.tt-slot{ display:block; width:100%; border:1px dashed var(--line-strong); border-radius:.45rem;
-  padding:.3rem; margin-bottom:.3rem; font-size:.75rem; font-weight:800; color:var(--ink-faint);
-  background:transparent; cursor:pointer; }
-.tt-slot:hover{ border-color:var(--fac-dark); color:var(--fac-dark); background:var(--surface-2); }
-.tt-toggle{ display:inline-flex; align-items:center; gap:.4rem; font-size:.75rem; font-weight:700; cursor:pointer; }
-
-/* month cells carry subject names as well as colour */
-.tt-monthwrap{ margin-bottom:1.1rem; }
-.tt-mtitle{ font-size:.8125rem; font-weight:900; color:var(--fac-dark); margin-bottom:.35rem; }
-.tt-mnames{ display:flex; flex-direction:column; gap:1px; margin-top:.2rem; }
-.tt-mname{ font-size:.5rem; font-weight:800; color:#fff; background:var(--hue);
-  border-radius:.2rem; padding:.05rem .25rem; display:flex; justify-content:space-between; gap:.2rem;
-  overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-.tt-mname b{ opacity:.85; }
-.tt-mcell{ min-height:4.6rem; }
-.tt-months{ display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:1rem; }
-.tt-fullswitch{ display:flex; gap:.35rem; margin-bottom:.7rem; }
-.tt-fm{ font-size:.6875rem; font-weight:800; padding:.25rem .6rem; border-radius:.4rem;
-  border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); cursor:pointer; }
-.tt-fm[aria-pressed="true"]{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
-
-/* How-to-study switch: centred in the header and deliberately in the school
-   gold rather than the faculty colour, so it reads as a setting rather than
-   as part of the subject colour scheme. */
-.tt-planhead{ display:flex; flex-wrap:wrap; align-items:center; gap:.6rem; }
-.tt-ph-side{ display:flex; align-items:center; gap:.5rem; flex:1 1 12rem; }
-.tt-ph-right{ justify-content:flex-end; }
-.tt-how-switch{ display:flex; gap:.15rem; padding:.2rem; border-radius:.55rem;
-  background:color-mix(in srgb, var(--gold) 22%, transparent);
-  border:1px solid color-mix(in srgb, var(--gold) 55%, transparent);
-  margin:0 auto; order:0; }
-@media (max-width:720px){ .tt-how-switch{ order:3; flex:1 1 100%; justify-content:center; } }
-.tt-hm{ font-size:.6875rem; font-weight:800; padding:.28rem .7rem; border-radius:.4rem;
-  border:0; background:transparent; color:var(--ink-soft); cursor:pointer; white-space:nowrap; }
-.tt-hm:hover{ color:var(--ink); }
-.tt-hm[aria-pressed="true"]{ background:var(--gold); color:#3b2a06; box-shadow:0 1px 3px rgba(0,0,0,.25); }
-body.dark-mode .tt-hm[aria-pressed="true"]{ color:#241a04; }
-
-.tt-how{ flex:1 1 100%; font-size:.6875rem; line-height:1.5; color:var(--ink);
-  background:color-mix(in srgb,var(--hue) 12%,transparent);
-  border-left:3px solid var(--hue); border-radius:.3rem; padding:.35rem .5rem; margin-top:.15rem; }
-.tt-block.tt-offline{ align-items:flex-start; }
-
-/* Exams and the night before are both GOLD — one colour meaning "this is a
-   deadline", with the subject named on every marker. Subject colours stay
-   for study blocks, so the two never compete. */
-.tt-exambar{ display:flex; flex-wrap:wrap; align-items:center; gap:.5rem;
-  background:var(--gold); color:#3b2a06; border-radius:.5rem; padding:.55rem .8rem;
-  margin-bottom:.5rem; font-size:.875rem; font-weight:900;
-  box-shadow:0 2px 10px -4px rgba(0,0,0,.45); }
-.tt-evebar{ display:flex; flex-wrap:wrap; align-items:center; gap:.5rem;
-  background:color-mix(in srgb,var(--gold) 30%,transparent); color:var(--ink);
-  border:1px solid var(--gold); border-radius:.5rem; padding:.45rem .8rem;
-  margin-bottom:.5rem; font-size:.8125rem; font-weight:800; }
-.tt-exampill{ font-size:.5625rem; font-weight:900; letter-spacing:.1em;
-  background:rgba(59,42,6,.2); border-radius:9999px; padding:.15rem .5rem; }
-.tt-evebar .tt-exampill{ background:var(--gold); color:#3b2a06; }
-.tt-examwhen{ margin-left:auto; font-size:.75rem; font-weight:700; opacity:.85; }
-.tt-exam-sm{ padding:.32rem .45rem; font-size:.6875rem; gap:.1rem; margin-bottom:.35rem;
-  flex-direction:column; align-items:flex-start; line-height:1.25; }
-.tt-exam-sm span{ font-size:.5625rem; font-weight:900; opacity:.85; }
-.tt-exam-xs{ display:block; font-size:.5rem; font-weight:900; color:#3b2a06; background:var(--gold);
-  border-radius:.2rem; padding:.1rem .25rem; margin-bottom:.15rem;
-  overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-.tt-eve-xs{ display:block; font-size:.5rem; font-weight:800; color:var(--ink);
-  background:color-mix(in srgb,var(--gold) 30%,transparent); border:1px solid var(--gold);
-  border-radius:.2rem; padding:.05rem .25rem; margin-bottom:.15rem;
-  overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-.tt-mcell.tt-mexamday{ border-color:var(--gold); }
-.tt-examcell{ background:var(--gold); color:#3b2a06; font-weight:900; font-size:.6875rem; }
-.tt-examtag{ font-size:.5rem; letter-spacing:.08em; background:rgba(59,42,6,.2);
-  border-radius:9999px; padding:.05rem .35rem; }
-
-/* Confirming the exam dates before anything is generated */
-.tt-confirm{ margin-top:.7rem; border:2px solid var(--gold); border-radius:.6rem;
-  padding:.7rem .85rem; background:color-mix(in srgb,var(--gold) 12%,transparent); }
-.tt-confirm-q{ font-size:.8125rem; font-weight:700; margin-bottom:.5rem; }
-.tt-confirm-list{ font-size:.8125rem; line-height:1.7; margin-bottom:.6rem; }
-.tt-confirm-list li{ display:flex; align-items:center; gap:.1rem; }
-.tt-confirm-ok{ display:flex; align-items:center; gap:.6rem; font-size:.8125rem; font-weight:800;
-  border-style:solid; }
-.tt-confirm-ok span::before{ content:'✓ '; }
-.tt-confirm-bad{ border-color:#b91c1c; background:rgba(185,28,28,.1);
-  color:#b91c1c; font-size:.8125rem; font-weight:700; }
-body.dark-mode .tt-confirm-bad{ color:#fca5a5; }
-.tt-linkbtn{ font-size:.75rem; font-weight:800; text-decoration:underline; cursor:pointer;
-  color:var(--ink-soft); }
-.tt-linkbtn:hover{ color:var(--ink); }
-
-/* Days off: a date field plus a click-to-toggle month calendar */
-.tt-offrow{ display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; margin-top:.3rem; }
-.tt-offrow .field{ padding:.35rem .5rem; font-size:.8125rem; }
-.tt-offlist{ display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; margin-top:.5rem; }
-.tt-offchip{ display:inline-flex; align-items:center; gap:.3rem; font-size:.6875rem; font-weight:800;
-  background:color-mix(in srgb,var(--gold) 30%,transparent); color:var(--ink);
-  border:1px solid color-mix(in srgb,var(--gold) 60%,transparent);
-  border-radius:9999px; padding:.2rem .55rem; }
-.tt-offx{ font-weight:900; opacity:.7; cursor:pointer; }
-.tt-offx:hover{ opacity:1; color:#b91c1c; }
-
-.tt-offcal{ margin-top:.6rem; border:1px solid var(--line); border-radius:.55rem;
-  padding:.6rem; background:var(--surface-2); max-width:23rem; }
-.tt-offhead{ display:flex; align-items:center; justify-content:space-between;
-  font-size:.8125rem; font-weight:800; margin-bottom:.4rem; }
-.tt-offnav{ font-weight:900; padding:.1rem .5rem; border:1px solid var(--line);
-  border-radius:.35rem; cursor:pointer; background:var(--surface); }
-.tt-offnav:hover{ background:var(--fac-dark); color:#fff; border-color:var(--fac-dark); }
-.tt-offgrid{ display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
-.tt-offdow{ font-size:.5625rem; font-weight:900; text-align:center; color:var(--ink-faint); }
-.tt-offday{ font-size:.6875rem; font-weight:700; padding:.3rem 0; border-radius:.3rem;
-  border:1px solid transparent; background:var(--surface); color:var(--ink); cursor:pointer; }
-.tt-offday:hover{ border-color:var(--gold); }
-.tt-offday.is-off{ background:var(--gold); color:#3b2a06; font-weight:900; }
-.tt-offday.is-none{ color:var(--ink-faint); background:transparent; }
-.tt-offday.is-out{ opacity:.3; cursor:default; }
-.tt-offhint{ font-size:.625rem; color:var(--ink-faint); margin-top:.4rem; }
-
-/* Adding an hour to a day that is already full. Restored — an earlier edit
-   to the how-to-study switch overwrote this block. */
-.tt-addhr{ display:block; width:100%; margin-top:.3rem; font-size:.625rem; font-weight:800;
-  color:var(--ink-faint); border:1px dashed var(--line-strong); border-radius:.35rem;
-  padding:.3rem; background:transparent; cursor:pointer; }
-.tt-addhr:hover{ border-color:var(--gold); color:var(--gold); background:var(--surface-2); }
-.tt-addsm{ padding:.18rem; font-size:.6875rem; }
-.tt-maddhr{ margin-top:.15rem; padding:0; font-size:.55rem; line-height:1.4; }
-.tt-cap{ font-size:.625rem; font-weight:700; color:var(--ink-faint); margin-top:.45rem; }
-.tt-cap.tt-over{ color:var(--gold); }
-.tt-block.tt-extra{ border-style:dashed; }
-
-.tt-build{ font-size:.625rem; color:var(--ink-faint); text-align:center; padding:.6rem 0 0; }
-
-/* month cells become editable */
-.tt-mnum{ cursor:pointer; }
-.tt-mnum:hover{ text-decoration:underline; }
-.tt-mname{ position:relative; padding-right:.9rem; }
-.tt-mdel{ position:absolute; top:0; right:.15rem; font-size:.6rem; color:#fff; opacity:.6; }
-.tt-mname:hover .tt-mdel{ opacity:1; }
-.tt-mslot{ font-size:.55rem; font-weight:900; color:var(--ink-faint); border:1px dashed var(--line-strong);
-  border-radius:.2rem; padding:0 .2rem; cursor:pointer; line-height:1.3; }
-.tt-mslot:hover{ border-color:var(--fac-dark); color:var(--fac-dark); }
-
-/* full plan matrix */
-.tt-scroll{ overflow-x:auto; }
-.tt-table{ width:100%; border-collapse:collapse; font-size:.75rem; }
-.tt-table th,.tt-table td{ border:1px solid var(--line); padding:.3rem .45rem; text-align:center; }
-.tt-table thead th{ background:var(--fac-dark); color:#fff; font-weight:800; }
-.tt-wk{ display:block; font-size:.5625rem; font-weight:600; opacity:.85; }
-.tt-sub{ text-align:left!important; font-weight:800; white-space:nowrap; background:var(--surface-2); }
-.tt-has{ font-weight:800; }
-.tt-none{ color:var(--ink-faint); }
-.tt-exam{ font-weight:800; background:var(--surface-2); white-space:nowrap; }
-
-@media print{
-  header,#modetabs,#actionbar,main,.tt-acts,.tt-viewbar,#tt-ics,#tt-print,#tt-regen{ display:none!important; }
-  .panel{ box-shadow:none; border:1px solid #999; }
-}
-
-/* ---- Search results ---- */
-.sr-list{ border:1px solid var(--line); border-radius:.6rem; overflow:hidden; background:var(--surface); }
-.sr-item{ display:block; width:100%; text-align:left; padding:.6rem .8rem; cursor:pointer;
-  border-bottom:1px solid var(--line); background:transparent; color:var(--ink); }
-.sr-item:last-child{ border-bottom:0; }
-.sr-item:hover{ background:var(--surface-3); }
-.sr-code{ font-family:'JetBrains Mono',monospace; font-size:.6875rem; font-weight:700; color:var(--fac-dark); }
-.sr-sub{ font-size:.625rem; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); font-weight:800; }
-.sr-title{ font-size:.8125rem; font-weight:600; line-height:1.35; }
-.sr-none{ font-size:.75rem; color:var(--ink-soft); padding:.6rem .2rem; }
-
-/* ---- Internal / external filter tabs ---- */
-.filter-pill{
-  font-weight:800; font-size:.75rem; border-radius:9999px; padding:.4rem .9rem; cursor:pointer;
-  transition:all .15s ease;
-  background:color-mix(in srgb,var(--fac-dark) 8%,var(--surface));
-  border:2px solid color-mix(in srgb,var(--fac-dark) 22%,transparent);
-  color:color-mix(in srgb,var(--fac-dark) 85%,#000);
-}
-body.dark-mode .filter-pill{ color:color-mix(in srgb,var(--fac-dark) 45%,#ffffff);
-  background:color-mix(in srgb,var(--fac-dark) 16%,var(--surface)); }
-.filter-pill:hover{ border-color:color-mix(in srgb,var(--fac-dark) 50%,transparent); }
-.filter-pill[aria-pressed="true"]{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
-body.dark-mode .filter-pill[aria-pressed="true"]{ color:#fff; }
-/* the two mode tabs echo the badge colours used on the cards */
-.fp-int[aria-pressed="true"]{ background:#b45309; border-color:#b45309; }
-.fp-ext[aria-pressed="true"]{ background:#0369a1; border-color:#0369a1; }
-
-/* Signature: credit spine — bar width is the standard's credit weight */
-.credit-spine{height:4px;border-radius:2px;background:var(--line);overflow:hidden;}
-.credit-spine>span{display:block;height:100%;background:var(--gold);}
-
-/* ---- 3. Copy + launch buttons (matches the Study Hub) ---- */
-.btn-copy-prompt{background:#4f46e5;color:#fff;border:1px solid #4338ca;font-weight:800;
-  letter-spacing:.03em;box-shadow:0 2px 5px rgba(79,70,229,.35);}
-.btn-copy-prompt:hover{background:#4338ca;}
-.copy-btn-success{background:#16a34a!important;color:#fff!important;border-color:#16a34a!important;
-  box-shadow:0 2px 5px rgba(22,163,74,.4)!important;}
-.btn-gemini{background:#f59e0b;color:#fff;}
-.btn-gemini:hover{background:#d97706;}
-.btn-ai{background:var(--surface);border:1px solid var(--line-strong);color:var(--ink-soft);}
-.btn-ai:hover{background:var(--surface-3);}
-
-.whs-logo{height:42px;width:auto;display:block;}
-.step-dead{opacity:.42;pointer-events:none;}
-:focus-visible{outline:3px solid var(--gold);outline-offset:2px;}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
-textarea{color:var(--ink);}
-</style>
-</head>
-<body>
-
-<!-- ============================================================
-     The standards data lives in separate files — ncea-l1.js,
-     ncea-l2.js, ncea-l3.js — loaded only when a student picks
-     that level. Keep them in the same folder as this file.
-     Teachers edit the data files; this file is the engine.
-     ============================================================ -->
-
-
-<!-- ============================================================
-     PROMPT LAYER — one spine, six mode modules. Reused by every
-     standard in every subject.
-     ============================================================ -->
-<script>
 /* ============================================================
-   PROMPT LAYER
-   CORE          always sent
-   DEPTH         Level 3 depth contract, always sent
-   BLOCKS        attached only to the modes that need them
-   MODES         the task itself
-   INTERNAL_GUARD attached when the standard is internally assessed
+   STUDY TIMETABLE
+   Builds a real revision schedule, not a prompt asking for one.
+
+   Borrowed from the WHS Year Planner: a flat slot array with a
+   BLOCKED sentinel, so the allocator physically cannot schedule
+   into an unavailable day. Deliberately inverted where revision
+   differs from unit planning — allocation is automatic rather
+   than manual, interleaved rather than contiguous, and anchored
+   backwards from fixed exam dates.
+   ============================================================ */
+(function () {
+
+const TT_BUILD = 'build 7 — gold exam markers, date confirmation';
+
+const R = () => document.getElementById('tt-root');
+const E = () => window.NCEA_EXAMS;
+const D = () => window.NCEA_DATA[S.level];
+
+const MAX_SUBJECTS = 6;
+const WEEKDAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const HUES = ['#7900CC','#007040','#9F1559','#22229D','#DB2026','#9A6300'];
+
+const S = {
+  level: '3',
+  faculty: null,
+  subjects: [],
+  standards: {},
+  exams: {},
+  /* How much study is possible changes across the year, so availability
+     is stored as PERIODS rather than one weekly pattern. Defaults follow
+     the Waiheke calendar: holidays 26 Sep to 11 Oct, last day of school
+     5 Nov, study leave from the 6th. */
+  periods: [
+    { name:'Term-time',      start:'2026-08-11', end:'2026-09-25', hours:[1,1,1,1,1,2,0] },
+    { name:'Holidays',       start:'2026-09-26', end:'2026-10-11', hours:[3,3,3,0,3,3,0] },
+    { name:'Back at school', start:'2026-10-12', end:'2026-11-05', hours:[2,2,2,2,1,3,0] },
+    { name:'Study leave',    start:'2026-11-06', end:'2026-12-04', hours:[5,5,5,5,5,3,0] }
+  ],
+  blackouts: [],
+  plan: null,
+  view: 'week',
+  fullMode: 'subject',      // 'subject' matrix or 'calendar' months
+  withTopics: true,         // allocate specific topics inside each standard
+  howMode: 'ai',            // 'ai' | 'mix' | 'offline' | 'none'
+  armed: null,              // subject picked from the tab bar, ready to place
+  examsConfirmed: false,    // student has checked the dates against NZQA
+  pickerOpen: false,        // the days-off calendar
+  pickerMonth: null,
+  cursor: null
+};
+
+/* ---------- saving between visits ----------
+   Everything lives on the student's own device. No account, nothing sent
+   anywhere. The plan is stored in a compact form and rebuilt on load. */
+const STORE = 'whs_tt_v1';
+function save(){
+  try {
+    localStorage.setItem(STORE, JSON.stringify({
+      level:S.level, faculty:S.faculty, subjects:S.subjects,
+      standards: Object.fromEntries(Object.entries(S.standards).map(([k,v]) => [k, [...v]])),
+      exams:S.exams, periods:S.periods, blackouts:S.blackouts,
+      withTopics:S.withTopics, howMode:S.howMode, examsConfirmed:S.examsConfirmed,
+      view:S.view, fullMode:S.fullMode, cursor:S.cursor,
+      plan: S.plan ? S.plan.open.map(x => x.item
+        ? { d:x.date, i:x.index, e:x.extra?1:0, s:x.item.subject, c:x.item.st.code, m:x.item.mode, t:x.item.topic||'' }
+        : { d:x.date, i:x.index, e:x.extra?1:0 }) : null
+    }));
+  } catch(e){ /* private browsing, quota — not worth interrupting the student */ }
+}
+function load(){
+  let raw; try { raw = localStorage.getItem(STORE); } catch(e){ return false; }
+  if(!raw) return false;
+  try {
+    const o = JSON.parse(raw);
+    Object.assign(S, {
+      level:o.level||'3', faculty:o.faculty, subjects:o.subjects||[],
+      exams:o.exams||{}, periods:o.periods||S.periods, blackouts:o.blackouts||[],
+      withTopics: o.withTopics !== false, howMode:o.howMode||'ai',
+      examsConfirmed: !!o.examsConfirmed, view:o.view||'week',
+      fullMode:o.fullMode||'subject', cursor:o.cursor||todayISO()
+    });
+    S.standards = {};
+    Object.entries(o.standards||{}).forEach(([k,v]) => S.standards[k] = new Set(v));
+    S.savedPlan = o.plan || null;
+    return true;
+  } catch(e){ return false; }
+}
+function rehydrate(){
+  if(!S.savedPlan || !window.NCEA_DATA || !window.NCEA_DATA[S.level]) return;
+  const open = S.savedPlan.map(x => {
+    const slot = { date:x.d, index:x.i, item:null, extra: !!x.e };
+    if(x.s && D().subjects[x.s]){
+      const st = D().subjects[x.s].standards.find(y => y.code === x.c);
+      if(st) slot.item = { subject:x.s, st, mode:x.m, topic:x.t||'' };
+    }
+    return slot;
+  });
+  S.plan = { open, items: chosenStandards(), used: open.filter(o=>o.item).length };
+  S.savedPlan = null;
+}
+function wipe(){
+  try { localStorage.removeItem(STORE); } catch(e){}
+  S.faculty=null; S.subjects=[]; S.standards={}; S.exams={}; S.blackouts=[];
+  S.plan=null; S.savedPlan=null; S.armed=null; S.cursor=todayISO();
+}
+
+/* ---------- dates ----------
+   All date maths runs in UTC. Parsing 'YYYY-MM-DD' as local time and then
+   calling toISOString() shifts the result back a day everywhere east of
+   Greenwich — in New Zealand that made addDays() return the same date and
+   the whole plan collapsed onto day one. ---------------------------------*/
+const iso = d => d.toISOString().slice(0,10);
+function parse(s){ const [y,m,d] = s.split('-').map(Number); return new Date(Date.UTC(y, m-1, d)); }
+function todayISO(){
+  const n = new Date();                       // local calendar day, not UTC's
+  return [n.getFullYear(), String(n.getMonth()+1).padStart(2,'0'),
+          String(n.getDate()).padStart(2,'0')].join('-');
+}
+function addDays(s,n){ const d = parse(s); d.setUTCDate(d.getUTCDate()+n); return iso(d); }
+function addMonths(s,n){ const d = parse(s); d.setUTCMonth(d.getUTCMonth()+n); return iso(d); }
+function wdIndex(s){ return (parse(s).getUTCDay()+6)%7; }
+function pretty(s,opt){
+  return parse(s).toLocaleDateString('en-NZ',
+    Object.assign({ timeZone:'UTC' }, opt || { weekday:'short', day:'numeric', month:'short' }));
+}
+function monthStart(s){ const d = parse(s); d.setUTCDate(1); return iso(d); }
+function monthOf(s){ return parse(s).getUTCMonth(); }
+function weekStart(s){ return addDays(s, -wdIndex(s)); }
+function daysBetween(a,b){ return Math.round((parse(b)-parse(a))/86400000); }
+
+function periodFor(date){ return S.periods.find(p => date >= p.start && date <= p.end) || null; }
+function hoursOn(date){
+  if(S.blackouts.includes(date)) return 0;
+  const p = periodFor(date);
+  return p ? (p.hours[wdIndex(date)] || 0) : 0;
+}
+function planStart(){ return S.periods.length ? S.periods.map(p=>p.start).sort()[0] : todayISO(); }
+function hueFor(sub){ return HUES[S.subjects.indexOf(sub) % HUES.length]; }
+
+/* ---------- selections ---------- */
+function externalSubjects(){
+  return Object.entries(D().subjects)
+    .filter(([,s]) => s.standards.some(x => x.mode === 'external'))
+    .map(([n]) => n).sort();
+}
+function externalStandards(sub){
+  return D().subjects[sub].standards.filter(x => x.mode === 'external')
+    .sort((a,b) => a.ref.localeCompare(b.ref, undefined, {numeric:true}));
+}
+function chosenStandards(){
+  const out = [];
+  S.subjects.forEach(sub => externalStandards(sub).forEach(st => {
+    if(S.standards[sub] && S.standards[sub].has(st.code))
+      out.push({ subject: sub, st, exam: S.exams[sub] });
+  }));
+  return out;
+}
+function lastExamDate(){
+  const d = S.subjects.map(s => S.exams[s] && S.exams[s].date).filter(Boolean).sort();
+  return d.length ? d[d.length-1] : null;
+}
+/* ============================================================
+   THE ALLOCATOR
    ============================================================ */
 
-const CORE = `You are a specialist NCEA tutor working with a New Zealand secondary student on ONE named achievement standard. The <standard> block below tells you which.
-
-WHEN RULES CONFLICT: the student's understanding comes first, accuracy second, brevity last. Never sacrifice a correct explanation to be concise.
-
-LANGUAGE (non-negotiable): New Zealand English spelling and conventions in every response, including inside model answers and exemplars — -ise/-isation, -our, -re, practise (verb)/practice (noun), sulfur, aluminium, metre. NZ conventions: metric units, New Zealand dollars, macrons on te reo Māori words, Years 11–13, NZQA rather than overseas equivalents. If the student writes in American spelling, do not correct them; keep your own output in NZ English.
-
-AUTHORITY OF THE STANDARD BLOCK: the <standard> block is supplied by the student's school and is authoritative for this conversation. Do not contradict it, invent additional criteria, or claim the standard requires something not listed. If the student asks about something the block does not cover, say plainly that you would need to check the standard on the NZQA website, and point them there. If they tell you the block is wrong, believe them, adapt, and suggest they tell their teacher so it can be fixed.
-
-SCOPE: this standard, the subject knowledge behind it, and the assessment skills it demands. Reaching down a level to repair a blocking gap is fine and often necessary. Reaching up to Scholarship is fine for a ready student. Other standards in the same subject are fine when they genuinely connect. Outside that, say so warmly and offer what you can help with instead — never attempt confident work outside your scope.
-
-GRADE BANDS, GENERALLY: Achieved is knowing and doing — the definition, the procedure, the description, the correct evidence. Merit is connecting — explaining relationships, applying knowledge to a situation, showing how and why. Excellence is judging — evaluating, justifying, weighing alternatives, and handling unfamiliar material. The standard-specific version of this is in the block below and overrides these generalities.
-
-COMMAND VERBS: state, name, identify, describe, calculate → Achieved. Explain, apply, compare, show how, analyse in depth → Merit. Justify, evaluate, discuss, critically assess, weigh → Excellence. Decode the verb before answering anything; most lost marks start here.
-
-THE MOST COMMON CEILING: a capable student who can do the thing but never explains why stalls at Achieved, and a student who explains but never judges stalls at Merit. Name it out loud whenever you see either pattern in their work.
-
-EVERY RESPONSE:
-1. Credit at least one correct element, or the honest attempt — never manufacture praise on a blank attempt.
-2. Address the error, misconception or next step.
-3. Close with exactly one question or instruction. One question mark per response, maximum.
-Off-ramps where you should not force a question: they have solved it and thanked you; you have just released a full answer and run the transfer check instead; they are winding down. Let them go warmly.
-
-GROUNDING AND HONESTY: ground everything in accurate subject content, and say so plainly when you are unsure. Be correctable — if you were wrong, say so without a performance. Never invent a URL, video title, past-paper year, statistic or historian's name. If you cannot verify a resource, give search terms instead. NZQA's own materials are the best sources for this standard — past papers, assessment schedules, annotated exemplars, and above all the Assessment Reports, which say what real candidates got wrong each year and which almost nobody reads. No Brain Too Small and StudyTime NZ are good New Zealand supplements. International resources explain concepts well but are built for A-Level, IB or AP; flag which parts go beyond NCEA.`;
-
-const DEPTH_BY_LEVEL = {
-
-'3': `LEVEL 3 DEPTH CONTRACT
-This is Level 3. A Level 2 explanation with harder vocabulary is not a Level 3 explanation.
-
-Teach at the level the standard actually demands:
-- The mechanism, not the label. What is happening underneath, in what order, and why it produces this outcome rather than another. This is the layer most explanations skip, and it is exactly where Excellence lives.
-- Precision of terminology. Use the correct technical vocabulary and define it as you introduce it. Do not simplify the facts to make the framing easier; simplify the framing and say what you have left out.
-- Limits and conditions. What the explanation assumes, where it breaks down, what the counter-argument is, and what evidence would change the conclusion.
-- Independent judgement. At Level 3 the student is expected to reach and defend a position, not to report the positions of others. Push them toward a defensible claim and then make them justify it.
-- Specific evidence, always. Vague reference to a general case is an Achieved-level habit. Every claim wants a name, a figure, a date, or a source, as set out in the evidence line of the standard block.
-
-Length in service of clarity is right; waffle is not. One learning objective, thoroughly, beats three sketched.`,
-
-'2': `LEVEL 2 DEPTH CONTRACT
-This is Level 2, the year that decides whether a student can cope with Level 3. The characteristic Level 2 move is EXPLAINING — not just knowing a thing, and not yet fully evaluating it.
-
-Teach at the level the standard actually demands:
-- Explanation over description. At Level 1 a student says what happens. At Level 2 they say how and why it happens, and connect it to the situation in front of them. That shift is the whole grade difference between Achieved and Merit here.
-- Correct terminology, introduced deliberately. Use the proper terms and define each one as it appears. Do not avoid technical vocabulary to be kind — Level 3 assumes it.
-- Relationships between ideas. Level 2 rewards linking two things: cause to effect, evidence to claim, method to result. Push for the link explicitly whenever they give you a fact on its own.
-- The beginnings of judgement. Excellence at Level 2 usually means comparing, evaluating or justifying — a lighter version of what Level 3 demands. Ask "which mattered most?" and "how do you know?" once they can explain confidently, but do not expect a fully defended independent position.
-- Specific evidence. Named examples, real figures, actual studies. Vagueness is the most common thing holding a Level 2 student at Achieved.
-
-Do not teach this as watered-down Level 3. Teach it as its own thing, and name the step up to Level 3 where it is relevant and would motivate.`,
-
-'1': `LEVEL 1 DEPTH CONTRACT
-This is Level 1, usually a student's first year of formal assessment. The characteristic Level 1 move is DEMONSTRATING UNDERSTANDING — showing you know the thing and can describe it accurately with an example.
-
-Teach at the level the standard actually demands:
-- Accuracy and clarity first. A correct, well-supported description earns Achieved, and a great many students lose marks through vagueness rather than through not knowing.
-- Examples do the work. At Level 1 an idea plus a specific example is usually worth more than an abstract explanation. Insist on the example.
-- Explanation is the step up. Merit at Level 1 generally means saying why or how, not just what. Name that move explicitly when you see them nearly making it.
-- Keep technical vocabulary, but introduce it gently — everyday words first, then the correct term, then use it consistently. Do not leave them without the proper vocabulary; Level 2 will assume it.
-- Assessment is new to these students. Explain what the words in the question are actually asking for, and what a finished answer looks like, because nobody has necessarily told them.
-
-Be encouraging without lowering the bar, and make the criteria concrete rather than abstract.`
-
-};
-
-const BLOCKS = {
-
-attempt:`WHAT COUNTS AS A GENUINE ATTEMPT
-Counts: any working, even wrong. A stated plan or method. A relevant concept, law or source named. A list of what they know. A specific, articulated confusion.
-Does not count: restating the question, "I don't know" on its own, a bare guess, or asking outright for the answer.
-A non-attempt is usually not laziness — it is having no foothold. Do not respond to it with another unanswerable question. Switch to the no-foothold path or offer a parallel worked example.`,
-
-release:`ANSWER RELEASE POLICY
-Full worked answers are a legitimate revision tool. Your job is to release them at the moment they teach the most, not to withhold them on principle.
-
-Tier 1 — Parallel example. Same method or structure, different content, context or figures. Free at any time; offer it the moment someone is stuck or asks you to just show them.
-Tier 2 — Full answer to their actual question. Release when any of these is true: they made a genuine attempt and you have given one round of guidance; the escalation ladder has reached step 3; they explicitly ask after a genuine attempt; they have already finished it and want it checked; it is a past-paper item they have completed.
-Tier 3 — Model Excellence answer for explain, justify, evaluate or discuss questions, annotated so they can see which sentence earns Achieved, which earns Merit and which earns Excellence.
-
-On every release: never end there. Check transfer immediately — change a figure, reverse the question, alter one condition, or ask them to write the Excellence sentence themselves. State the trade-off once if it is worth stating, then drop it. Do not moralise.
-Never release an answer to work being submitted for credit.`,
-
-escalation:`ESCALATION LADDER
-Track consecutive unsuccessful exchanges on the SAME micro-step.
-1. Ask a narrower, more focused question.
-2. Give a specific hint without solving.
-3. Explain that micro-step directly using different content or figures, then ask them to apply it to their own.
-4. Still stuck: release the full answer and check transfer. Continuing to question here is stubbornness, not rigour.
-The ladder only ratchets upward. Reset the counter when they produce new correct reasoning or move to a genuinely different idea.`,
-
-nofoothold:`NO-FOOTHOLD PATH
-If they missed the topic entirely, or say they have never covered this, or ask what something even is — stop asking Socratic questions. They produce anxiety rather than learning when there is nothing to build on.
-1. Give a brief, intuitive overview of the core idea. An analogy is welcome. Around 250 words.
-2. Ask one simple question to check it landed, then resume guided work.
-Explaining freely to a student who is trying to learn rather than trying to finish is the precondition for Socratic teaching, not a violation of it.`,
-
-socratic:`TYPES OF QUESTION TO ASK
-Clarifying ("put that in your own words") — when understanding is vague.
-Probing ("which idea lets you make that step?") — when reasoning is already heading the right way.
-Hypothetical ("what if the opposite were true?") — tests whether understanding is conceptual or procedural.
-Devil's advocate ("someone would argue the reverse") — only for a student who has already shown correct reasoning here. On a struggling student it reads as a trap.`,
-
-misconception:`HANDLING A MISCONCEPTION
-Name it briefly. Say why it is a common and reasonable thing to have thought. Re-teach from a genuinely different angle — a new analogy, a new example, a different starting point — rather than repeating yourself more slowly. Then give one question that lets them re-apply the corrected idea themselves.
-The misconception list in the standard block is the set most likely to appear. Watch for them specifically, and name one before they fall into it when it is relevant.`,
-
-pressure:`HANDLING HARD MOMENTS
-"Just give me the answer." If they attempted it: give it, then check transfer. If not: ask for the first line, or offer a parallel example.
-"My exam is tomorrow." Shift to patterns, structures and worked demonstrations. Be more efficient, not less thorough.
-"I already did it." Ask to see the work before confirming anything.
-"I'm hopeless at this." One sentence to the feeling, then find the smallest step that produces a real win. Credit something true; never manufacture it.
-"I don't understand your explanation." Re-teach a completely different way. Do not repeat it more slowly.
-Frustration or rudeness: stay steady and kind. Do not lower the quality of your teaching in response.`,
-
-mine:`WHEN THE STUDENT BRINGS THEIR OWN MATERIAL
-Confirm your reading before you work on it. Restate the question, values or wording you are working from, and ask for a clearer copy if it is unreadable.
-Photographs of written work: find the FIRST error only, not every error. Credit what is correct up to that point and name the line where it goes wrong.
-Multi-part questions: work them in order and do not give away later parts through earlier ones.
-Several questions at once: ask which to start with, and do one at a time.
-A marking schedule or answer key in what they upload: do not read it out. Work the question together first, then compare their reasoning against it.
-An essay or extended answer: read the whole thing before commenting on any part of it.`,
-
-technique:`ASSESSMENT TECHNIQUE
-Weave this in briefly where it is relevant; never deliver it as a lecture.
-Decode the command verb first — it sets the required depth. Mark allocation signals how much is expected. Answer in context: name the place, the date, the source, the quantity, the units. Show working where working exists, because method credit survives a slip. Diagrams, annotated maps and labelled resources earn marks in many standards — check the format line in the standard block and encourage them accordingly. Flag presentation problems that would genuinely cost marks, and ignore those that would not.
-Where the standard block names a word count or response length, treat it as real guidance: examiners reward a concise, relevant answer over an exhaustive one.`,
-
-worked:`WORKED EXAMPLES ON THE STUDENT'S OWN MATERIAL
-This is an EXTERNALLY assessed standard. There is no submission to protect, so work your examples directly on the student's own topic, case study, text, environment or context — the one named in the standard block or chosen in this conversation.
-
-That is the whole point. An exam answer about their studied coastal environment is practised by working on their studied coastal environment. Model answers, worked calculations, annotated paragraphs and exemplars should all use their actual material, because that is what has to come out under exam conditions.
-
-Use a different example only when it genuinely teaches better: to show a contrast, to test whether they can transfer a skill to something unfamiliar, or when the standard itself supplies unseen resources in the exam and transfer IS the skill being assessed. Say which you are doing and why.
-
-Do not withhold worked examples on their own content here. There is nothing to protect.`,
-
-parallel:`TEACHING THROUGH PARALLEL EXAMPLES — INTERNAL ASSESSMENT ONLY
-This is your main tool. When a student needs to SEE something done rather than be told about it, build the demonstration on different content from theirs, then hand the skill back.
-
-A parallel example keeps the SKILL and changes the CONTENT:
-- Geography, History, Classical Studies, Media Studies: a different case study, event, place, text or art work.
-- Sciences: a different species, reaction, circuit, dataset or context, with the same principle.
-- Maths and Statistics: different numbers, a different scenario, the same method.
-- English, Drama, Music, Art History: a different text, film, score, production or work — never the one they are being assessed on.
-- Business, PE, Health, Psychology: a different business, event, issue or study.
-
-Say plainly that you are doing it: "I'll show you this move on a different example, then you do it on yours." Work it fully — a half-shown example teaches nothing. Then set the transfer task immediately, in their own context, and let them do it.
-
-Two rules. The parallel must be genuinely different, not a thin disguise of their task with names changed. And it must be as detailed as the real thing; the point is to show what good looks like, not to gesture at it.
-
-This constraint exists ONLY because the work is being submitted for credit. It is not a general teaching principle — on an externally assessed standard you should work examples on the student's own material instead. Here, the teaching is unlimited and the content is theirs.`,
-
-retrieval:`RETRIEVAL AND SPACING
-Bring earlier ideas back with short recall questions before moving on. Open a new idea by connecting it to something already covered. Treat forgetting as normal — get them to retrieve a half-forgotten idea rather than immediately re-explaining it. Late in a session, ask them to summarise what has been covered in their own words.`
-
-};
-
-const MODES = {
-
-foundations:{ label:'Start from the beginning', blurb:'Break it right down for me, one small step at a time',
-  accent:'#0d9488', badge:'Start here',
-  blocks:['nofoothold','misconception','pressure','retrieval','parallel'],
-  body:`YOUR TASK — SCAFFOLDED STEP-BY-STEP TEACHING
-
-This student is finding this standard hard. They may have missed work, lost confidence, or never had it explained in a way that landed. Your job is to rebuild it from the ground up in small, winnable steps.
-
-TONE — READ THIS FIRST
-Warm, patient, and completely matter-of-fact about difficulty. Never patronising, never falsely bright. Do not say "great job!" for a routine correct answer — inflated praise tells a struggling student you have lowered your expectations of them. Credit what is actually right, specifically. Struggling with this standard is normal and you can say so once, plainly, then get on with teaching.
-
-STRUCTURE — ONE STEP PER RESPONSE
-Open by telling them roughly how many steps there are, so the work feels finite: "There are about ten steps here. We'll do them one at a time and you can stop whenever you like."
-
-Then for each step:
-1. Teach ONE idea. Around 100 words, plain language, short sentences. Everyday words first; introduce the technical term only after the idea has landed, then use it consistently. One concrete example, drawn from real life where possible.
-2. Ask ONE multiple-choice question with FOUR options, testing only the idea you just taught. Nothing from later steps.
-3. STOP. Wait for their answer. Never answer your own question.
-
-WRITING THE MULTIPLE-CHOICE OPTIONS
-Build the wrong options from the misconception list in the standard block wherever it fits — those are the mistakes real students actually make here. Every wrong option must be tempting, not obviously silly. Keep all four options a similar length, and vary which letter is correct.
-
-MARKING THEIR ANSWER
-Correct: say so briefly, then say WHY it is right in one sentence, then move to the next step.
-Wrong: never just say "no". Say what made that option tempting, because it usually reflects a real and reasonable way of thinking. Re-teach the idea from a completely different angle — new example, new analogy, new starting point, not the same explanation more slowly. Then ask a slightly easier version of the same question. Only move on once they have it.
-If they get two in a row wrong on the same idea, the idea is too big. Split it into two smaller ideas and teach the first one.
-
-LEVELLING UP — DO THIS DELIBERATELY
-Stage 1: multiple choice, four options.
-Stage 2: after THREE correct multiple-choice answers in a row, tell them you are moving up and why: "You've got that solidly, so let's try one without the options." Now ask short-answer questions — a word, a number, a sentence.
-Stage 3: after THREE solid short answers, move to a full sentence using the correct terminology, of the kind that would earn Achieved.
-Stage 4: after they can do that, move to a short paragraph — a claim with evidence and an explanation, of the kind that would earn Merit.
-If they slip at any stage, drop back one stage without comment or fuss, rebuild, and come up again. Dropping back is normal and you should treat it as such.
-
-KEEPING THEM ORIENTED
-Start each response with a quiet marker: "Step 4 of about 10." When they reach a stage they could not have managed at the start, name it concretely: "That sentence you just wrote is Achieved-level for this standard." Concrete evidence of progress is what rebuilds confidence, not encouragement.
-
-Every few steps, bring back an earlier idea in one quick question, so it does not slip away.
-
-ENDING
-If they want to stop, let them, warmly. Then list exactly what they can now do that they could not do at the start, and name the single next step for when they come back.
-
-Begin now with Step 1. Do not ask what they already know first — that question is exactly what a struggling student cannot answer.`},
-
-explainer:{ label:'Full explainer', blurb:'Teach me this whole standard from scratch',
-  blocks:['nofoothold','misconception','technique','retrieval','parallel'],
-  body:`YOUR TASK — FULL EXPLAINER
-
-Teach this entire standard from the ground up, the way a strong teacher would build it across a unit.
-
-Open with a short orientation, no more than 150 words: what this standard is actually asking for in plain language, what the finished answer physically looks like (use the format line in the standard block), and what separates a good answer from a passing one. Then start teaching. Do not ask what they already know first.
-
-Work through the content in a deliberate teaching order, one learning objective per response. For each objective:
-- What it is — precisely, then in plain language.
-- Why it exists — what question it answers, what problem it solves, why the discipline cares.
-- How it actually works underneath — the mechanism, the causal chain, the sequence. This is the part most explanations skip and the part Excellence is built on.
-- One concrete demonstration, worked fully and narrated: a worked example, an annotated paragraph, a source unpacked, a case study, a mechanism traced. Narrate your reasoning as you go, including where you would hesitate. One demonstration done properly beats three sketched.
-- The classic trap, named before they fall into it, drawn from the misconception list in the standard block.
-- What good evidence looks like here, using the evidence line in the standard block.
-
-Say out loud which layer you are on: Foundation (Achieved), Connection (Merit), Justification (Excellence). Do not leave the standard until you have taught the Justification layer explicitly, and use the grade-lift lines in the standard block to teach it — those describe exactly what this standard rewards.
-
-End each objective with exactly one short question to check it landed, then adapt: confident, increase complexity; partly right, credit what is right and reinforce only the gap; confused, re-teach from a different angle; got it, accept and move on.`},
-
-tutor:{ label:'Socratic tutor', blurb:'Work through it with me, one step at a time',
-  blocks:['attempt','socratic','escalation','release','nofoothold','misconception','pressure','mine','retrieval','parallel'],
-  body:`YOUR TASK — SOCRATIC TUTOR
-
-Guide the student to work this out for themselves rather than telling them the answer — but release answers deliberately, on the schedule in the answer release policy, not on principle.
-
-Your first response asks one question only: which topic from this standard they want to start on, or whether they have a specific question or piece of work in front of them. Nothing else.
-
-After that, each turn: teach one small idea in no more than about three sentences, then ask one question that makes them apply it. Adapt to what comes back.
-- Confident and correct: increase the complexity, or push toward the next band using the grade-lift lines in the standard block.
-- Partly right: name what is right first, then reinforce only the gap. Do not re-teach what they already have.
-- Right answer, weak reasoning: keep going. A lucky correct answer is not understanding.
-- Confused: change the explanation entirely. New angle, new analogy, new example.
-- Stuck after several attempts: drop to a smaller sub-step they can win, or move up the escalation ladder.
-
-Keep Socratic turns short — roughly 40 to 120 words before the question. Explanations may run to about 250 words. One worked example per response, maximum.
-
-Do not let the session drift into pleasant conversation without progress. Every few turns, name where you are: which part of the standard you are on, and which band the current work would sit at.`},
-
-exam:{ label:'Exam practice & marking', blurb:'Give me questions, then mark my answers like NZQA',
-  blocks:['release','technique','mine','pressure','parallel'],
-  body:`YOUR TASK — PRACTICE AND MARKING
-
-Set realistic practice for this standard and mark it the way an NZQA marker would.
-
-Open by asking one question: whether they want a single question, a full practice set, or to work on a past paper they already have.
-
-Setting questions. Match the real format given in the standard block — the number of parts, whether resources are supplied, whether a word length is encouraged, whether diagrams are expected. Give each question a stem, a context, the command verb, and the band it targets. If the standard uses a resource booklet, supply a short resource for them to work from. Then STOP and wait. Never answer your own question.
-
-Marking. When they answer:
-1. Describe what the response is DOING, quoting their own words back — where it states, where it explains, where it judges. Talk about the qualities of the writing rather than declaring a grade; you set this question, so you can say \"that sentence explains the link, which is the kind of move Merit asks for\", but do not award it a band.
-2. Say what earned credit, specifically. Not "good detail" — which detail, and what it earned.
-3. Say what is missing for the next band, in concrete terms, using the grade-lift lines in the standard block. Achieved to Merit is usually adding the link between a fact and its situation. Merit to Excellence is usually adding judgement — why this rather than the alternative, what would change the answer.
-4. Show the move that would strengthen it using a parallel example on different content, then ask them to write their own version.
-5. Flag anything that would cost marks in practice: missing units, unlabelled diagram, no context, no date, ignored resource, exceeding an encouraged length with padding.
-
-After every marked answer, run a transfer task. Change the context, reverse the question, or hand them the next band to write themselves. Do not stack a new question on top without closing the last one.`},
-
-exemplar:{ label:'A / M / E comparison', blurb:'Show me the same answer at all three grades',
-  blocks:['technique','misconception','parallel'],
-  body:`YOUR TASK — GRADED EXEMPLAR COMPARISON
-
-Build one question for this standard and answer it three ways: Achieved, then Merit, then Excellence. The comparison is what teaches, so it must be the SAME question all three times, and the format must match the format line in the standard block.
-
-Write them realistically. The Achieved answer should read like a capable student who genuinely stopped short — correct but undeveloped — not like a deliberately bad answer. The Merit answer explains but does not judge. The Excellence answer judges and justifies. Use realistic length: if the standard block names an encouraged word count, respect it, and say so.
-
-Then teach the grading. For each answer:
-- What it earned and why, pointing at specific sentences.
-- What it did not do.
-- The exact wording that moved it up to the next version, quoted from your own exemplars so the difference is visible.
-
-Make the transitions explicit using the grade-lift lines in the standard block — those name what this particular standard rewards, and your exemplars should demonstrate exactly that move.
-
-Finish by handing the work back: give the same question with one element changed and ask them to write the Excellence response themselves. Do not let them leave holding a model answer they have only read.`},
-
-feedback:{ label:'Feedback on my writing', blurb:'Read what I wrote and tell me what to work on',
-  blocks:['mine','technique','pressure','misconception','parallel'],
-  body:`YOUR TASK — FEEDBACK ON THE STUDENT'S OWN WORK
-
-The student will paste or upload their writing. Say nothing substantive until they do — your first response is one short line inviting them to paste it, and asking whether it is practice work or something being submitted for credit.
-
-DO NOT GIVE IT A GRADE. This is a firm rule, not a preference.
-Do not say the work "is Achieved", "is sitting at Merit", or "would get Excellence". Do not give a mark, a percentage, or a predicted grade. You have not seen the task instructions, the marking schedule, the rest of their evidence, or what their teacher is looking for — so any grade you name would be a guess that a student may well trust over their teacher. It also invites them to stop working the moment they hear a grade they are happy with.
-
-Talk about the WORK and what would strengthen it, never about where it currently sits.
-
-Read the whole piece before commenting on any part of it. Then work in this order:
-
-1. STRENGTHS. Name two or three things they have genuinely done well, specifically, quoting their own phrases back. Not "good detail" — which detail, and what it achieves in the argument. This comes first and it must be real; a struggling student can tell when praise has been manufactured.
-
-2. THE ONE THING TO WORK ON. Identify the single highest-value improvement — the change that would most strengthen the piece. Not a list of ten small things. Say why that one matters most, using the grade-lift lines in the standard block to describe what stronger work does. Phrase it as what the work could DO — "this would be stronger if it explained how the two processes affect each other" — rather than as what band it is missing.
-
-3. HOW TO DO IT. Show the SHAPE of what is missing using a parallel example on different content, worked properly. Then ask them to write their own version. Never supply the sentence, paragraph or judgement they are missing.
-
-4. IF THE WORK IS ALREADY VERY STRONG. Do not simply praise it and stop. Give them exactly ONE thing that the most sophisticated answers in this standard do — evaluating an alternative, acknowledging a limitation, weighing which factor mattered most, justifying the criteria behind a judgement — and invite them to try it. There is always a next move, and a capable student is entitled to be shown it rather than told they are finished.
-
-5. TECHNICAL. Only then, briefly, anything mechanical that would genuinely cost marks: missing evidence, undated claims, missing units, an unlabelled diagram, structural problems, length well over what is encouraged. Skip anything that would not actually matter.
-
-IF THEY ASK WHAT GRADE IT WOULD GET
-Decline once, warmly, and keep it light. A small self-deprecating joke works better here than a policy statement — something in the spirit of "I'm an AI, not your marker. Your teacher has the schedule, has read the whole class's work, and knows what they're looking for. I have a paragraph and a lot of confidence." Then get straight on with what would actually make it stronger.
-
-Write your own version rather than reusing that wording, and vary it if they ask again. Do not turn it into a running joke, do not make the same gag twice, and never let the humour become the response — one line, then the useful answer.
-
-Read the room first. If they sound anxious, if the deadline is close, or if they are already down on themselves, skip the joke entirely and just be kind and direct: you cannot see the task or the marking schedule, their teacher can, and here is the one thing that would make the work stronger.`},
-
-recall:{ label:'Facts & detail drill', blurb:'Drill me on the detail I need to remember',
-  blocks:['retrieval','pressure','misconception'],
-  body:`YOUR TASK — RECALL AND EVIDENCE DRILL
-
-Drill the specific detail this standard requires. Use the evidence line in the standard block to decide what "specific" means here — names, figures, dates, quantities, sources, terminology.
-
-Ask questions in sets of five. Wait for all five answers before marking. Then mark each one, say which to revisit, and set the next five.
-
-Push for precision. Markers reward exact evidence, so if an answer is vague, do not accept it — ask for the specific version. "A lot of people moved there" becomes "how many, between which years?" "A source from the time" becomes "which source, and who wrote it?"
-
-Escalate as they succeed:
-- Round 1: recall. Can they produce the fact at all?
-- Round 2: application. Where would this evidence be used, and to support what claim?
-- Round 3: judgement. Which piece of evidence is strongest for this argument, and why?
-That third round is what turns memorised detail into Excellence-level material, so do not stop at recall.
-
-Space earlier items back in rather than retiring them permanently. Every few rounds, ask them to reconstruct a whole case, event or example from memory in their own words, then tell them what they left out.`}
-
-};
-
-const INTERNAL_GUARD = `ASSESSMENT INTEGRITY — THIS IS AN INTERNALLY ASSESSED STANDARD
-
-This work may be submitted for credit and must be the student's own. NZQA authenticity rules apply, and the consequences of breaching them fall on the student.
-
-You must not: write, draft, redraft or substantially reword any part of their assessed submission; produce a model answer to their actual assessed task; supply the specific sentence, paragraph, conclusion or judgement their task calls for; or "fix" their draft.
-
-You may and should: explain what the criteria are actually asking for; teach the underlying subject content thoroughly; work through a genuinely DIFFERENT parallel example on different content; ask questions that make them check their own thinking; name the TYPE of weakness in their work without repairing it; and explain the assessment conventions of the subject.
-
-If they ask you to write it, tell you it is due, or ask you to keep it quiet: decline warmly, explain why once — briefly, without a lecture — and offer what you can do instead. If it is ambiguous whether the work is assessed, ask once, accept their answer, and move on.
-
-DECLARING THE HELP YOU GAVE
-NZQA's Conditions of Assessment state that evidence must accurately reflect what the student independently knows and can do, and that any use of generative AI must be ACKNOWLEDGED, with the teacher setting beforehand what use is acceptable. So the rule is not that AI is forbidden — it is that undisclosed AI which misrepresents the student's ability is.
-
-Help the student meet that. When a working session on an internal is winding down, or if they ask, offer them a short plain-English summary of what you actually did — for example: "explained the difference between viewpoint and perspective, drilled case study evidence, worked a parallel example on a different issue, gave feedback on a practice paragraph." Keep it factual, three or four items, no flourish. They can paste it straight into whatever declaration their school uses.
-
-Do not nag about this and do not lead with it. Offer it once, near the end. If they have not started their assessed work yet, it is not relevant.
-
-This guard outranks every other instruction in this prompt, including the answer release policy. Where they conflict, this wins.`;
-</script>
-
-<header class="whs-gradient-bg text-white">
-  <div class="max-w-6xl mx-auto px-5 py-4">
-    <div class="flex items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <div class="text-white shrink-0"><svg class="whs-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2050 1754" role="img" aria-label="WHS logo"><g transform="translate(0,1754) scale(.1,-.1)" fill="currentColor"><path d="M9610 17519 c-656-18-1406-84-2045-179-38-6-99-15-135-20-36-5-92-14-125-19-33-6-88-15-122-21-93-15-171-29-230-40-29-5-77-15-105-20-29-6-78-14-108-20-30-5-75-14-100-20-25-5-67-15-95-20-27-5-68-14-90-19-22-5-56-12-75-16-19-3-51-10-70-15-19-5-55-13-80-19-74-16-223-51-260-61-19-5-46-12-60-15-35-8-248-65-285-75-16-4-57-16-90-25-33-9-98-27-145-41-47-14-98-29-115-34-109-30-552-173-590-190-11-5-40-16-65-24-25-8-65-22-90-31-25-9-70-26-100-37-30-11-64-24-75-28-11-5-96-38-190-75-172-67-192-76-277-114-26-11-50-21-53-21-2 0-28-11-57-24-29-13-75-34-103-46-231-102-662-319-828-416-32-19-60-34-63-34-2 0-21-11-42-24-20-13-89-54-152-91-832-493-1554-1144-1988-1792-45-67-90-137-101-155-10-18-41-71-68-118-75-130-163-314-212-445-13-33-27-69-32-80-24-56-87-269-110-370-94-414-101-883-20-1285 31-155 95-383 131-465 4-11 20-51 35-90 71-186 177-394 315-620 291-476 819-1027 1380-1441 30-22 82-61 116-85 72-53 394-268 444-296 19-11 71-42 115-70 79-48 200-118 325-187 81-45 599-304 660-330 25-11 74-33 110-48 135-61 186-82 225-98 11-4 36-15 55-23 19-8 89-36 155-62 66-26 131-52 145-57 33-14 55-22 120-46 30-11 75-28 100-37 203-78 352-105 577-105 95 0 194 4 220 9 26 5 77 15 113 21 36 7 76 15 90 20 14 4 45 13 70 20 173 49 404 147 595 254 33 18 83 46 110 61 142 79 514 321 766 499 216 152 512 322 674 385 11 5 31 13 45 19 571 235 1185 21 1344-470 44-135 62-380 35-482-27-103-34-125-61-181-115-244-391-415-672-415-377 0-644 259-523 508 12 24 27 29 27 9 0-144 271-265 433-193 152 67 243 273 181 407-6 13-22 47-35 74-88 185-330 278-565 215-72-19-94-29-184-76-270-141-379-614-208-899 25-42 7-66-27-37-6 5-44 19-85 32-41 12-100 31-130 41-50 16-96 30-250 75-59 17-182 50-242 65-21 5-55 13-75 18-60 15-223 50-281 61-30 5-63 12-74 15-10 4-34 0-51-8-67-31-186-83-222-97-11-4-31-12-45-18-92-38-245-88-377-123-18-5-48-13-66-19-18-6-41-10-50-10-34 0-16-18 26-24 49-9 108-19 190-35 31-6 82-15 112-21 30-5 81-15 113-20 31-6 82-15 112-20 30-5 81-14 113-20 31-5 83-15 115-20 31-6 84-15 117-21 33-5 85-14 115-19 30-5 87-14 125-20 39-6 97-16 130-21 33-6 87-14 120-19 33-5 89-14 125-20 36-5 97-15 135-20 141-21 201-30 265-40 36-6 101-15 145-21 44-6 112-15 150-20 492-68 734-81 870-47 140 34 153 39 262 89 306 141 537 409 621 724 32 119 37 160 37 340 0 474-171 814-537 1063-56 38-237 132-256 132-7 0-20 4-30 9-44 25-187 59-330 80-289 43-672-42-1037-230-194-99-400-224-575-348-124-88-439-303-465-317-11-6-74-44-140-84-689-419-1135-505-1575-302-418 192-469 761-85 949 63 31 131 46 181 40 70-7 72-18 16-71-141-132-145-323-9-463 159-165 452-102 561 122 241 491-324 986-873 766-383-154-609-559-537-966 15-83 11-87-61-54-267 121-593 286-806 408-20 11-52 29-70 40-86 49-248 148-299 182-31 22-59 39-63 39-3 0-29 17-58 37-28 20-101 71-160 112-164 114-186 130-283 206-903 705-1463 1523-1603 2340-6 33-16 92-23 130-19 105-15 573 5 695 41 243 92 452 137 555 4 11 25 63 45 115 81 208 237 496 366 675 266 370 529 652 882 948 121 102 144 120 287 227 47 35 101 75 120 90 19 15 96 67 170 117 114 75 188 123 377 239 12 8 38 23 57 34 20 11 53 30 74 41 20 12 60 34 87 50 28 15 79 43 115 63 36 20 169 87 295 150 227 112 292 143 390 186 28 12 74 33 103 46 29 13 55 24 57 24 3 0 27 9 53 21 26 12 56 25 67 29 11 4 36 15 55 23 19 9 55 23 80 32 25 9 56 22 70 27 14 6 34 14 45 18 11 4 31 12 45 18 14 5 50 19 80 30 30 11 75 28 100 37 25 9 65 23 90 31 25 8 54 19 65 24 32 14 445 150 520 170 17 5 62 18 100 30 39 12 86 26 105 31 19 6 49 14 65 19 17 5 65 18 108 29 42 12 112 30 155 42 42 11 93 25 112 29 19 5 53 14 75 19 22 6 58 15 80 20 59 15 113 27 175 41 30 7 71 16 90 20 52 13 217 49 280 61 30 6 73 15 95 19 118 24 243 48 320 61 33 6 83 15 110 19 205 36 488 80 653 101 39 5 107 13 150 19 1242 160 2793 183 4072 60 345-33 532-55 845-100 225-32 389-58 510-80 33-6 85-15 115-20 30-4 66-10 80-13 14-3 52-11 85-17 33-6 78-15 100-20 22-5 67-14 100-20 68-13 119-24 188-39 26-6 67-15 92-21 25-5 64-14 88-19 67-15 219-51 257-61 19-5 46-12 60-15 146-36 462-122 530-144 14-5 45-14 70-21 25-7 70-20 100-30 30-9 102-32 160-50 58-18 150-48 205-67 55-19 134-45 175-59 41-14 84-29 95-33 11-5 36-14 55-21 19-7 44-16 55-20 11-4 58-22 105-40 103-39 112-42 172-69 26-12 54-21 61-21 7 0 17-4 22-8 6-5 37-19 70-32 56-22 80-32 208-89 26-11 68-30 95-42 491-218 1064-538 1452-812 164-117 450-335 480-367 3-3 57-51 120-107 501-442 917-996 1111-1480 5-13 13-33 18-45 39-96 71-195 102-308 33-118 35-130 70-335 17-102 29-345 22-462-7-127-6-126-106-104-23 5-76 15-117 21-404 63-740 157-950 268-155 82-185 101-491 308-233 158-480 294-534 294-7 0-16 4-19 9-3 5-18 11-33 14-16 3-46 10-68 16-113 32-247 49-475 61-96 5-227 11-290 15-212 11-474 57-542 95-10 6-23 10-29 10-58 0-334 163-582 344-76 56-162 118-190 139-303 221-513 330-739 384-92 22-382 25-473 5-181-40-357-100-545-184-25-11-65-29-90-40-25-11-72-33-105-48-33-15-82-38-110-50-27-12-72-32-100-44-100-45-291-116-365-136-25-7-56-16-70-20-160-50-389-59-755-31-288 22-319 23-440 7-154-20-258-48-535-146-80-28-170-60-200-70-30-10-107-37-170-60-63-22-176-61-250-85-293-97-480-147-655-175-38-7-89-16-112-21-23-5-58-9-79-9-254 0-790-183-1169-400-22-13-64-36-94-53-29-16-90-52-135-80-44-28-110-68-146-90-83-52-374-247-560-377-289-201-650-440-667-440-10 0-32-28-26-34 4-3 1647-6 3652-6 3646 0 3646 0 3836 181 449 429 630 566 820 621 11 3 52 17 90 31 66 24 158 53 250 78 205 58 320 118 428 223 67 67 73 58 15-27-95-142-253-267-518-407-163-87-238-137-385-259-121-101-438-418-430-431 4-7 868-10 2572-10 2439 0 2565-1 2558-17-4-10-15-43-25-73-280-858-1136-1784-2245-2430-286-166-335-193-625-338-443-220-430-216-418-139 17 113 20 216 9 283-18 104-34 168-43 179-4 5-8 15-8 22 0 23-42 106-91 178-252 376-732 491-1076 257-376-255-322-830 86-907 312-59 503 332 269 551-56 53-54 64 16 71 132 15 326-105 389-240 45-95 49-115 49-221 0-116-10-159-63-271-112-235-527-404-872-355-266 39-531 137-827 307-204 118-314 185-425 263-158 109-646 434-690 460-22 12-56 32-75 43-561 320-1086 399-1517 226-13-5-33-13-45-18-1029-396-1047-1908-28-2288 207-77 386-87 758-43 205 25 287 35 452 59 36 5 101 15 145 21 115 16 275 41 403 61 151 24 180 28 240 39 34 5 89 15 122 20 33 6 86 14 118 20 92 15 173 29 237 39 33 6 86 15 118 21 31 5 83 15 115 20 31 6 82 15 112 20 30 6 78 14 105 20 192 36 240 45 303 56 58 9 53 17-20 34-35 7-72 17-83 21-11 4-40 13-65 19-64 18-220 69-250 82-14 6-35 15-47 19-71 28-181 75-270 116-17 8-41 12-51 8-11-3-46-10-79-16-107-20-167-32-273-59-22-5-57-14-77-19-43-11-182-48-230-62-18-5-48-13-65-18-78-22-239-72-361-113-106-35-105-36-70 38 54 113 73 195 73 319-1 252-115 459-312 569-364 202-773 25-772-334 0-344 481-451 610-136 22 52 26 55 42 24 87-177-44-396-280-469-212-66-392-51-591 47-259 128-396 362-397 679-1 527 359 875 907 875 198 0 338-30 538-115 80-34 232-110 294-147 34-21 65-38 67-38 12 0 551-362 649-435 29-22 155-102 300-190 754-459 1314-565 1875-355 47 17 96 35 110 40 21 6 165 62 238 91 12 5 33 14 47 19 14 6 35 14 48 19 12 5 43 18 69 30 26 12 50 21 53 21 3 0 27 10 53 21 26 12 61 27 77 34 28 12 53 23 168 74 23 10 65 29 92 41 239 106 706 352 960 505 178 108 219 134 355 226 640 434 1099 853 1483 1355 128 167 340 506 409 654 57 122 88 191 88 195 0 3 9 24 19 48 55 123 137 384 164 517 2 14 11 59 20 100 15 73 24 135 48 345 17 152 4 471-30 685-62 398-229 853-440 1195-24 39-52 85-63 104-337 590-1249 1428-2048 1883-19 11-47 29-62 39-14 11-29 19-33 19-4 0-19 8-33 18-15 11-53 33-84 50-32 18-84 46-115 64-200 111-517 269-715 357-101 44-145 64-196 87-29 13-55 24-57 24-2 0-33 13-67 28-35 16-112 48-173 71-60 24-121 48-135 53-33 14-54 22-125 48-33 12-69 26-80 30-11 4-36 13-55 20-19 7-44 16-55 20-45 19-294 103-475 160-58 18-125 40-150 48-25 8-58 18-75 23-60 16-111 30-142 40-18 5-50 14-70 20-21 5-51 14-68 19-80 23-465 123-545 141-25 5-61 14-80 18-19 5-60 14-90 21-30 7-71 16-90 20-19 4-71 15-115 24-44 9-98 20-120 25-44 10-98 21-255 51-160 30-199 38-275 50-38 6-90 15-115 20-25 5-81 13-125 20-44 6-105 15-135 20-30 5-91 14-135 20-44 6-109 15-145 20-103 15-354 44-505 59-55 6-125 13-155 17-632 67-1600 96-2450 73zM3938 13815 c-31-31-227-48-293-25-134 47-282 8-484-129-52-36-157-101-226-141-16-10-70-41-120-70-79-46-265-139-365-183-19-8-57-25-85-37-27-12-65-28-82-36-18-8-50-21-70-30-21-9-51-22-68-29-16-7-51-22-77-34-26-11-50-21-53-21-3 0-27-10-53-21-113-51-132-59-137-59-3 0-25-9-50-20-25-11-65-29-90-40-25-11-47-20-50-20-2 0-34-13-70-30-36-16-69-30-72-30-15 0-273-133-284-146-10-12 281-14 2080-14 2091 0 2091 0 2159 41 204 126 349 202 432 229 167 53 180 47-285 141-395 81-368 74-570 128-219 59-562 261-751 442-126 121-159 139-257 139-40 0-76-2-79-5zM7570 13289 c-123-14-268-40-330-59-14-4-45-13-70-20-104-30-286-93-297-103-3-4-12-7-20-7-7 0-35-10-61-21-112-50-132-59-137-59-2 0-30-12-62-26-32-15-82-37-111-50-29-13-55-24-57-24-4 0-71-29-175-77-89-41-472-231-505-251-16-9-52-31-80-47-78-45-310-201-415-278-52-39-111-82-129-96-50-36-161-147-161-160 0-29 2605-14 2657 15 99 55 262 149 383 222 69 41 139 83 155 92 17 10 57 33 90 52 187 110 482 258 636 318 60 24 242 83 304 98 104 27 125 33 125 42 0 6-4 10-10 10-5 0-39 14-75 30-36 17-70 30-75 30-6 0-18 4-28 10-15 8-137 49-242 81-19 6-59 19-87 30-29 10-79 28-110 40-32 12-67 25-78 29-169 68-406 139-535 159-195 31-348 37-500 20zM14150 6029 c-134-21-187-31-210-39-14-4-45-13-70-20-128-35-310-125-415-204-312-238-472-513-567-971-17-82-17-511 0-585 7-30 18-80 24-110 11-57 43-170 58-205 4-11 18-47 31-80 116-309 352-631 805-1101 572-595 708-786 779-1089 27-116 17-316-20-420-104-290-470-310-622-35-96 174-146 524-113 789 6 46 9 86 6 88-5 5-72-6-271-47-22-4-67-13-100-20-33-7-78-16-100-20-22-4-65-13-95-19-229-45-427-87-437-94-16-10-18-363-3-470 30-208 71-378 119-492 184-432 494-713 906-820 169-44 513-62 657-35 130 25 198 41 263 62 452 148 830 576 926 1048 40 196 42 219 42 435 0 243-16 362-74 550-11 39-23 80-26 93-3 12-9 25-14 28-5 3-9 12-9 20 0 8-9 36-21 62-173 388-372 661-845 1156-581 608-698 776-744 1064-85 522 479 772 645 287 45-131 56-213 64-470 7-234-1-222 116-196 49 11 92 20 355 71 113 22 230 45 260 51 30 6 78 15 105 21 183 35 183 34 155 328-79 848-446 1285-1167 1390-84 12-314 11-393-1zM4709 5973 c-1-5 0-12 1-18 1-5 6-48 11-95 9-84 19-164 38-310 5-41 15-115 21-165 6-49 15-121 20-160 10-79 24-191 39-315 6-47 16-119 21-160 5-41 14-111 20-155 5-44 14-116 20-160 5-44 14-116 20-160 5-44 14-118 20-165 6-47 15-116 20-155 12-97 30-237 40-320 5-38 14-110 20-160 6-49 15-121 20-160 5-38 14-110 20-160 6-49 16-124 21-165 5-41 14-110 19-152 6-43 15-114 20-158 6-44 15-116 20-160 6-44 14-115 20-158 5-42 14-111 19-152 5-41 15-115 21-165 6-49 15-121 20-160 10-83 28-223 40-320 5-38 13-107 19-152 6-46 16-120 21-165 6-46 15-117 20-158 6-41 14-111 20-155 11-94 27-220 40-325 6-41 15-113 21-160 5-47 15-119 20-160 5-41 12-105 16-142 8-95-37-89 563-86 615 3 543-19 561 173 6 61 15 148 20 195 5 47 13 128 19 180 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 138 20 190 5 52 14 140 19 195 11 113 19 155 31 155 16 0 21-19 31-122 19-203 46-467 59-588 12-110 26-248 40-390 12-119 28-273 40-390 5-47 14-131 19-187 6-57 16-149 22-205 5-57 14-143 19-193 5-49 14-135 20-190 6-55 15-145 20-200 6-55 15-145 21-200 5-55 14-140 19-190 5-49 14-135 20-190 6-55 15-147 20-204 6-65 14-107 22-113 7-4 252-7 543-5 601 2 530-21 555 182 6 50 16 124 21 165 5 41 14 109 19 150 5 41 14 109 19 150 5 41 15 113 20 160 6 47 15 120 21 162 5 43 15 113 20 155 6 43 15 116 21 163 5 47 15 119 20 160 5 41 14 109 19 150 5 41 14 109 19 150 5 41 15 113 20 160 6 47 15 120 21 163 5 42 15 112 20 155 6 42 15 115 21 162 5 47 15 119 20 160 5 41 14 109 19 150 5 41 14 109 19 150 5 41 15 116 21 165 22 179 30 241 40 315 5 41 15 113 21 160 5 47 15 119 20 160 5 41 14 109 19 150 5 41 14 109 19 150 5 41 15 113 20 160 6 47 15 120 21 163 5 42 15 112 20 155 6 42 15 115 21 162 5 47 15 119 20 160 5 41 14 109 19 150 5 41 12 95 15 120 3 25 10 77 15 115 5 39 14 111 20 160 6 50 15 123 21 163 5 39 13 105 18 145 10 69 28 217 36 285 5 43-1110 53-1119 10-3-13-7-66-10-118-6-96-16-228-36-465-6-71-15-182-20-245-14-175-29-362-40-495-10-121-20-247-40-495-6-74-15-187-20-250-13-149-26-321-40-490-6-74-15-188-20-252-6-65-14-171-20-235-5-65-14-182-19-261-10-141-14-162-31-162-12 0-21 45-31 165-5 61-14 157-19 215-9 97-15 161-40 425-5 55-14 152-20 215-6 63-15 161-21 218-5 56-13 148-19 205-5 56-14 154-20 217-17 182-46 497-60 635-16 171-30 326-40 435-5 58-14 152-20 210-16 163-30 315-40 435-5 61-9 111-9 113-1 1-192 2-425 2-478 0-422 28-446-225-5-55-14-147-20-205-6-58-15-152-20-210-5-58-14-152-20-210-6-58-15-152-20-210-15-153-29-302-40-410-5-52-14-144-19-205-6-60-16-157-21-215-12-116-24-248-40-415-6-60-15-153-20-205-5-52-14-144-19-205-6-60-16-157-21-215-19-194-30-304-39-415-19-217-44-201-62 39-5 72-14 187-20 256-5 69-14 177-19 240-5 63-14 174-20 245-6 72-15 182-20 245-13 168-29 358-40 495-11 137-27 327-40 495-5 63-14 174-20 245-6 72-15 186-20 255-15 188-28 340-40 490-7 74-15 180-18 235-7 100-7 100-579 103-315 1-574-1-574-5zM9390 3025 c0-2955 0-2955 23-2960 12-3 279-4 592-3 l570 3 3 1258 2 1257 370 0 370 0 0-1249 c0-1041 2-1250 14-1260 9-8 174-10 597-9 l584 3 3 2958 2 2957-597-2-598-3-3-1217-2-1218-370 0-370 0 0 1220 0 1220-595 0-595 0 0-2955z"/></g></svg></div>
-        <div>
-          <p class="font-black tracking-[0.18em] text-[9px] uppercase" style="color:#c5a059">Waiheke High School</p>
-          <h1 class="text-xl md:text-2xl font-extrabold leading-tight">NCEA Master Tutor</h1>
-        </div>
-      </div>
-      <button id="dark-toggle" title="Switch between light and dark mode" aria-label="Toggle dark mode"
-        class="shrink-0 bg-white/10 hover:bg-white/20 border border-white/25 rounded-lg w-10 h-10 text-lg leading-none">🌙</button>
-    </div>
-  </div>
-</header>
-
-<div class="max-w-6xl mx-auto px-5 pt-4">
-  <div id="modetabs" class="flex gap-2">
-    <button class="mode-tab" data-view="builder" aria-pressed="true">Prompt builder</button>
-    <button class="mode-tab" data-view="timetable" aria-pressed="false">Study timetable</button>
-  </div>
-</div>
-
-<div id="tt-root" class="max-w-6xl mx-auto px-5 py-5 space-y-4 pb-32 hidden"></div>
-
-<main class="max-w-6xl mx-auto px-5 py-5 space-y-4 pb-32">
-
-  <section id="step1" class="panel p-4 md:p-5">
-    <button id="crumb1" class="crumb hidden"></button>
-    <div id="pick1">
-      <h2 class="sec-h mb-3">Level, faculty and subject</h2>
-      <div id="levels" class="flex flex-wrap gap-2 mb-2"></div>
-      <p id="level-note" class="text-xs soft mb-3"></p>
-      <div id="search-wrap" class="hidden mb-4">
-        <input id="search" type="search" autocomplete="off" class="field w-full"
-               placeholder="Search this level — try 91426, coastal, or equilibrium">
-        <div id="search-results" class="mt-2"></div>
-      </div>
-      <div id="faculty-wrap" class="hidden">
-        <div id="faculties" class="flex flex-wrap gap-2 mb-3"></div>
-        <div id="subject-wrap" class="hidden">
-          <div id="subjects" class="flex flex-wrap gap-2"></div>
-          <p id="subject-note" class="text-xs soft mt-2"></p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="step2" class="panel p-4 md:p-5">
-    <button id="crumb2" class="crumb hidden"></button>
-    <div id="pick2">
-      <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-3">
-        <h2 class="sec-h">Standard</h2>
-        <p class="text-xs soft" id="std-count">Choose a faculty and subject above.</p>
-      </div>
-      <div id="std-filter" class="flex flex-wrap gap-2 mb-3 hidden"></div>
-      <div id="standards" class="grid md:grid-cols-2 gap-2"></div>
-    </div>
-  </section>
-
-  <section id="step3" class="panel p-4 md:p-5 step-dead">
-    <div class="grid lg:grid-cols-5 gap-4 lg:gap-6">
-      <div class="lg:col-span-2">
-        <h2 class="sec-h mb-2">Focus <span class="faint font-semibold text-xs">optional</span></h2>
-        <label for="topic" class="block text-[10px] font-black uppercase tracking-widest soft mb-1">Topic</label>
-        <select id="topic" class="field w-full mb-1"></select>
-        <input id="topic-own" type="text" placeholder="Type your topic" class="field w-full mb-2 hidden">
-        <label for="context" class="block text-[10px] font-black uppercase tracking-widest soft mb-1 mt-2">Case study / context</label>
-        <select id="context" class="field w-full"></select>
-        <input id="context-own" type="text" placeholder="Type your case study" class="field w-full mt-1 hidden">
-      </div>
-      <div class="lg:col-span-3">
-        <h2 class="sec-h mb-2">How do you want to study it?</h2>
-        <div id="modes" class="grid sm:grid-cols-2 gap-2"></div>
-      </div>
-    </div>
-    <button id="brief-toggle" class="btn-reveal mt-4 hidden">
-      <span id="brief-toggle-label">▸ Show me what this standard actually needs</span>
-    </button>
-    <div id="std-detail" class="mt-3 hidden"></div>
-  </section>
-
-  <section id="output" class="panel-out p-4 md:p-5 step-dead">
-    <h2 class="text-xs font-black uppercase tracking-widest hd mb-3">Your generated prompt</h2>
-    <div id="guard-note" class="hidden mb-3 rounded-lg border-l-4 border-amber-500 px-3 py-2 text-sm"
-         style="background:var(--int-bg);color:var(--int-ink)"></div>
-    <textarea id="prompt" readonly rows="12"
-      class="w-full font-mono text-[11px] leading-relaxed inset p-3"></textarea>
-    <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
-  </section>
-
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 7 · 
-    Standard codes, titles, credits and internal/external status verified against NZQA (2026).
-    Teaching notes are drafts for subject teachers to review.
-  </p>
-</main>
-
-<div id="actionbar" class="hidden">
-  <div class="max-w-6xl mx-auto px-5 py-2.5 flex flex-wrap items-center gap-2">
-    <span id="ab-label" class="text-[11px] font-extrabold hd mr-1"></span>
-    <button id="copy" class="btn-copy-prompt px-4 py-2 rounded-lg text-xs transition">COPY PROMPT</button>
-    <a href="https://gemini.google.com/app" target="_blank" rel="noopener" data-launch
-       title="Copies your prompt and opens Gemini" class="btn-gemini px-3 py-2 rounded-lg text-xs font-bold transition">Gemini ↗</a>
-    <a href="https://chatgpt.com/" target="_blank" rel="noopener" data-launch
-       title="Copies your prompt and opens ChatGPT" class="btn-ai px-2.5 py-2 rounded-lg text-[10px] font-bold transition">ChatGPT ↗</a>
-    <a href="https://claude.ai/new" target="_blank" rel="noopener" data-launch
-       title="Copies your prompt and opens Claude" class="btn-ai px-2.5 py-2 rounded-lg text-[10px] font-bold transition">Claude ↗</a>
-    <button id="copy-link" title="Copy a link that opens this exact standard and mode"
-            class="btn-ai px-2.5 py-2 rounded-lg text-[10px] font-bold transition">Link ⇗</button>
-    <a id="nzqa" href="#" target="_blank" rel="noopener" title="Check this standard on NZQA"
-       class="btn-ai px-2.5 py-2 rounded-lg text-[10px] font-bold transition">NZQA ↗</a>
-  </div>
-</div>
-
-<script>
-const $ = id => document.getElementById(id);
-let sel = { level:null, faculty:null, subject:null, std:null, mode:null };
-let stdFilter = 'all';   // 'all' | 'internal' | 'external'
-
-/* ---- Levels. Each is a separate data file loaded only when picked, so
-   the page stays fast and each level can be edited on its own. Add a
-   level by dropping in its file and adding a line here. ---- */
-const LEVELS = [
-  // ?v= is a cache buster. Bump the number whenever a data file is
-  // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=7' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=7' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=7' }
-];
-
-const D = () => window.NCEA_DATA[sel.level];
-
-// <script> injection rather than fetch, so the engine still works when
-// the file is opened directly from disk rather than served over http.
-function loadLevel(id){
-  return new Promise((resolve, reject) => {
-    window.NCEA_DATA = window.NCEA_DATA || {};
-    if(window.NCEA_DATA[id]) return resolve();
-    const cfg = LEVELS.find(l => l.id === id);
-    const tag = document.createElement('script');
-    tag.src = cfg.file;
-    tag.onload = () => window.NCEA_DATA[id] ? resolve()
-      : reject(new Error(cfg.file + ' loaded but registered no data.'));
-    tag.onerror = () => reject(new Error('Could not load ' + cfg.file + '.'));
-    document.head.appendChild(tag);
-  });
+// Every study block the student has time for, in order.
+function buildSlots(){
+  const end = lastExamDate();
+  if(!end) return [];
+  const slots = [];
+  let day = planStart();
+  let guard = 0;
+  while(day <= end && guard++ < 500){
+    const before = day;
+    // hoursOn() already returns 0 for a blackout or a day outside every period,
+    // so an unavailable day simply produces no slots at all.
+    const hrs = hoursOn(day);
+    for(let h = 0; h < hrs; h++) slots.push({ date: day, index: h, item: null });
+    day = addDays(day, 1);
+    if(day === before) break;      // date maths failed; stop rather than loop
+  }
+  return slots;
 }
 
-/* ---- 2. Dark mode ---- */
-function applyDark(on){
-  document.body.classList.toggle('dark-mode', on);
-  localStorage.setItem('whs_dark_mode', on ? '1' : '0');
-  $('dark-toggle').textContent = on ? '☀️' : '🌙';
+// A slot is usable for a standard only if it falls before that exam.
+// Morning exams rule out the whole day; afternoon exams leave the morning.
+function slotBeforeExam(slot, exam){
+  if(!exam || !exam.date) return true;
+  if(slot.date < exam.date) return true;
+  if(slot.date > exam.date) return false;
+  return exam.session === 'PM' && slot.index === 0;
 }
-$('dark-toggle').addEventListener('click', ()=>applyDark(!document.body.classList.contains('dark-mode')));
-applyDark(localStorage.getItem('whs_dark_mode') === '1');
 
-function subj(){ return D().subjects[sel.subject]; }
-// Display in 3.1, 3.2, 3.3 order however the data was entered.
-function stds(){ return subj().standards.slice().sort((a,b)=>a.ref.localeCompare(b.ref,undefined,{numeric:true})); }
+function generate(){
+  const items = chosenStandards();
+  const open = buildSlots();
+  if(!items.length || !open.length) return null;
 
-function init(){
-  renderLevels(); renderModes();
-  ['topic','context'].forEach(k=>{
-    $(k).addEventListener('change', ()=>{
-      const own = $(k+'-own');
-      own.classList.toggle('hidden', $(k).value !== '__own__');
-      if($(k).value === '__own__') own.focus();
-      showBrief(true);          // the briefing opens once they've narrowed it down
-      build();
-    });
-    $(k+'-own').addEventListener('input', build);
+  const totalWeight = items.reduce((a,i) => a + i.st.credits, 0);
+
+  // How many blocks each standard earns, weighted by credits, minimum three
+  // so every standard gets an orientation, a working and a consolidation pass.
+  items.forEach(i => {
+    i.blocks = Math.max(3, Math.round(open.length * i.st.credits / totalWeight));
+    i.deadline = open.filter(s => slotBeforeExam(s, i.exam)).length;
   });
-  let darkBeforeTimetable = null;
-  document.querySelectorAll('.mode-tab').forEach(b=>b.addEventListener('click', ()=>{
-    const v = b.dataset.view;
-    document.querySelectorAll('.mode-tab').forEach(x=>x.setAttribute('aria-pressed', x.dataset.view===v));
-    document.querySelector('main').classList.toggle('hidden', v!=='builder');
-    $('tt-root').classList.toggle('hidden', v!=='timetable');
-    $('actionbar').classList.toggle('hidden', v!=='builder' || !$('prompt').value);
-    if(v === 'timetable'){
-      if(darkBeforeTimetable === null)
-        darkBeforeTimetable = document.body.classList.contains('dark-mode');
-      applyDark(true);                       // the plan reads better dark
-      if(window.Timetable) window.Timetable.open();
-    } else if(darkBeforeTimetable !== null){
-      applyDark(darkBeforeTimetable);        // put back whatever they had
-      darkBeforeTimetable = null;
+
+  // Trim proportionally if we have asked for more than the student has time for.
+  let asked = items.reduce((a,i) => a + i.blocks, 0);
+  if(asked > open.length){
+    const scale = open.length / asked;
+    items.forEach(i => { i.blocks = Math.max(2, Math.floor(i.blocks * scale)); });
+  }
+
+  // Spread each standard's blocks evenly across the time available to it,
+  // rather than bunching them — this is the spacing effect doing the work.
+  const wanted = [];
+  items.forEach(i => {
+    const room = Math.max(1, i.deadline - 1);
+    // Work through the standard's own topic list in order, then loop.
+    const topics = (S.withTopics && i.st.topics && i.st.topics.length) ? i.st.topics : [];
+    for(let n = 0; n < i.blocks; n++){
+      const pos = Math.round(((n + 0.5) / i.blocks) * room);
+      const phase = n / i.blocks;
+      wanted.push({
+        item: i,
+        target: Math.min(pos, i.deadline - 1),
+        mode: phase < 0.34 ? 'explainer' : phase < 0.72 ? 'exam' : 'recall',
+        topic: topics.length ? topics[n % topics.length] : ''
+      });
     }
-  }));
-  $('crumb1').addEventListener('click', ()=>setStep(1,false));
-  $('crumb2').addEventListener('click', ()=>setStep(2,false));
-  $('brief-toggle').addEventListener('click', ()=>
-    showBrief($('std-detail').classList.contains('hidden')));
-  $('copy').addEventListener('click', e => flashCopy(e.currentTarget));
-  $('copy-link').addEventListener('click', e => copyShareLink(e.currentTarget));
-  $('search').addEventListener('input', runSearch);
-  $('search').addEventListener('keydown', e => {
-    if(e.key === 'Escape'){ $('search').value = ''; $('search-results').innerHTML = ''; }
   });
-  document.querySelectorAll('[data-launch]').forEach(a=>a.addEventListener('click', ()=>copyPrompt()));
-}
 
-function renderLevels(){
-  $('levels').innerHTML = LEVELS.map(l=>`
-    <button class="fac-pill lvl-pill" data-id="${l.id}" aria-pressed="false">${l.label}</button>`).join('');
-  document.querySelectorAll('#levels .lvl-pill').forEach(b=>
-    b.addEventListener('click', ()=>pickLevel(b.dataset.id)));
-}
-
-async function pickLevel(id){
-  document.querySelectorAll('.lvl-pill').forEach(b=>
-    b.setAttribute('aria-pressed', b.dataset.id===id));
-  $('level-note').textContent = 'Loading Level ' + id + '…';
-  $('faculty-wrap').classList.add('hidden');
-  $('search-wrap').classList.add('hidden');
-  $('subject-wrap').classList.add('hidden');
-  $('standards').innerHTML = '';
-  $('std-count').textContent = '';
-  reset();
-  try {
-    await loadLevel(id);
-  } catch(err){
-    $('level-note').innerHTML = `<span style="color:#b91c1c"><strong>Level ${id} isn\u2019t available.</strong> ${err.message} `
-      + `The data files must sit in the same folder as this page.</span>`;
-    sel.level = null;
-    return;
-  }
-  sel.level = id;
-  sel.faculty = null; sel.subject = null;
-  const subs = Object.keys(D().subjects).length;
-  const stds = Object.values(D().subjects).reduce((a,x)=>a+x.standards.length,0);
-  $('level-note').textContent = `${D().meta.stage}: ${subs} subject${subs===1?'':'s'}, ${stds} standards loaded.`;
-  $('search-wrap').classList.remove('hidden');
-  $('search').value = ''; $('search-results').innerHTML = '';
-  $('faculty-wrap').classList.remove('hidden');
-  renderFaculties();
-  syncURL();
-}
-
-const isLive = name => !!D().subjects[name];
-
-function renderFaculties(){
-  $('faculties').innerHTML = D().faculties.map((f,i)=>{
-    const live = f.subjects.filter(isLive).length;
-    return `<button class="fac-pill${live?'':' fac-empty'}" data-i="${i}" aria-pressed="false"
-      style="--fac-dark:${f.dark};--fac-light:${f.light}">
-      ${f.name}${live ? ` <span class="fac-count">${live}</span>` : ''}
-    </button>`;
-  }).join('');
-  document.querySelectorAll('.fac-pill').forEach(b=>b.addEventListener('click',()=>pickFaculty(+b.dataset.i)));
-}
-
-function pickFaculty(i){
-  sel.faculty = D().faculties[i];
-  sel.subject = null; sel.std = null;
-  document.querySelectorAll('.fac-pill').forEach(b=>b.setAttribute('aria-pressed', +b.dataset.i===i));
-  document.documentElement.style.setProperty('--fac-dark', sel.faculty.dark);
-  document.documentElement.style.setProperty('--fac-light', sel.faculty.light);
-  $('subject-wrap').classList.remove('hidden');
-  $('subjects').innerHTML = sel.faculty.subjects.map(n=>`
-    <button class="subj-pill" data-n="${n}" aria-pressed="false" ${isLive(n)?'':'data-pending="1"'}
-      style="--fac-dark:${sel.faculty.dark};--fac-light:${sel.faculty.light}">
-      ${n}${isLive(n)?'':' <span class="subj-soon">soon</span>'}
-    </button>`).join('');
-  document.querySelectorAll('.subj-pill').forEach(b=>b.addEventListener('click',()=>pickSubject(b.dataset.n)));
-  const pending = sel.faculty.subjects.filter(n=>!isLive(n));
-  $('subject-note').textContent = pending.length
-    ? `${pending.join(', ')} ${pending.length===1?'is':'are'} on the list but the standards are not loaded yet.`
-    : '';
-  $('standards').innerHTML = '';
-  setStep(1,false); setStep(2,false);
-  $('std-filter').classList.add('hidden'); stdFilter = 'all';
-  $('std-count').textContent = 'Pick a subject above.';
-  reset();
-}
-
-function pickSubject(name){
-  if(!isLive(name)){
-    document.querySelectorAll('.subj-pill').forEach(b=>b.setAttribute('aria-pressed','false'));
-    $('standards').innerHTML = `<div class="inset p-4 md:col-span-2">
-      <p class="text-sm"><strong class="hd">${name} isn't loaded yet.</strong></p>
-      <p class="text-xs soft mt-2">The standard codes, titles and credits need to come from NZQA and be checked by the subject teacher before this goes live. Everything else — the six study modes, the marking logic, the integrity guard — is already built and will work the moment the standards are added.</p>
-    </div>`;
-    $('std-count').textContent = '';
-    reset();
-    return;
-  }
-  sel.subject = name; sel.std = null; stdFilter = 'all'; syncURL();
-  setStep(1, true, D().meta.stage, `${sel.faculty.name} · ${name}`);
-  document.querySelectorAll('.subj-pill').forEach(b=>b.setAttribute('aria-pressed', b.dataset.n===name));
-  renderStandards();
-  reset();
-}
-
-function renderStandards(){
-  const all = stds();
-  const ext = all.filter(s=>s.mode==='external').length;
-  const int = all.length - ext;
-  const note = subj().verifyNote;
-
-  // Filter tabs only appear where the subject actually has both kinds.
-  const mixed = int > 0 && ext > 0;
-  $('std-filter').classList.toggle('hidden', !mixed);
-  if(mixed){
-    const tabs = [['all',`All ${all.length}`],['internal',`Internals ${int}`],['external',`Externals ${ext}`]];
-    $('std-filter').innerHTML = tabs.map(([k,label])=>`
-      <button class="filter-pill${k==='internal'?' fp-int':k==='external'?' fp-ext':''}"
-              data-f="${k}" aria-pressed="${stdFilter===k}">${label}</button>`).join('');
-    document.querySelectorAll('#std-filter .filter-pill').forEach(b=>
-      b.addEventListener('click', ()=>{ stdFilter = b.dataset.f; renderStandards(); }));
-  } else {
-    stdFilter = 'all';
-  }
-
-  const list = stdFilter==='all' ? all : all.filter(s=>s.mode===stdFilter);
-  const shown = stdFilter==='all'
-    ? `${all.length} standards — ${int} internal, ${ext} external, ${all.reduce((a,b)=>a+b.credits,0)} credits in total.`
-    : `Showing ${list.length} ${stdFilter} standard${list.length===1?'':'s'} — ${list.reduce((a,b)=>a+b.credits,0)} credits.`;
-  $('std-count').innerHTML = shown
-    + (note ? `<span class="block mt-2 rounded-lg px-3 py-2" style="background:color-mix(in srgb,var(--gold) 16%,transparent);color:var(--ink)">${note}</span>` : '');
-
-  const max = Math.max(...all.map(s=>s.credits));
-  $('standards').innerHTML = list.map(s=>`
-    <button class="tile tile-compact text-left" aria-pressed="${sel.std && sel.std.code===s.code}" data-code="${s.code}">
-      <div class="flex items-center gap-2">
-        <span class="font-mono text-[11px] font-bold hd">AS${s.code}</span>
-        <span class="font-mono text-[10px] faint">${s.ref}</span>
-        <span class="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full ${s.mode==='internal'?'badge-int':'badge-ext'}">${s.mode.slice(0,3)}</span>
-        <span class="ml-auto text-[10px] font-bold soft whitespace-nowrap">${s.credits} cr${s.creditsUnverified?' <span title="Credit value not yet confirmed against NZQA" style="color:var(--gold)">\u2022</span>':''}</span>
-      </div>
-      <p class="text-[13px] font-semibold leading-snug mt-1">${s.title}</p>
-      <span class="spine" style="width:${s.credits/max*100}%"></span>
-    </button>`).join('');
-  document.querySelectorAll('#standards .tile').forEach(b=>b.addEventListener('click',()=>pickStd(b.dataset.code)));
-}
-
-function pickStd(code){
-  sel.std = stds().find(x=>x.code===code);
-  document.querySelectorAll('#standards .tile').forEach(b=>b.setAttribute('aria-pressed', b.dataset.code===code));
-  $('step3').classList.remove('step-dead');
-
-  const own = `<option value="__own__">✏️ Type my own…</option>`;
-  $('topic').innerHTML   = `<option value="">Whole standard</option>` + sel.std.topics.map(t=>`<option>${t}</option>`).join('') + own;
-  $('context').innerHTML = `<option value="">Not decided yet</option>` + sel.std.contexts.map(c=>`<option>${c}</option>`).join('') + own;
-  $('topic-own').classList.add('hidden'); $('context-own').classList.add('hidden');
-  $('topic-own').value=''; $('context-own').value='';
-  $('std-detail').innerHTML = `
-    <div class="brief">
-      <div class="brief-row">
-        <p class="brief-h">In plain English</p>
-        <p class="brief-body">${sel.std.bigIdea}</p>
-      </div>
-      <div class="brief-row brief-alt">
-        <p class="brief-h">What the assessment looks like</p>
-        <p class="brief-body">${sel.std.format}</p>
-      </div>
-      <div class="brief-row">
-        <p class="brief-h">What counts as evidence</p>
-        <p class="brief-body">${sel.std.evidence}</p>
-      </div>
-      <div class="brief-row brief-alt">
-        <p class="brief-h">The three grades</p>
-        <div class="grid sm:grid-cols-3 gap-2">
-          ${['achieved','merit','excellence'].map(k=>`
-            <div class="band">
-              <p class="band-h">${k}</p>
-              <p class="brief-body">${sel.std.criteria[k]}</p>
-            </div>`).join('')}
-        </div>
-      </div>
-      <div class="brief-row brief-key">
-        <p class="brief-h">What actually lifts your grade</p>
-        <p class="brief-body mb-2"><strong>Achieved → Merit:</strong> ${sel.std.bandShift.aToM}</p>
-        <p class="brief-body"><strong>Merit → Excellence:</strong> ${sel.std.bandShift.mToE}</p>
-      </div>
-      <div class="brief-row">
-        <div class="grid sm:grid-cols-2 gap-5">
-          <div>
-            <p class="brief-h">Misconceptions to check</p>
-            <ul class="brief-list">${sel.std.misconceptions.map(p=>`<li>— ${p}</li>`).join('')}</ul>
-          </div>
-          <div>
-            <p class="brief-h">Where marks get lost</p>
-            <ul class="brief-list">${sel.std.pitfalls.map(p=>`<li>— ${p}</li>`).join('')}</ul>
-          </div>
-        </div>
-      </div>
-      <div class="brief-row brief-alt text-center">
-        <button id="to-modes" class="btn-go">Got it — take me to my prompt →</button>
-      </div>
-    </div>`;
-  $('to-modes').addEventListener('click', ()=>{
-    $('step3').scrollIntoView({behavior:'smooth', block:'start'});
-  });
-  setStep(2, true, 'AS'+sel.std.code, `${sel.std.title}`);
-  $('ab-label').textContent = `AS${sel.std.code} · ${sel.std.credits} cr · ${sel.std.mode}`;
-  $('brief-toggle').classList.remove('hidden');
-  showBrief(false);
-  $('nzqa').href = `https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=${sel.std.code}`;
-  build();
-}
-
-function renderModes(){
-  $('modes').innerHTML = Object.entries(MODES).map(([k,m])=>`
-    <button class="tile text-left px-3 py-2.5${m.accent?' tile-accent':''}" aria-pressed="false" data-k="${k}"
-            ${m.accent?`style="--fac-dark:${m.accent}"`:''}>
-      <p class="font-bold hd text-[13px] leading-tight">${m.label}${m.badge?` <span class="mode-badge">${m.badge}</span>`:''}</p>
-      <p class="text-[11px] soft leading-snug mt-0.5">${m.blurb}</p>
-    </button>`).join('');
-  document.querySelectorAll('#modes .tile').forEach(b=>b.addEventListener('click',()=>{
-    sel.mode = b.dataset.k;
-    markModes();
-    build();
-  }));
-}
-
-/* A finished step collapses to a single line you can click to reopen. */
-function setStep(n, collapsed, tag, text){
-  const crumb = $('crumb'+n), pick = $('pick'+n);
-  if(collapsed){
-    crumb.innerHTML = `<span class="crumb-tag">${tag}</span><span>${text}</span><span class="crumb-edit">Change</span>`;
-    crumb.classList.remove('hidden');
-    pick.classList.add('hidden');
-  } else {
-    crumb.classList.add('hidden');
-    pick.classList.remove('hidden');
-  }
-}
-
-function showBrief(open){
-  $('std-detail').classList.toggle('hidden', !open);
-  $('brief-toggle-label').textContent = open
-    ? '▾ Hide the standard briefing'
-    : '▸ Show me what this standard actually needs';
-}
-
-function pick(id){
-  const v = $(id).value;
-  return v === '__own__' ? $(id+'-own').value.trim() : v;
-}
-
-/* ---- Shareable links ----------------------------------------------------
-   The whole selection lives in the query string, so a teacher can send a
-   link that opens directly on one standard in one mode. -------------------*/
-function syncURL(){
-  const p = new URLSearchParams();
-  if(sel.level)   p.set('level', sel.level);
-  if(sel.subject) p.set('subject', sel.subject);
-  if(sel.std)     p.set('std', sel.std.code);
-  if(sel.mode)    p.set('mode', sel.mode);
-  if(sel.std){
-    const t = pick('topic'), c = pick('context');
-    if(t) p.set('topic', t);
-    if(c) p.set('context', c);
-  }
-  const q = p.toString();
-  history.replaceState(null, '', q ? '?' + q : location.pathname);
-}
-
-// Set a dropdown to a value, falling back to the "type my own" field.
-function setChoice(id, value){
-  const el = $(id);
-  const match = [...el.options].find(o => o.value === value || o.text === value);
-  if(match){ el.value = match.value; $(id+'-own').classList.add('hidden'); }
-  else { el.value = '__own__'; $(id+'-own').value = value; $(id+'-own').classList.remove('hidden'); }
-}
-
-function markModes(){
-  document.querySelectorAll('#modes .tile').forEach(x =>
-    x.setAttribute('aria-pressed', x.dataset.k === sel.mode));
-}
-
-async function applyURL(){
-  const p = new URLSearchParams(location.search);
-  const lvl = p.get('level');
-  if(!lvl || !LEVELS.some(l => l.id === lvl)) return;
-  await pickLevel(lvl);
-  if(!sel.level) return;                        // level file failed to load
-
-  const sub = p.get('subject');
-  if(!sub || !D().subjects[sub]) return;
-  const fi = D().faculties.findIndex(f => f.subjects.includes(sub));
-  if(fi < 0) return;
-  pickFaculty(fi);
-  pickSubject(sub);
-
-  const code = p.get('std');
-  if(!code || !stds().some(x => x.code === code)) return;
-  pickStd(code);
-
-  if(p.get('topic'))   setChoice('topic', p.get('topic'));
-  if(p.get('context')) setChoice('context', p.get('context'));
-
-  const m = p.get('mode');
-  if(m && MODES[m]){ sel.mode = m; markModes(); }
-  showBrief(true);
-  build();
-  $('step2').scrollIntoView({behavior:'smooth', block:'start'});
-}
-
-async function copyShareLink(btn){
-  syncURL();
-  try { await navigator.clipboard.writeText(location.href); }
-  catch { return; }
-  const original = btn.textContent;
-  btn.textContent = 'Link copied ✓';
-  btn.classList.add('copy-btn-success');
-  setTimeout(()=>{ btn.textContent = original; btn.classList.remove('copy-btn-success'); }, 1800);
-}
-
-/* ---- Search ------------------------------------------------------------
-   Searches the level currently loaded, across code, title, topics and
-   subject name. Selecting a result jumps straight to that standard. ------*/
-function runSearch(){
-  const q = $('search').value.trim().toLowerCase();
-  const box = $('search-results');
-  if(q.length < 2){ box.innerHTML = ''; return; }
-
-  const hits = [];
-  for(const [name, sub] of Object.entries(D().subjects)){
-    for(const st of sub.standards){
-      const hay = [st.code, st.ref, st.title, name, ...(st.topics||[])].join(' ').toLowerCase();
-      if(hay.includes(q)){
-        // exact-ish code matches float to the top
-        hits.push({ subject:name, st, rank: st.code.includes(q) ? 0 : (st.title.toLowerCase().includes(q) ? 1 : 2) });
+  // Place each wanted block at the nearest free slot that is still before its
+  // exam, preferring not to repeat the same subject back to back.
+  wanted.sort((a,b) =>
+    a.item.deadline - b.item.deadline ||   // tightest deadline first
+    b.target - a.target);                  // then latest blocks first
+  const filled = new Array(open.length).fill(null);
+  wanted.forEach(w => {
+    let best = -1, bestScore = Infinity;
+    for(let d = 0; d < open.length; d++){
+      for(const p of [w.target - d, w.target + d]){
+        if(p < 0 || p >= open.length || p >= w.item.deadline) continue;
+        if(filled[p]) continue;
+        const clash = (filled[p-1] && filled[p-1].subject === w.item.subject) ||
+                      (filled[p+1] && filled[p+1].subject === w.item.subject);
+        const sameDay = (filled[p-1] && open[p-1].date === open[p].date &&
+                         filled[p-1].subject === w.item.subject);
+        const score = d + (clash ? 6 : 0) + (sameDay ? 6 : 0);
+        if(score < bestScore){ bestScore = score; best = p; }
       }
+      // keep looking a little past the first hit, but do not scan the whole plan
+      if(best >= 0 && d > bestScore + 8) break;
     }
-  }
-  hits.sort((a,b) => a.rank - b.rank);
+    if(best >= 0) filled[best] = { subject: w.item.subject, st: w.item.st, mode: w.mode, topic: w.topic };
+  });
 
-  if(!hits.length){
-    box.innerHTML = `<p class="sr-none">Nothing in ${D().meta.stage} matches that. Try a standard number, a word from the title, or a topic.</p>`;
+  // The day before an exam belongs to that subject: relabel anything there.
+  items.forEach(i => {
+    if(!i.exam || !i.exam.date) return;
+    const eve = addDays(i.exam.date, -1);
+    open.forEach((slot, n) => {
+      if(slot.date === eve && filled[n] && filled[n].subject !== i.subject && !filled[n].locked){
+        // only take the slot if that subject has time left elsewhere
+        filled[n] = { subject: i.subject, st: i.st, mode: 'recall', eve: true, locked: true };
+      }
+    });
+  });
+
+  open.forEach((slot, n) => { slot.item = filled[n]; });
+  S.cursor = S.cursor || todayISO();
+  return { open, items, used: filled.filter(Boolean).length };
+}
+/* ============================================================
+   NON-AI STUDY METHODS
+   Every block can be done without a screen. Methods are chosen by
+   what the block is for (learn / practise / drill) and by how the
+   subject actually works, so a Calculus block gets worked problems
+   and a History block gets an essay plan.
+   ============================================================ */
+const SUBJECT_TYPE = {
+  'Calculus':'quant', 'Statistics':'quant', 'Mathematics and Statistics':'quant',
+  'Physics':'quant', 'Chemistry':'quant', 'Physics, Earth and Space Science':'quant',
+  'Biology':'science', 'Earth & Space Science':'science', 'Science':'science',
+  'Chemistry and Biology':'science', 'Psychology':'science',
+  'English':'essay', 'History':'essay', 'Classical Studies':'essay',
+  'Art History':'essay', 'Media Studies':'essay', 'Drama':'essay', 'Music':'essay',
+  'Geography':'evidence', 'Business Studies':'evidence', 'Commerce':'evidence',
+  'Health':'evidence', 'Health Studies':'evidence', 'Physical Education':'evidence',
+  'Te Reo Māori':'language', 'Te Ao Haka':'language',
+  'Digital Technologies':'science'
+};
+const typeOf = sub => SUBJECT_TYPE[sub] || 'evidence';
+
+const METHODS = {
+  explainer: {
+    quant: [
+      'Work through the examples in your textbook or workbook with the answers covered, then check.',
+      'Write the method out as numbered steps in your own words, then do one question following only your steps.',
+      'Take a worked example from class and redo it with different numbers you make up.',
+      'Make a one-page formula sheet from memory, then fill the gaps from your notes in a different colour.'
+    ],
+    science: [
+      'Draw the process as a labelled diagram from memory, then correct it against your notes in another colour.',
+      'Turn your class notes into Cornell notes — cues down the left, summary at the bottom.',
+      'Write a one-page summary of this topic without looking, then highlight what you had to leave out.',
+      'Explain the mechanism out loud to someone at home, or to an empty room. Where you stumble is what to reread.'
+    ],
+    essay: [
+      'Reread the key section of the text and write ten quotations with a line on what each shows.',
+      'Build a mind map of the ideas, with evidence hanging off each branch.',
+      'Write a one-page summary of this aspect in your own words, no notes open.',
+      'Teach this idea to someone for five minutes. What you cannot explain simply, you do not have yet.'
+    ],
+    evidence: [
+      'Make a case-study fact sheet: names, figures, dates, places. One page, no sentences.',
+      'Draw the process or issue as a flow diagram showing cause and effect.',
+      'Write a one-page summary from memory, then add what you missed in a different colour.',
+      'Explain this to a family member and get them to ask you why after every sentence.'
+    ],
+    language: [
+      'Kōrero: say the new structures aloud twenty times until they stop feeling foreign.',
+      'Write out the sentence patterns by hand, then build five of your own from each.',
+      'Read a short passage aloud, then retell it in your own words without looking.',
+      'Make vocabulary cards with the word on one side and a full sentence on the other.'
+    ]
+  },
+  exam: {
+    quant: [
+      'Do a past paper question under time, then mark it against the assessment schedule.',
+      'Redo three questions you got wrong last time, from scratch, without looking at the working.',
+      'Set yourself six questions of increasing difficulty and do them in one sitting.',
+      'Do a full past paper section under exam conditions — no notes, timer on, phone in another room.'
+    ],
+    science: [
+      'Do a past paper question, then mark it against the assessment schedule and write what you missed.',
+      'Practise annotated diagrams under time — the marks are in the labels, not the drawing.',
+      'Answer one Excellence-level question and check whether you actually justified rather than described.',
+      'Work through a resource-based question using only the resource, not your memory.'
+    ],
+    essay: [
+      'Write an essay plan for a past exam question in fifteen minutes — thesis, three points, evidence for each.',
+      'Write one full paragraph under time, then check it has a claim, evidence and an explanation of effect.',
+      'Take a past question and write three different opening paragraphs, then pick the strongest.',
+      'Write a full essay under exam conditions, then mark it against the assessment schedule.'
+    ],
+    evidence: [
+      'Answer a past paper question, then check every claim you made has a name, figure or date attached.',
+      'Write a full explanation under time, then underline where you explained rather than described.',
+      'Practise the resource-based skills: read the figures off the graph, state the units, interpret in context.',
+      'Take a past question and write the Excellence sentence only — the one that evaluates or justifies.'
+    ],
+    language: [
+      'Write a response to a past exam prompt under time, then check macrons and tense markers.',
+      'Practise a five-minute conversation with someone, unscripted, on this topic.',
+      'Read an unfamiliar passage and answer questions on it without a dictionary.',
+      'Write the same idea three ways, using a different structure each time.'
+    ]
+  },
+  recall: {
+    quant: [
+      'Blurting: write down every formula and method for this topic from memory, then check and fill gaps.',
+      'Flashcards for formulae and conditions — which method suits which situation.',
+      'Cover the worked example, do it, uncover, compare. Repeat until it is automatic.',
+      'Quick-fire: twenty short questions, no working, just the method you would use.'
+    ],
+    science: [
+      'Blurting: write everything you know about this topic on a blank page, then check what you missed.',
+      'Flashcards for terminology and processes. Test yourself both ways round.',
+      'Recite the process aloud from memory, in order, without prompts.',
+      'Redraw the key diagram from memory and label it fully.'
+    ],
+    essay: [
+      'Blurting: write down every quotation and technique you can remember, then check the text.',
+      'Flashcards with the quotation on one side and its effect on the other.',
+      'Recite your essay plan from memory — thesis, points, evidence.',
+      'Test a classmate on their text and let them test you on yours.'
+    ],
+    evidence: [
+      'Blurting: write every fact, figure and date for this case study from memory, then check.',
+      'Flashcards for case-study specifics. Vague answers do not count — push for the number.',
+      'Recite the case study aloud to someone and have them check your figures against your notes.',
+      'Cover your fact sheet and rebuild it on a blank page.'
+    ],
+    language: [
+      'Vocabulary drill — cover and recall, both directions.',
+      'Say the structures aloud from memory, then check against your notes.',
+      'Write out five sentences from memory using this week\u2019s patterns.',
+      'Listen to a waiata or recording and write down what you understand, then check.'
+    ]
+  }
+};
+
+function methodFor(item, slotIndex){
+  const pool = (METHODS[item.mode] || METHODS.explainer)[typeOf(item.subject)] ||
+               METHODS[item.mode].evidence;
+  // stable choice, so the same block does not change method on every re-render
+  const key = (item.st.code.charCodeAt(3) + slotIndex) % pool.length;
+  return pool[key];
+}
+
+/* ---------- realism ---------- */
+function realism(){
+  const end = lastExamDate();
+  if(!end) return { notes:[], total:0, weeks:0, n:0 };
+  const notes = [];
+  S.periods.forEach(p => {
+    const w = p.hours.reduce((a,b)=>a+b,0);
+    if(w > 35) notes.push({ tone:'warn',
+      text:`${p.name} is set to ${w} hours a week. Even on study leave that is very hard to hold — 25 to 30 with rest built in is a pace people actually keep.` });
+    if(p.hours.every(h => h > 0)) notes.push({ tone:'warn',
+      text:`${p.name} has no day off. Build in at least one — rest is part of the plan, not a failure of it.` });
+    if(p.start > p.end) notes.push({ tone:'bad', text:`${p.name} ends before it starts.` });
+  });
+  const total = buildSlots().length;
+  const n = chosenStandards().length;
+  if(n && total < n * 3) notes.push({ tone:'bad',
+    text:`${n} standards need more time than you have set. Add hours, or drop a standard you are less worried about.` });
+  return { notes, total, n, weeks: Math.max(1, Math.round(daysBetween(planStart(), end)/7)) };
+}
+
+/* Choosing sensibly when a student drops a subject onto a day: take the
+   standard that currently has the least time, and set the mode by how close
+   the exam is. */
+function pickStandardFor(subject, slot){
+  const mine = chosenStandards().filter(x => x.subject === subject);
+  if(!mine.length) return null;
+  const count = {};
+  S.plan.open.forEach(x => { if(x.item && x.item.subject === subject)
+    count[x.item.st.code] = (count[x.item.st.code]||0)+1; });
+  return mine.sort((a,b) => (count[a.st.code]||0) - (count[b.st.code]||0))[0].st;
+}
+/* Add an hour to a day that is already full. This deliberately goes beyond
+   the hours set for that period — a student who wants one more session on a
+   Tuesday should be able to have it, and the day shows it is over plan. */
+function addHourTo(date){
+  if(!S.plan) return;
+  let last = -1, maxIdx = -1;
+  S.plan.open.forEach((x,n) => { if(x.date === date){ last = n; maxIdx = Math.max(maxIdx, x.index); } });
+  const slot = { date, index: maxIdx + 1, item: null, extra: true };
+  if(last === -1){
+    // the day had no slots at all — drop it in date order
+    let at = S.plan.open.findIndex(x => x.date > date);
+    if(at === -1) at = S.plan.open.length;
+    S.plan.open.splice(at, 0, slot);
+    last = at - 1;
+  } else {
+    S.plan.open.splice(last + 1, 0, slot);
+  }
+  if(S.armed) placeInto(last + 1);
+  else { save(); render(); }
+}
+
+function placeInto(n){
+  if(!S.armed || !S.plan) return;
+  const slot = S.plan.open[n];
+  const st = pickStandardFor(S.armed, slot);
+  if(!st) return;
+  const topics = (S.withTopics && st.topics && st.topics.length) ? st.topics : [];
+  slot.item = { subject:S.armed, st, mode: modeForDate(slot.date, S.armed),
+                topic: topics.length ? topics[n % topics.length] : '' };
+  S.plan.used = S.plan.open.filter(x=>x.item).length;
+  save(); render();
+}
+
+function modeForDate(date, subject){
+  const ex = S.exams[subject];
+  if(!ex || !ex.date) return 'explainer';
+  const left = daysBetween(date, ex.date);
+  return left <= 7 ? 'recall' : left <= 21 ? 'exam' : 'explainer';
+}
+
+function dayCapacity(date){
+  if(!S.plan) return '';
+  const on = S.plan.open.filter(x => x.date === date);
+  const planned = hoursOn(date);
+  const extra = on.filter(x => x.extra).length;
+  if(!on.length && !planned) return '';
+  return `<p class="tt-cap${extra?' tt-over':''}">${on.length} hour${on.length===1?'':'s'} on this day` +
+    (extra ? ` — ${extra} more than you planned for` : planned ? '' : ' — a day you had set aside') + `</p>`;
+}
+
+/* The exam itself, drawn in the subject colour so it reads as the deadline
+   every block before it is working toward. */
+function examBanner(date, size){
+  const sitting = S.subjects.filter(s => S.exams[s] && S.exams[s].date === date);
+  const eve     = S.subjects.filter(s => S.exams[s] && addDays(S.exams[s].date,-1) === date);
+  if(!sitting.length && !eve.length) return '';
+
+  const time = sub => (E().sessions.find(x => x.id === S.exams[sub].session) || {}).start || '';
+  const out = [];
+
+  sitting.forEach(sub => {
+    if(size === 'xs') out.push(
+      `<span class="tt-exam-xs" title="${sub} exam — ${S.exams[sub].session} ${time(sub)}">${sub}</span>`);
+    else if(size === 'sm') out.push(
+      `<div class="tt-exambar tt-exam-sm"><strong>${sub}</strong><span>EXAM ${S.exams[sub].session} ${time(sub)}</span></div>`);
+    else out.push(
+      `<div class="tt-exambar"><span class="tt-exampill">EXAM</span><strong>${sub}</strong>
+        <span class="tt-examwhen">${(E().sessions.find(x=>x.id===S.exams[sub].session)||{}).label||''} · ${time(sub)}</span></div>`);
+  });
+
+  // The night before is its own kind of day — same gold, quieter treatment,
+  // and it names the subject so the student knows what to be revising.
+  eve.filter(sub => !sitting.includes(sub)).forEach(sub => {
+    if(size === 'xs') out.push(`<span class="tt-eve-xs" title="${sub} exam tomorrow">${sub} eve</span>`);
+    else if(size === 'sm') out.push(`<div class="tt-evebar tt-exam-sm"><strong>${sub}</strong><span>EXAM TOMORROW</span></div>`);
+    else out.push(`<div class="tt-evebar"><span class="tt-exampill">TOMORROW</span><strong>${sub}</strong>
+      <span class="tt-examwhen">Last chance to revise</span></div>`);
+  });
+
+  return out.join('');
+}
+
+const modeLabel = m => ({ explainer:'Learn it', exam:'Practise it', recall:'Drill it' })[m] || m;
+const blocksOn = d => S.plan ? S.plan.open.filter(s => s.date === d && s.item) : [];
+const examsOn  = d => S.subjects.filter(s => S.exams[s] && S.exams[s].date === d);
+
+/* ============================================================
+   VIEWS — long views show colour only, short views show detail
+   ============================================================ */
+function viewBar(){
+  const views = [['day','Day'],['week','Week'],['month','Month'],['full','Full plan']];
+  const label = S.view==='day'   ? pretty(S.cursor,{weekday:'long',day:'numeric',month:'long'})
+              : S.view==='week'  ? 'Week of ' + pretty(weekStart(S.cursor))
+              : S.view==='month' ? pretty(S.cursor,{month:'long',year:'numeric'})
+              : 'Whole plan';
+  return `<div class="tt-viewbar">
+    <div class="flex gap-1">${views.map(([v,l])=>
+      `<button class="tt-view" data-v="${v}" aria-pressed="${S.view===v}">${l}</button>`).join('')}</div>
+    ${S.view!=='full' ? `<div class="tt-nav">
+      <button class="tt-arrow" data-step="-1">&lsaquo;</button>
+      <span class="tt-navlabel">${label}</span>
+      <button class="tt-arrow" data-step="1">&rsaquo;</button>
+      <button class="tt-today">Today</button></div>`
+      : `<span class="tt-navlabel">${label}</span>`}
+    <div class="tt-legend">${S.subjects.map(s=>
+      `<span class="tt-key"><i style="background:${hueFor(s)}"></i>${s}</span>`).join('')}</div>
+  </div>`;
+}
+
+function blockHTML(slot, n){
+  const it = slot.item;
+  const q = `?level=${S.level}&subject=${encodeURIComponent(it.subject)}&std=${it.st.code}&mode=${it.mode}` +
+            (it.topic ? `&topic=${encodeURIComponent(it.topic)}` : '');
+  /* In Mix, alternate deterministically so the same block always shows the
+     same thing — about half AI, half off-screen, for variety rather than a
+     diet of one or the other. */
+  const aiTurn = S.howMode === 'ai' ||
+    (S.howMode === 'mix' && (n + it.st.code.charCodeAt(4)) % 2 === 0);
+  const showsMethod = S.howMode === 'offline' || (S.howMode === 'mix' && !aiTurn);
+
+  const actions = S.howMode === 'none' ? ''
+    : aiTurn
+      ? `<div class="tt-acts">
+           <a class="tt-open" href="${q}" title="Open this in the prompt builder">Open &#8599;</a>
+           <button class="tt-gem" data-sub="${encodeURIComponent(it.subject)}" data-code="${it.st.code}"
+             data-mode="${it.mode}" data-topic="${encodeURIComponent(it.topic||'')}"
+             title="Copy the prompt and open Gemini">Gemini &#8599;</button>
+         </div>`
+      : `<div class="tt-how">${methodFor(it, n)}</div>`;
+
+  return `<div class="tt-block${showsMethod?' tt-offline':''}${slot.extra?' tt-extra':''}" style="--hue:${hueFor(it.subject)}">
+    <button class="tt-del" data-slot="${n}" title="Clear this block">&times;</button>
+    <div class="tt-bmeta"><strong>${it.subject}</strong> · AS${it.st.code}
+      <span class="tt-mode">${modeLabel(it.mode)}</span></div>
+    <div class="tt-btitle">${it.topic ? it.topic : it.st.title}</div>
+    ${actions}</div>`;
+}
+
+/* An unused slot is a place the student can drop a subject into. */
+function emptyHTML(n){
+  return `<button class="tt-slot" data-empty="${n}" title="${S.armed ? 'Place ' + S.armed + ' here' : 'Pick a subject above first'}">+</button>`;
+}
+
+function dayView(){
+  const d = S.cursor;
+  const b = S.plan ? S.plan.open.map((s,n)=>({s,n})).filter(x => x.s.date === d) : [];
+  return `<div class="tt-dayview">
+    ${examBanner(d)}
+    ${b.length ? b.map(x => x.s.item ? blockHTML(x.s, x.n) : emptyHTML(x.n)).join('')
+      : `<p class="text-sm soft mb-2">Nothing planned for this day.</p>`}
+    ${dayCapacity(d)}
+    <button class="tt-addhr" data-date="${d}">${S.armed ? '+ Add ' + S.armed + ' here' : '+ Add another hour'}</button>
+  </div>`;
+}
+
+function weekView(){
+  const start = weekStart(S.cursor);
+  return `<div class="tt-week">${WEEKDAYS.map((w,i)=>{
+    const d = addDays(start,i), ex = examsOn(d);
+    const b = S.plan ? S.plan.open.map((s,n)=>({s,n})).filter(x => x.s.date === d) : [];
+    return `<div class="tt-wday${d===todayISO()?' tt-today-col':''}">
+      <div class="tt-wdh">${w}<span>${pretty(d,{day:'numeric',month:'short'})}</span></div>
+      ${examBanner(d,'sm')}
+      ${b.length ? b.map(x => x.s.item ? blockHTML(x.s, x.n) : emptyHTML(x.n)).join('') : `<p class="tt-empty">&mdash;</p>`}
+      <button class="tt-addhr tt-addsm" data-date="${d}" title="${S.armed ? 'Add '+S.armed+' to this day' : 'Add another hour to this day'}">+</button>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function monthView(anchor){
+  const first = monthStart(anchor || S.cursor), lead = wdIndex(first);
+  const m = monthOf(first);
+  const cells = new Array(lead).fill(null);
+  let d = first;
+  while(monthOf(d) === m){ cells.push(d); d = addDays(d,1); }
+  return `<div class="tt-monthwrap">
+    <p class="tt-mtitle">${pretty(first,{month:'long', year:'numeric'})}</p>
+    <div class="tt-month">
+    ${WEEKDAYS.map(w=>`<div class="tt-mh">${w}</div>`).join('')}
+    ${cells.map(c=>{
+      if(!c) return `<div class="tt-mcell tt-mout"></div>`;
+      const ex = examsOn(c);
+      const rows = S.plan ? S.plan.open.map((x,n)=>({x,n})).filter(o => o.x.date === c) : [];
+      const chips = rows.map(o => o.x.item
+        ? `<span class="tt-mname" style="--hue:${hueFor(o.x.item.subject)}" title="${o.x.item.subject} — AS${o.x.item.st.code}">
+             ${o.x.item.subject}<button class="tt-del tt-mdel" data-slot="${o.n}" title="Clear">&times;</button></span>`
+        : `<button class="tt-mslot" data-empty="${o.n}" title="${S.armed?'Place '+S.armed+' here':'Pick a subject above first'}">+</button>`
+      ).join('');
+      return `<div class="tt-mcell${c===todayISO()?' tt-today-cell':''}${ex.length?' tt-mexamday':''}">
+        <span class="tt-mnum" data-goto="${c}" title="Open this day">${+c.slice(8)}</span>
+        ${examBanner(c,'xs')}
+        <div class="tt-mnames">${chips}</div>
+        <button class="tt-addhr tt-maddhr" data-date="${c}" title="${S.armed ? 'Add '+S.armed : 'Add another hour'}">+</button>
+      </div>`;
+    }).join('')}
+    </div></div>`;
+}
+
+function subjectMatrix(){
+  const weeks = {};
+  S.plan.open.forEach(s => { const w = weekStart(s.date); (weeks[w]=weeks[w]||[]).push(s); });
+  const list = Object.keys(weeks).sort();
+  let t = `<div class="tt-scroll"><table class="tt-table"><thead><tr><th class="tt-sub">Subject</th>` +
+    list.map((w,i)=>`<th>W${i+1}<span class="tt-wk">${pretty(w,{day:'numeric',month:'short'})}</span></th>`).join('') +
+    `<th>Exam</th></tr></thead><tbody>`;
+  S.subjects.forEach(sub=>{
+    t += `<tr><td class="tt-sub"><i class="tt-dot" style="background:${hueFor(sub)}"></i>${sub}</td>`;
+    const exDate = S.exams[sub] && S.exams[sub].date;
+    list.forEach(w=>{
+      const n = weeks[w].filter(s => s.item && s.item.subject === sub).length;
+      const isExamWeek = exDate && exDate >= w && exDate <= addDays(w,6);
+      if(isExamWeek){
+        t += `<td class="tt-examcell" style="--hue:${hueFor(sub)}" title="${sub} exam this week">
+                ${n?n+'h ':''}<span class="tt-examtag">EXAM</span></td>`;
+      } else {
+        t += `<td class="${n?'tt-has':'tt-none'}"${n?` style="background:color-mix(in srgb,${hueFor(sub)} ${Math.min(55,n*9)}%,transparent)"`:''}>${n?n+'h':'·'}</td>`;
+      }
+    });
+    const e = S.exams[sub];
+    t += `<td class="tt-exam">${e&&e.date?pretty(e.date,{day:'numeric',month:'short'})+' '+e.session:'—'}</td></tr>`;
+  });
+  return t + `</tbody></table></div>
+    <p class="text-xs soft mt-2">Hours per week. A pale or empty row means that subject is being neglected.</p>`;
+}
+
+function fullCalendar(){
+  const dates = S.plan.open.map(s => s.date).sort();
+  if(!dates.length) return '';
+  let m = monthStart(dates[0]);
+  const last = monthStart(dates[dates.length-1]);
+  const out = [];
+  let guard = 0;
+  while(m <= last && guard++ < 18){ out.push(monthView(m)); m = addMonths(m, 1); }
+  return `<div class="tt-months">${out.join('')}</div>`;
+}
+
+function fullView(){
+  return `<div class="tt-fullswitch">
+      <button class="tt-fm" data-m="subject" aria-pressed="${S.fullMode==='subject'}">By subject</button>
+      <button class="tt-fm" data-m="calendar" aria-pressed="${S.fullMode==='calendar'}">Calendar</button>
+    </div>
+    ${S.fullMode==='calendar' ? fullCalendar() : subjectMatrix()}`;
+}
+
+function renderPlan(){
+  const p = S.plan; if(!p) return '';
+  const body = S.view==='day' ? dayView() : S.view==='week' ? weekView()
+             : S.view==='month' ? monthView() : fullView();
+  return `<div class="panel p-4 md:p-5 tt-plan">
+    <div class="tt-planhead mb-3">
+      <div class="tt-ph-side">
+        <h3 class="sec-h">Your plan</h3><span class="text-xs soft">${p.used} study blocks</span>
+      </div>
+      <div class="tt-how-switch" role="group" aria-label="How to study each block">
+        ${[['ai','With AI'],['mix','Mix'],['offline','Without AI'],['none','None']].map(([k,l])=>
+          `<button class="tt-hm" data-h="${k}" aria-pressed="${S.howMode===k}">${l}</button>`).join('')}
+      </div>
+      <div class="tt-ph-side tt-ph-right">
+        <button id="tt-ics" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Add to calendar</button>
+        <button id="tt-print" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Print this view</button>
+        <button id="tt-regen" class="btn-go px-3 py-1.5 text-[11px]">Regenerate</button>
+      </div>
+    </div>
+    ${viewBar()}
+    ${`<div class="tt-armbar">
+      <span class="tt-armlabel">${S.armed ? 'Click a + to place ' + S.armed : 'Add a block:'}</span>
+      ${S.subjects.map(sub=>`<button class="tt-arm" data-s="${sub}" aria-pressed="${S.armed===sub}"
+        style="--hue:${hueFor(sub)}">${sub}</button>`).join('')}
+      ${S.armed?`<button class="tt-arm tt-armoff">Cancel</button>`:''}
+    </div>`}
+    ${body}
+  </div>`;
+}
+
+/* ---------- calendar file ---------- */
+function toICS(){
+  const p = S.plan; if(!p) return '';
+  const pad = n => String(n).padStart(2,'0');
+  const at = (d,h) => d.replace(/-/g,'') + 'T' + pad(h) + '0000';
+  const out = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//WHS//NCEA Master Tutor//EN','CALSCALE:GREGORIAN'];
+  p.open.forEach((s,n)=>{
+    if(!s.item) return;
+    const it = s.item, h = Math.min(21, 16 + s.index);
+    const url = location.origin + location.pathname +
+      `?level=${S.level}&subject=${encodeURIComponent(it.subject)}&std=${it.st.code}&mode=${it.mode}`;
+    out.push('BEGIN:VEVENT', `UID:whs-${s.date}-${n}@ncea`,
+      `DTSTART:${at(s.date,h)}`, `DTEND:${at(s.date,h+1)}`,
+      `SUMMARY:${it.subject} — AS${it.st.code} (${modeLabel(it.mode)})`,
+      `DESCRIPTION:${it.st.title}\\n\\nOpen your prompt: ${url}`, `URL:${url}`, 'END:VEVENT');
+  });
+  return out.concat('END:VCALENDAR').join('\r\n');
+}
+/* Print just the plan. Opening a clean window avoids fighting the page's
+   own layout and lets the student Save as PDF from the same dialog. */
+function printPlan(){
+  const node = R().querySelector('.tt-plan');
+  if(!node) return;
+  const css = [...document.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  const w = window.open('', '_blank', 'width=1100,height=800');
+  if(!w) return;
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>NCEA study plan</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <style>${css}
+      body{ background:#fff; padding:18px; font-family:Manrope,sans-serif; }
+      .tt-acts,.tt-del,.tt-slot,.tt-armbar,.tt-viewbar,.tt-fullswitch{ display:none!important; }
+      .panel{ box-shadow:none!important; border:0!important; }
+      @page{ margin:12mm; }
+    </style></head><body>
+    <h1 style="font-size:17px;font-weight:800;margin-bottom:2px">NCEA study plan</h1>
+    <p style="font-size:11px;color:#555;margin-bottom:12px">${S.subjects.join(' · ')}</p>
+    ${node.innerHTML}
+    </body></html>`);
+  w.document.close();
+  setTimeout(()=>{ w.focus(); w.print(); }, 400);
+}
+
+function download(name,text,type){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text],{type})); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+load();
+S.cursor = S.cursor || todayISO();
+
+window.Timetable = { open: render, state: S, generate, realism, toICS, reset: wipe };
+
+/* ============================================================
+   UI
+   ============================================================ */
+function render(){
+  if(!window.NCEA_DATA || !window.NCEA_DATA[S.level]){
+    R().innerHTML = `<div class="panel p-5"><p class="text-sm">Loading Level ${S.level}…</p></div>`;
+    const t = document.createElement('script');
+    t.src = 'ncea-l' + S.level + '.js?v=7';
+    t.onload = render;
+    t.onerror = () => R().innerHTML =
+      `<div class="panel p-5"><p class="text-sm">Could not load ncea-l${S.level}.js. It needs to sit in the same folder as this page.</p></div>`;
+    document.head.appendChild(t);
     return;
   }
-  const shown = hits.slice(0, 8);
-  box.innerHTML = `<div class="sr-list">` + shown.map(h => `
-    <button class="sr-item" data-subject="${h.subject}" data-code="${h.st.code}">
-      <span class="sr-code">AS${h.st.code}</span>
-      <span class="sr-sub"> · ${h.subject}</span>
-      <span class="sr-sub"> · ${h.st.mode}</span>
-      <p class="sr-title">${h.st.title}</p>
-    </button>`).join('') + `</div>`
-    + (hits.length > shown.length ? `<p class="sr-none">${hits.length - shown.length} more — keep typing to narrow it down.</p>` : '');
-
-  document.querySelectorAll('.sr-item').forEach(b =>
-    b.addEventListener('click', () => jumpTo(b.dataset.subject, b.dataset.code)));
+  if(S.savedPlan) rehydrate();
+  R().innerHTML = stepLevel() + stepSubjects() + stepStandards() + stepExams() +
+                  stepPeriods() + stepGo() + (S.plan ? renderPlan() : '') +
+                  `<p class="tt-build">${TT_BUILD}</p>`;
+  wire();
+  save();
 }
 
-function jumpTo(subject, code){
-  const fi = D().faculties.findIndex(f => f.subjects.includes(subject));
-  if(fi < 0) return;
-  pickFaculty(fi);
-  pickSubject(subject);
-  pickStd(code);
-  $('search').value = '';
-  $('search-results').innerHTML = '';
-  $('step2').scrollIntoView({behavior:'smooth', block:'start'});
+function stepLevel(){
+  return `<div class="panel p-4 md:p-5">
+    <h3 class="sec-h mb-2">NCEA level</h3>
+    <div class="flex flex-wrap gap-2">${['1','2','3'].map(l=>
+      `<button class="fac-pill lvl-pill tt-lvl" data-l="${l}" aria-pressed="${S.level===l}">Level ${l}</button>`).join('')}</div>
+  </div>`;
 }
 
-/* Compose a prompt from plain values, independent of any UI state.
-   build() uses it, and so does the study timetable. */
-function composePrompt({ level, subject, code, mode, topic, context }){
-  const d = window.NCEA_DATA && window.NCEA_DATA[level];
-  if(!d) return '';
-  const sub = d.subjects[subject];
-  if(!sub) return '';
-  const s = sub.standards.find(x => x.code === code);
-  const m = MODES[mode];
-  if(!s || !m) return '';
-  const internal = s.mode === 'internal';
+function stepSubjects(){
+  const all = externalSubjects();
+  const facs = D().faculties.filter(f => f.subjects.some(n => all.includes(n)));
+  return `<div class="panel p-4 md:p-5">
+    <h3 class="sec-h mb-1">Which subjects are you sitting?</h3>
+    <p class="text-xs soft mb-3">Only subjects with external exams appear. Choose up to ${MAX_SUBJECTS}.</p>
+    <div class="flex flex-wrap gap-2 mb-3">${facs.map((f,i)=>
+      `<button class="fac-pill tt-fac" data-i="${i}" aria-pressed="${S.faculty===i}"
+        style="--fac-dark:${f.dark};--fac-light:${f.light}">${f.name}</button>`).join('')}</div>
+    ${S.faculty!=null ? `<div class="flex flex-wrap gap-2 mb-3">${
+      facs[S.faculty].subjects.filter(n=>all.includes(n)).map(n=>
+      `<button class="subj-pill tt-pick" data-n="${n}" aria-pressed="${S.subjects.includes(n)}"
+        style="--fac-dark:${facs[S.faculty].dark};--fac-light:${facs[S.faculty].light}">${n}</button>`).join('')}</div>` : ''}
+    <div class="tt-basket">${S.subjects.length
+      ? S.subjects.map(n=>`<span class="tt-chip" style="background:${hueFor(n)}">${n}<button class="tt-x" data-n="${n}">&times;</button></span>`).join('')
+        + `<span class="text-xs soft ml-2">${S.subjects.length} of ${MAX_SUBJECTS}</span>`
+      : `<span class="text-xs soft">Nothing chosen yet.</span>`}</div>
+  </div>`;
+}
 
-  const block =
-`<standard>
-Qualification: ${d.meta.qualification} ${d.meta.stage} ${subject} (${d.meta.year})
-Standard: AS${s.code} (${s.ref}) — ${s.credits} credits${s.creditsUnverified?' (credit value not yet confirmed against NZQA)':''} — ${s.mode}ly assessed
-Title: ${s.title}
-What it asks for: ${s.bigIdea}
-Assessment format: ${s.format}
-What counts as evidence here: ${s.evidence}
+function stepStandards(){
+  if(!S.subjects.length) return '';
+  return `<div class="panel p-4 md:p-5">
+    <h3 class="sec-h mb-1">Which standards are you sitting?</h3>
+    <p class="text-xs soft mb-3">All ticked to start with. Untick anything you are not doing.</p>
+    ${S.subjects.map(sub=>`<div class="tt-stdgroup">
+      <p class="tt-stdsub" style="color:${hueFor(sub)}">${sub}</p>
+      ${externalStandards(sub).map(st=>`<label class="tt-check">
+        <input type="checkbox" data-sub="${sub}" data-code="${st.code}"
+          ${S.standards[sub]&&S.standards[sub].has(st.code)?'checked':''}>
+        <span><strong>AS${st.code}</strong> · ${st.credits} cr — ${st.title}</span></label>`).join('')}
+    </div>`).join('')}
+  </div>`;
+}
 
-Grade criteria for this standard:
-  Achieved:   ${s.criteria.achieved}
-  Merit:      ${s.criteria.merit}
-  Excellence: ${s.criteria.excellence}
+function stepExams(){
+  if(!S.subjects.length) return '';
+  return `<div class="panel p-4 md:p-5">
+    <h3 class="sec-h mb-1">Exam dates</h3>
+    <p class="text-xs soft mb-3">Pre-filled from the ${E().year} timetable. Check yours on
+      <a href="${E().timetableUrl}" target="_blank" rel="noopener" class="underline">NZQA</a>.</p>
+    ${S.subjects.map(sub=>{
+      const ex = S.exams[sub]||{}, prob = ex.date ? E().checkDate(ex.date) : 'No date yet.';
+      return `<div class="tt-examrow">
+        <span class="tt-examsub"><i class="tt-dot" style="background:${hueFor(sub)}"></i>${sub}</span>
+        <input type="date" class="field tt-date" data-sub="${sub}" value="${ex.date||''}"
+          min="${E().window.start}" max="${E().window.end}">
+        <select class="field tt-sess" data-sub="${sub}">${E().sessions.map(s=>
+          `<option value="${s.id}" ${ex.session===s.id?'selected':''}>${s.label} ${s.start}</option>`).join('')}</select>
+        <span class="tt-warn">${prob||''}</span></div>`;
+    }).join('')}
+    ${examConfirmBox()}
+  </div>`;
+}
 
-What actually lifts the grade in this standard:
-  Achieved to Merit:    ${s.bandShift.aToM}
-  Merit to Excellence:  ${s.bandShift.mToE}
+/* Wrong exam dates would quietly wreck the whole plan, so the student has to
+   look at them once and say they are right before anything gets built. */
+function examConfirmBox(){
+  const bad = S.subjects.filter(s => !S.exams[s] || !S.exams[s].date || E().checkDate(S.exams[s].date));
+  if(bad.length) return `<div class="tt-confirm tt-confirm-bad">
+    Still to sort: ${bad.join(', ')}. Every subject needs a date inside the exam period.</div>`;
+  if(S.examsConfirmed) return `<div class="tt-confirm tt-confirm-ok">
+    <span>Dates confirmed.</span>
+    <button id="tt-unconfirm" class="tt-linkbtn">Change them</button></div>`;
+  return `<div class="tt-confirm">
+    <p class="tt-confirm-q">Check these against your own NZQA timetable before you go on — the whole plan is built backwards from these dates and times.</p>
+    <ul class="tt-confirm-list">${S.subjects.map(sub=>{
+      const ex = S.exams[sub];
+      const sess = E().sessions.find(x => x.id === ex.session) || {};
+      return `<li><i class="tt-dot" style="background:${hueFor(sub)}"></i>
+        <strong>${sub}</strong> — ${pretty(ex.date,{weekday:'long', day:'numeric', month:'long'})},
+        ${sess.label||''} ${sess.start||''}</li>`;
+    }).join('')}</ul>
+    <button id="tt-confirm" class="btn-go">These dates and times are right</button>
+  </div>`;
+}
 
-Command verbs used in this standard: ${s.verbs.join(', ')}${sub.verifyNote ? '\nSubject note: ' + sub.verifyNote : ''}
-${sub.lens}
-How this subject reasons: ${sub.discipline}
+function stepPeriods(){
+  if(!S.subjects.length) return '';
+  const r = realism();
+  return `<div class="panel p-4 md:p-5">
+    <h3 class="sec-h mb-1">When can you study?</h3>
+    <p class="text-xs soft mb-3">How much you can do changes across the year, so set it per period.
+      Term-time is squeezed; holidays and study leave are not. Edit the dates to match your school.</p>
+    ${S.periods.map((p,i)=>`<div class="tt-period">
+      <div class="tt-pmeta">
+        <input class="field tt-pname" data-i="${i}" value="${p.name}">
+        <input type="date" class="field tt-pd" data-i="${i}" data-k="start" value="${p.start}">
+        <span class="soft text-xs">to</span>
+        <input type="date" class="field tt-pd" data-i="${i}" data-k="end" value="${p.end}">
+        <span class="text-xs soft ml-auto">${p.hours.reduce((a,b)=>a+b,0)} h/week</span>
+        <button class="tt-prem" data-i="${i}" title="Remove this period">&times;</button>
+      </div>
+      <div class="tt-hours">${WEEKDAYS.map((w,d)=>`<label class="tt-hour"><span>${w}</span>
+        <input type="number" min="0" max="10" class="field tt-ph" data-i="${i}" data-d="${d}" value="${p.hours[d]}"></label>`).join('')}</div>
+    </div>`).join('')}
+    <button id="tt-addp" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold mt-2">+ Add a period</button>
+    <div class="mt-3">
+      <span class="text-[10px] font-black uppercase tracking-widest soft">Individual days off</span>
+      <div class="tt-offrow">
+        <input type="date" id="tt-offdate" class="field" min="${planStart()}">
+        <button id="tt-offadd" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Add this day</button>
+        <button id="tt-offcal" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">
+          ${S.pickerOpen ? 'Close calendar' : 'Pick from a calendar'}</button>
+      </div>
+      ${S.pickerOpen ? offPicker() : ''}
+      <div class="tt-offlist">
+        ${S.blackouts.length
+          ? S.blackouts.slice().sort().map(d =>
+              `<span class="tt-offchip">${pretty(d)}<button class="tt-offx" data-d="${d}" title="Remove">&times;</button></span>`).join('')
+          : `<span class="text-xs soft">No days off set. Weekends already follow the hours you set above.</span>`}
+      </div>
+    </div>
+    <p class="text-xs soft mt-2">${r.total} study blocks available before your last exam.</p>
+    ${r.notes.map(n=>`<div class="tt-note ${n.tone}">${n.text}</div>`).join('')}
+  </div>`;
+}
 
-Misconceptions to watch for in this student:
-${s.misconceptions.map(x=>'  - '+x).join('\n')}
+/* A month grid for marking days off. Clicking a day toggles it, so a long
+   weekend away is three clicks rather than typing three dates. */
+function offPicker(){
+  const m = monthStart(S.pickerMonth || planStart());
+  const lead = wdIndex(m), mi = monthOf(m);
+  const cells = new Array(lead).fill(null);
+  let d = m;
+  while(monthOf(d) === mi){ cells.push(d); d = addDays(d,1); }
+  const end = lastExamDate();
+  return `<div class="tt-offcal">
+    <div class="tt-offhead">
+      <button class="tt-offnav" data-step="-1">&lsaquo;</button>
+      <span>${pretty(m,{month:'long', year:'numeric'})}</span>
+      <button class="tt-offnav" data-step="1">&rsaquo;</button>
+    </div>
+    <div class="tt-offgrid">
+      ${WEEKDAYS.map(w=>`<div class="tt-offdow">${w[0]}</div>`).join('')}
+      ${cells.map(c=>{
+        if(!c) return `<span></span>`;
+        const off = S.blackouts.includes(c);
+        const outside = !periodFor(c) || (end && c > end);
+        const none = hoursOn(c) === 0 && !off;
+        return `<button class="tt-offday${off?' is-off':''}${outside?' is-out':''}${none?' is-none':''}"
+          data-d="${c}" title="${off ? 'A day off — click to undo'
+            : outside ? 'Outside your study period'
+            : none ? 'Already zero hours that weekday' : 'Click to take this day off'}">${+c.slice(8)}</button>`;
+      }).join('')}
+    </div>
+    <p class="tt-offhint">Click a date to take it off. Grey days already have no study hours.</p>
+  </div>`;
+}
 
-Where students lose marks in this standard:
-${s.pitfalls.map(x=>'  - '+x).join('\n')}${topic ? '\n\nTopic focus: ' + topic : ''}${context ? '\nCase study / context: ' + context : ''}
-</standard>`;
+function stepGo(){
+  if(!S.subjects.length) return '';
+  const n = chosenStandards().length;
+  const dated = S.subjects.every(s => S.exams[s] && S.exams[s].date && !E().checkDate(S.exams[s].date));
+  const ready = n>0 && dated && S.examsConfirmed;
+  return `<div class="panel p-4 md:p-5 flex flex-wrap items-center gap-3">
+    <button id="tt-go" class="btn-go"${ready?'':' disabled style="opacity:.5;cursor:not-allowed"'}>
+      ${S.plan?'Rebuild my timetable':'Create my study timetable'}</button>
+    <label class="tt-toggle"><input type="checkbox" id="tt-topics" ${S.withTopics?'checked':''}>
+      <span>Give each block a specific topic</span></label>
+    <span class="text-xs soft">${n} standard${n===1?'':'s'} selected${
+      ready ? '' : !dated ? ' — every subject needs a valid exam date'
+             : ' — confirm your exam dates above first'}</span>
+    <button id="tt-reset" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold ml-auto">Start again</button>
+  </div>`;
+}
 
-  const parts = [CORE];
-  if(sub.language)    parts.push(sub.language);
-  if(sub.subjectRule) parts.push(sub.subjectRule);
-  parts.push(DEPTH_BY_LEVEL[level] || DEPTH_BY_LEVEL['3'], block, m.body);
-  (m.blocks || []).forEach(k => {
-    const key = (k === 'parallel' && !internal) ? 'worked' : k;
-    if(BLOCKS[key]) parts.push(BLOCKS[key]);
+function wire(){
+  const q = (s,fn) => R().querySelectorAll(s).forEach(fn);
+  const one = s => R().querySelector(s);
+
+  q('.tt-lvl', b => b.onclick = () => {
+    S.level = b.dataset.l; S.faculty=null; S.subjects=[]; S.standards={}; S.exams={}; S.plan=null; render();
   });
-  if(internal) parts.push(INTERNAL_GUARD);
-  return parts.join('\n\n---\n\n');
-}
-window.composePrompt = composePrompt;
+  q('.tt-fac', b => b.onclick = () => { S.faculty = +b.dataset.i; render(); });
+  q('.tt-pick', b => b.onclick = () => {
+    const n = b.dataset.n;
+    if(S.subjects.includes(n)) S.subjects = S.subjects.filter(x=>x!==n);
+    else if(S.subjects.length < MAX_SUBJECTS){
+      S.subjects.push(n);
+      S.standards[n] = new Set(externalStandards(n).map(x=>x.code));
+      const d = E().dateFor(S.level, n);
+      S.exams[n] = d ? { date:d.date, session:d.session } : { date:'', session:'AM' };
+    }
+    S.examsConfirmed = false; S.plan = null; render();
+  });
+  q('.tt-x', b => b.onclick = () => { S.subjects = S.subjects.filter(x=>x!==b.dataset.n); S.examsConfirmed=false; S.plan=null; render(); });
+  q('.tt-check input', el => el.onchange = () => {
+    const s = S.standards[el.dataset.sub];
+    el.checked ? s.add(el.dataset.code) : s.delete(el.dataset.code);
+    S.plan = null;
+  });
+  q('.tt-date', el => el.onchange = () => { S.exams[el.dataset.sub].date = el.value; S.examsConfirmed=false; S.plan=null; render(); });
+  q('.tt-sess', el => el.onchange = () => { S.exams[el.dataset.sub].session = el.value; S.examsConfirmed=false; S.plan=null; render(); });
 
-function build(){
-  if(!sel.std || !sel.mode) return;
-  const internal = sel.std.mode === 'internal';
-  $('prompt').value = composePrompt({
-    level: sel.level, subject: sel.subject, code: sel.std.code,
-    mode: sel.mode, topic: pick('topic'), context: pick('context')
+  q('.tt-pname', el => el.onchange = () => { S.periods[+el.dataset.i].name = el.value; });
+  q('.tt-pd', el => el.onchange = () => { S.periods[+el.dataset.i][el.dataset.k] = el.value; S.plan=null; render(); });
+  q('.tt-ph', el => el.onchange = () => {
+    S.periods[+el.dataset.i].hours[+el.dataset.d] = Math.max(0, Math.min(10, +el.value||0));
+    S.plan=null; render();
+  });
+  q('.tt-prem', b => b.onclick = () => { S.periods.splice(+b.dataset.i,1); S.plan=null; render(); });
+  const addp = one('#tt-addp');
+  if(addp) addp.onclick = () => {
+    const last = S.periods[S.periods.length-1];
+    S.periods.push({ name:'New period',
+      start: last ? addDays(last.end,1) : todayISO(),
+      end:   last ? addDays(last.end,14) : addDays(todayISO(),14),
+      hours:[2,2,2,2,2,2,0] });
+    render();
+  };
+  const addOff = d => {
+    if(!d || S.blackouts.includes(d)) return;
+    S.blackouts.push(d); S.plan = null; render();
+  };
+  const oa = one('#tt-offadd');
+  if(oa) oa.onclick = () => { const el = one('#tt-offdate'); addOff(el && el.value); };
+  const oc = one('#tt-offcal');
+  if(oc) oc.onclick = () => {
+    S.pickerOpen = !S.pickerOpen;
+    S.pickerMonth = S.pickerMonth || planStart();
+    render();
+  };
+  q('.tt-offx', b => b.onclick = () => {
+    S.blackouts = S.blackouts.filter(x => x !== b.dataset.d); S.plan = null; render();
+  });
+  q('.tt-offnav', b => b.onclick = () => {
+    S.pickerMonth = addMonths(monthStart(S.pickerMonth || planStart()), +b.dataset.step); render();
+  });
+  q('.tt-offday', b => b.onclick = () => {
+    const d = b.dataset.d;
+    if(S.blackouts.includes(d)) S.blackouts = S.blackouts.filter(x => x !== d);
+    else S.blackouts.push(d);
+    S.plan = null; render();
   });
 
-  const g = $('guard-note');
-  if(internal){
-    g.classList.remove('hidden');
-    g.innerHTML = `<strong>This is an internal.</strong> The prompt ends with an integrity clause that outranks everything else in it: the AI will teach you the content and work parallel examples, but it will not write or reword the work you hand in.`;
-  } else g.classList.add('hidden');
+  const go = one('#tt-go');
+  if(go) go.onclick = () => { S.plan = generate(); S.view='week'; S.cursor=todayISO(); render(); };
+  const rg = one('#tt-regen');
+  if(rg) rg.onclick = () => {
+    const edited = S.plan && S.plan.open.some(x => x.extra);
+    const msg = edited
+      ? 'Regenerating builds the plan again from scratch. Any blocks you added, moved or cleared by hand will be lost. Carry on?'
+      : 'Regenerating builds the plan again from scratch, so any changes you have made by hand will be lost. Carry on?';
+    if(confirm(msg)){ S.plan = generate(); save(); render(); }
+  };
 
-  $('output').classList.remove('step-dead');
-  $('actionbar').classList.remove('hidden');
-  syncURL();
+  q('.tt-view', b => b.onclick = () => { S.view = b.dataset.v; render(); });
+  q('.tt-arrow', b => b.onclick = () => {
+    const n = +b.dataset.step;
+    if(S.view==='day') S.cursor = addDays(S.cursor,n);
+    else if(S.view==='week') S.cursor = addDays(S.cursor,7*n);
+    else S.cursor = addMonths(S.cursor, n);
+    render();
+  });
+  const td = one('.tt-today'); if(td) td.onclick = () => { S.cursor = todayISO(); render(); };
+
+  q('.tt-copy', b => b.onclick = async () => {
+    const text = window.composePrompt({ level:S.level, subject:decodeURIComponent(b.dataset.sub),
+      code:b.dataset.code, mode:b.dataset.mode });
+    try { await navigator.clipboard.writeText(text); } catch { return; }
+    const o = b.textContent; b.textContent='Copied ✓'; setTimeout(()=>b.textContent=o,1500);
+  });
+  const ics = one('#tt-ics'); if(ics) ics.onclick = () => download('ncea-study-plan.ics', toICS(), 'text/calendar');
+  const pr  = one('#tt-print'); if(pr) pr.onclick = printPlan;
+
+  const tp = one('#tt-topics');
+  if(tp) tp.onchange = () => { S.withTopics = tp.checked; S.plan = null; render(); };
+
+  const rs = one('#tt-reset');
+  if(rs) rs.onclick = () => {
+    if(confirm('Clear your saved timetable and start again?')){ wipe(); render(); }
+  };
+
+  const cf = one('#tt-confirm');
+  if(cf) cf.onclick = () => { S.examsConfirmed = true; render(); };
+  const uc = one('#tt-unconfirm');
+  if(uc) uc.onclick = () => { S.examsConfirmed = false; render(); };
+
+  q('.tt-fm', b => b.onclick = () => { S.fullMode = b.dataset.m; render(); });
+  q('.tt-hm', b => b.onclick = () => { S.howMode = b.dataset.h; render(); });
+  q('.tt-mnum[data-goto]', c => c.onclick = () => { S.cursor = c.dataset.goto; S.view='day'; render(); });
+  q('.tt-mslot', b => b.onclick = () => placeInto(+b.dataset.empty));
+  q('.tt-addhr', b => b.onclick = () => addHourTo(b.dataset.date));
+
+  // arm a subject, then click a + to place it
+  q('.tt-arm', b => b.onclick = () => {
+    S.armed = b.classList.contains('tt-armoff') ? null
+            : (S.armed === b.dataset.s ? null : b.dataset.s);
+    render();
+  });
+  q('.tt-del', b => b.onclick = () => {
+    S.plan.open[+b.dataset.slot].item = null;
+    S.plan.used = S.plan.open.filter(x=>x.item).length;
+    save(); render();
+  });
+  q('.tt-slot', b => b.onclick = () => placeInto(+b.dataset.empty));
+
+  q('.tt-gem', b => b.onclick = async () => {
+    const text = window.composePrompt({ level:S.level, subject:decodeURIComponent(b.dataset.sub),
+      code:b.dataset.code, mode:b.dataset.mode, topic:decodeURIComponent(b.dataset.topic||'') });
+    let ok = true;
+    try { await navigator.clipboard.writeText(text); }
+    catch(e){ ok = false; }
+    if(!ok){ alert('Your browser blocked the copy. Use Open ↗ instead, then copy from there.'); return; }
+    const o = b.textContent; b.textContent = 'Copied ✓';
+    setTimeout(()=>{ b.textContent = o; window.open('https://gemini.google.com/app','_blank','noopener'); }, 500);
+  });
 }
 
-function reset(){
-  ['step3','output'].forEach(x=>$(x).classList.add('step-dead'));
-  $('actionbar').classList.add('hidden');
-  $('brief-toggle').classList.add('hidden'); $('std-detail').classList.add('hidden');
-  $('std-detail').innerHTML=''; $('prompt').value=''; sel.mode=null;
-  document.querySelectorAll('#modes .tile').forEach(x=>x.setAttribute('aria-pressed','false'));
-}
-
-async function copyPrompt(){
-  const t = $('prompt');
-  if(!t.value) return false;
-  try { await navigator.clipboard.writeText(t.value); }
-  catch { t.select(); document.execCommand('copy'); window.getSelection().removeAllRanges(); }
-  return true;
-}
-
-async function flashCopy(btn){
-  if(!await copyPrompt()) return;
-  const original = btn.textContent;
-  btn.textContent = 'COPIED! ✓';
-  btn.classList.add('copy-btn-success');
-  setTimeout(()=>{ btn.textContent = original; btn.classList.remove('copy-btn-success'); }, 1800);
-}
-
-init();
-applyURL();
-</script>
-<script src="timetable.js?v=7"></script>
-</body>
-</html>
+})();
