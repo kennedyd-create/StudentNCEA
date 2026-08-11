@@ -40,7 +40,7 @@ const S = {
   view: 'week',
   fullMode: 'subject',      // 'subject' matrix or 'calendar' months
   withTopics: true,         // allocate specific topics inside each standard
-  howMode: 'ai',            // 'ai' prompts, or 'offline' study methods
+  howMode: 'ai',            // 'ai' | 'mix' | 'offline' | 'none'
   armed: null,              // subject picked from the tab bar, ready to place
   cursor: null
 };
@@ -57,8 +57,8 @@ function save(){
       exams:S.exams, periods:S.periods, blackouts:S.blackouts,
       withTopics:S.withTopics, howMode:S.howMode, view:S.view, fullMode:S.fullMode, cursor:S.cursor,
       plan: S.plan ? S.plan.open.map(x => x.item
-        ? { d:x.date, i:x.index, s:x.item.subject, c:x.item.st.code, m:x.item.mode, t:x.item.topic||'' }
-        : { d:x.date, i:x.index }) : null
+        ? { d:x.date, i:x.index, e:x.extra?1:0, s:x.item.subject, c:x.item.st.code, m:x.item.mode, t:x.item.topic||'' }
+        : { d:x.date, i:x.index, e:x.extra?1:0 }) : null
     }));
   } catch(e){ /* private browsing, quota — not worth interrupting the student */ }
 }
@@ -82,7 +82,7 @@ function load(){
 function rehydrate(){
   if(!S.savedPlan || !window.NCEA_DATA || !window.NCEA_DATA[S.level]) return;
   const open = S.savedPlan.map(x => {
-    const slot = { date:x.d, index:x.i, item:null };
+    const slot = { date:x.d, index:x.i, item:null, extra: !!x.e };
     if(x.s && D().subjects[x.s]){
       const st = D().subjects[x.s].standards.find(y => y.code === x.c);
       if(st) slot.item = { subject:x.s, st, mode:x.m, topic:x.t||'' };
@@ -425,6 +425,27 @@ function pickStandardFor(subject, slot){
     count[x.item.st.code] = (count[x.item.st.code]||0)+1; });
   return mine.sort((a,b) => (count[a.st.code]||0) - (count[b.st.code]||0))[0].st;
 }
+/* Add an hour to a day that is already full. This deliberately goes beyond
+   the hours set for that period — a student who wants one more session on a
+   Tuesday should be able to have it, and the day shows it is over plan. */
+function addHourTo(date){
+  if(!S.plan) return;
+  let last = -1, maxIdx = -1;
+  S.plan.open.forEach((x,n) => { if(x.date === date){ last = n; maxIdx = Math.max(maxIdx, x.index); } });
+  const slot = { date, index: maxIdx + 1, item: null, extra: true };
+  if(last === -1){
+    // the day had no slots at all — drop it in date order
+    let at = S.plan.open.findIndex(x => x.date > date);
+    if(at === -1) at = S.plan.open.length;
+    S.plan.open.splice(at, 0, slot);
+    last = at - 1;
+  } else {
+    S.plan.open.splice(last + 1, 0, slot);
+  }
+  if(S.armed) placeInto(last + 1);
+  else { save(); render(); }
+}
+
 function placeInto(n){
   if(!S.armed || !S.plan) return;
   const slot = S.plan.open[n];
@@ -442,6 +463,16 @@ function modeForDate(date, subject){
   if(!ex || !ex.date) return 'explainer';
   const left = daysBetween(date, ex.date);
   return left <= 7 ? 'recall' : left <= 21 ? 'exam' : 'explainer';
+}
+
+function dayCapacity(date){
+  if(!S.plan) return '';
+  const on = S.plan.open.filter(x => x.date === date);
+  const planned = hoursOn(date);
+  const extra = on.filter(x => x.extra).length;
+  if(!on.length && !planned) return '';
+  return `<p class="tt-cap${extra?' tt-over':''}">${on.length} hour${on.length===1?'':'s'} on this day` +
+    (extra ? ` — ${extra} more than you planned for` : planned ? '' : ' — a day you had set aside') + `</p>`;
 }
 
 const modeLabel = m => ({ explainer:'Learn it', exam:'Practise it', recall:'Drill it' })[m] || m;
@@ -475,15 +506,24 @@ function blockHTML(slot, n){
   const it = slot.item;
   const q = `?level=${S.level}&subject=${encodeURIComponent(it.subject)}&std=${it.st.code}&mode=${it.mode}` +
             (it.topic ? `&topic=${encodeURIComponent(it.topic)}` : '');
-  const actions = S.howMode === 'ai'
-    ? `<div class="tt-acts">
-         <a class="tt-open" href="${q}" title="Open this in the prompt builder">Open &#8599;</a>
-         <button class="tt-gem" data-sub="${encodeURIComponent(it.subject)}" data-code="${it.st.code}"
-           data-mode="${it.mode}" data-topic="${encodeURIComponent(it.topic||'')}"
-           title="Copy the prompt and open Gemini">Gemini &#8599;</button>
-       </div>`
-    : `<div class="tt-how">${methodFor(it, n)}</div>`;
-  return `<div class="tt-block${S.howMode==='offline'?' tt-offline':''}" style="--hue:${hueFor(it.subject)}">
+  /* In Mix, alternate deterministically so the same block always shows the
+     same thing — about half AI, half off-screen, for variety rather than a
+     diet of one or the other. */
+  const aiTurn = S.howMode === 'ai' ||
+    (S.howMode === 'mix' && (n + it.st.code.charCodeAt(4)) % 2 === 0);
+  const showsMethod = S.howMode === 'offline' || (S.howMode === 'mix' && !aiTurn);
+
+  const actions = S.howMode === 'none' ? ''
+    : aiTurn
+      ? `<div class="tt-acts">
+           <a class="tt-open" href="${q}" title="Open this in the prompt builder">Open &#8599;</a>
+           <button class="tt-gem" data-sub="${encodeURIComponent(it.subject)}" data-code="${it.st.code}"
+             data-mode="${it.mode}" data-topic="${encodeURIComponent(it.topic||'')}"
+             title="Copy the prompt and open Gemini">Gemini &#8599;</button>
+         </div>`
+      : `<div class="tt-how">${methodFor(it, n)}</div>`;
+
+  return `<div class="tt-block${showsMethod?' tt-offline':''}${slot.extra?' tt-extra':''}" style="--hue:${hueFor(it.subject)}">
     <button class="tt-del" data-slot="${n}" title="Clear this block">&times;</button>
     <div class="tt-bmeta"><strong>${it.subject}</strong> · AS${it.st.code}
       <span class="tt-mode">${modeLabel(it.mode)}</span></div>
@@ -504,7 +544,9 @@ function dayView(){
     ${ex.length ? `<div class="tt-flagbig">EXAM TODAY — ${ex.map(s=>s+' '+S.exams[s].session).join(', ')}</div>` : ''}
     ${!ex.length && eve.length ? `<div class="tt-flagbig tt-evebig">Night before ${eve.join(' and ')}</div>` : ''}
     ${b.length ? b.map(x => x.s.item ? blockHTML(x.s, x.n) : emptyHTML(x.n)).join('')
-      : `<p class="text-sm soft">A day off.</p>`}
+      : `<p class="text-sm soft mb-2">Nothing planned for this day.</p>`}
+    ${dayCapacity(d)}
+    <button class="tt-addhr" data-date="${d}">${S.armed ? '+ Add ' + S.armed + ' here' : '+ Add another hour'}</button>
   </div>`;
 }
 
@@ -518,6 +560,7 @@ function weekView(){
       <div class="tt-wdh">${w}<span>${pretty(d,{day:'numeric',month:'short'})}</span></div>
       ${ex.length ? `<div class="tt-flag">EXAM</div>` : eve ? `<div class="tt-flag tt-eve">Eve</div>` : ''}
       ${b.length ? b.map(x => x.s.item ? blockHTML(x.s, x.n) : emptyHTML(x.n)).join('') : `<p class="tt-empty">&mdash;</p>`}
+      <button class="tt-addhr tt-addsm" data-date="${d}" title="${S.armed ? 'Add '+S.armed+' to this day' : 'Add another hour to this day'}">+</button>
     </div>`;
   }).join('')}</div>`;
 }
@@ -545,6 +588,7 @@ function monthView(anchor){
         <span class="tt-mnum" data-goto="${c}" title="Open this day">${+c.slice(8)}</span>
         ${ex.length?`<span class="tt-mexam">EXAM</span>`:''}
         <div class="tt-mnames">${chips}</div>
+        <button class="tt-addhr tt-maddhr" data-date="${c}" title="${S.armed ? 'Add '+S.armed : 'Add another hour'}">+</button>
       </div>`;
     }).join('')}
     </div></div>`;
@@ -594,13 +638,15 @@ function renderPlan(){
   const body = S.view==='day' ? dayView() : S.view==='week' ? weekView()
              : S.view==='month' ? monthView() : fullView();
   return `<div class="panel p-4 md:p-5 tt-plan">
-    <div class="flex flex-wrap items-center gap-2 mb-3">
-      <h3 class="sec-h">Your plan</h3><span class="text-xs soft">${p.used} study blocks</span>
-      <div class="tt-how-switch">
-        <button class="tt-hm" data-h="ai" aria-pressed="${S.howMode==='ai'}">With AI</button>
-        <button class="tt-hm" data-h="offline" aria-pressed="${S.howMode==='offline'}">Without AI</button>
+    <div class="tt-planhead mb-3">
+      <div class="tt-ph-side">
+        <h3 class="sec-h">Your plan</h3><span class="text-xs soft">${p.used} study blocks</span>
       </div>
-      <div class="ml-auto flex gap-2">
+      <div class="tt-how-switch" role="group" aria-label="How to study each block">
+        ${[['ai','With AI'],['mix','Mix'],['offline','Without AI'],['none','None']].map(([k,l])=>
+          `<button class="tt-hm" data-h="${k}" aria-pressed="${S.howMode===k}">${l}</button>`).join('')}
+      </div>
+      <div class="tt-ph-side tt-ph-right">
         <button id="tt-ics" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Add to calendar</button>
         <button id="tt-print" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Print this view</button>
         <button id="tt-regen" class="btn-go px-3 py-1.5 text-[11px]">Regenerate</button>
@@ -847,7 +893,14 @@ function wire(){
 
   const go = one('#tt-go');
   if(go) go.onclick = () => { S.plan = generate(); S.view='week'; S.cursor=todayISO(); render(); };
-  const rg = one('#tt-regen'); if(rg) rg.onclick = () => { S.plan = generate(); render(); };
+  const rg = one('#tt-regen');
+  if(rg) rg.onclick = () => {
+    const edited = S.plan && S.plan.open.some(x => x.extra);
+    const msg = edited
+      ? 'Regenerating builds the plan again from scratch. Any blocks you added, moved or cleared by hand will be lost. Carry on?'
+      : 'Regenerating builds the plan again from scratch, so any changes you have made by hand will be lost. Carry on?';
+    if(confirm(msg)){ S.plan = generate(); save(); render(); }
+  };
 
   q('.tt-view', b => b.onclick = () => { S.view = b.dataset.v; render(); });
   q('.tt-arrow', b => b.onclick = () => {
@@ -880,6 +933,7 @@ function wire(){
   q('.tt-hm', b => b.onclick = () => { S.howMode = b.dataset.h; render(); });
   q('.tt-mnum[data-goto]', c => c.onclick = () => { S.cursor = c.dataset.goto; S.view='day'; render(); });
   q('.tt-mslot', b => b.onclick = () => placeInto(+b.dataset.empty));
+  q('.tt-addhr', b => b.onclick = () => addHourTo(b.dataset.date));
 
   // arm a subject, then click a + to place it
   q('.tt-arm', b => b.onclick = () => {
