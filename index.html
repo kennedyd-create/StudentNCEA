@@ -335,6 +335,26 @@ body.dark-mode .tt-note.bad{ color:#fca5a5; }
   border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); cursor:pointer; }
 .tt-fm[aria-pressed="true"]{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
 
+/* AI / no-AI switch and offline method text */
+.tt-how-switch{ display:flex; gap:.25rem; margin-left:.4rem; }
+.tt-hm{ font-size:.625rem; font-weight:800; padding:.22rem .6rem; border-radius:.4rem;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); cursor:pointer; }
+.tt-hm[aria-pressed="true"]{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
+.tt-how{ flex:1 1 100%; font-size:.6875rem; line-height:1.5; color:var(--ink);
+  background:color-mix(in srgb,var(--hue) 12%,transparent);
+  border-left:3px solid var(--hue); border-radius:.3rem; padding:.35rem .5rem; margin-top:.15rem; }
+.tt-block.tt-offline{ align-items:flex-start; }
+
+/* month cells become editable */
+.tt-mnum{ cursor:pointer; }
+.tt-mnum:hover{ text-decoration:underline; }
+.tt-mname{ position:relative; padding-right:.9rem; }
+.tt-mdel{ position:absolute; top:0; right:.15rem; font-size:.6rem; color:#fff; opacity:.6; }
+.tt-mname:hover .tt-mdel{ opacity:1; }
+.tt-mslot{ font-size:.55rem; font-weight:900; color:var(--ink-faint); border:1px dashed var(--line-strong);
+  border-radius:.2rem; padding:0 .2rem; cursor:pointer; line-height:1.3; }
+.tt-mslot:hover{ border-color:var(--fac-dark); color:var(--fac-dark); }
+
 /* full plan matrix */
 .tt-scroll{ overflow-x:auto; }
 .tt-table{ width:100%; border-collapse:collapse; font-size:.75rem; }
@@ -941,13 +961,22 @@ function init(){
     });
     $(k+'-own').addEventListener('input', build);
   });
+  let darkBeforeTimetable = null;
   document.querySelectorAll('.mode-tab').forEach(b=>b.addEventListener('click', ()=>{
     const v = b.dataset.view;
     document.querySelectorAll('.mode-tab').forEach(x=>x.setAttribute('aria-pressed', x.dataset.view===v));
     document.querySelector('main').classList.toggle('hidden', v!=='builder');
     $('tt-root').classList.toggle('hidden', v!=='timetable');
     $('actionbar').classList.toggle('hidden', v!=='builder' || !$('prompt').value);
-    if(v==='timetable' && window.Timetable) window.Timetable.open();
+    if(v === 'timetable'){
+      if(darkBeforeTimetable === null)
+        darkBeforeTimetable = document.body.classList.contains('dark-mode');
+      applyDark(true);                       // the plan reads better dark
+      if(window.Timetable) window.Timetable.open();
+    } else if(darkBeforeTimetable !== null){
+      applyDark(darkBeforeTimetable);        // put back whatever they had
+      darkBeforeTimetable = null;
+    }
   }));
   $('crumb1').addEventListener('click', ()=>setStep(1,false));
   $('crumb2').addEventListener('click', ()=>setStep(2,false));
