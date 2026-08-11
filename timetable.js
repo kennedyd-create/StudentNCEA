@@ -2,16 +2,12 @@
    STUDY TIMETABLE
    Builds a real revision schedule, not a prompt asking for one.
 
-   Design notes, borrowed from the Year Planner in the WHS teacher
-   site and then deliberately inverted where study differs from
-   unit planning:
-     - Slots are a flat array with a BLOCKED sentinel, so the
-       allocator physically cannot schedule into an unavailable day.
-     - Spans merge at render time rather than being stored.
-     - The year planner places units MANUALLY and keeps them
-       CONTIGUOUS. Revision is allocated AUTOMATICALLY and
-       INTERLEAVED, because spacing is what the evidence supports.
-     - Every block is anchored backwards from a fixed exam date.
+   Borrowed from the WHS Year Planner: a flat slot array with a
+   BLOCKED sentinel, so the allocator physically cannot schedule
+   into an unavailable day. Deliberately inverted where revision
+   differs from unit planning — allocation is automatic rather
+   than manual, interleaved rather than contiguous, and anchored
+   backwards from fixed exam dates.
    ============================================================ */
 (function () {
 
@@ -20,64 +16,73 @@ const E = () => window.NCEA_EXAMS;
 const D = () => window.NCEA_DATA[S.level];
 
 const MAX_SUBJECTS = 6;
-const WEEKDAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];   // index 0 = Monday
+const WEEKDAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const HUES = ['#7900CC','#007040','#9F1559','#22229D','#DB2026','#9A6300'];
 
 const S = {
   level: '3',
   faculty: null,
-  subjects: [],                 // chosen subject names, in order
-  standards: {},                // subject -> Set of external standard codes
-  exams: {},                    // subject -> { date, session }
-  hours: [2,2,2,2,2,4,0],       // hours available per weekday, Mon..Sun
-  blackouts: [],                // ISO dates the student is unavailable
-  startDate: todayISO(),
-  plan: null                    // generated schedule
+  subjects: [],
+  standards: {},
+  exams: {},
+  /* How much study is possible changes across the year, so availability
+     is stored as PERIODS rather than one weekly pattern. Defaults follow
+     the Waiheke calendar: holidays 26 Sep to 11 Oct, last day of school
+     5 Nov, study leave from the 6th. */
+  periods: [
+    { name:'Term-time',      start:'2026-08-11', end:'2026-09-25', hours:[1,1,1,1,1,2,0] },
+    { name:'Holidays',       start:'2026-09-26', end:'2026-10-11', hours:[3,3,3,0,3,3,0] },
+    { name:'Back at school', start:'2026-10-12', end:'2026-11-05', hours:[2,2,2,2,1,3,0] },
+    { name:'Study leave',    start:'2026-11-06', end:'2026-12-04', hours:[5,5,5,5,5,3,0] }
+  ],
+  blackouts: [],
+  plan: null,
+  view: 'week',
+  cursor: null
 };
 
-/* ---------- small date helpers ---------- */
-function todayISO(){ return new Date().toISOString().slice(0,10); }
-function iso(d){ return d.toISOString().slice(0,10); }
-function addDays(isoStr, n){
-  const d = new Date(isoStr + 'T00:00:00'); d.setDate(d.getDate() + n); return iso(d);
-}
-function weekdayIndex(isoStr){            // 0 = Monday
-  const d = new Date(isoStr + 'T00:00:00').getDay();
-  return (d + 6) % 7;
-}
-function pretty(isoStr){
-  return new Date(isoStr + 'T00:00:00').toLocaleDateString('en-NZ',
-    { weekday:'short', day:'numeric', month:'short' });
-}
-function daysBetween(a, b){
-  return Math.round((new Date(b+'T00:00:00') - new Date(a+'T00:00:00')) / 86400000);
-}
+/* ---------- dates ---------- */
+const iso = d => d.toISOString().slice(0,10);
+function todayISO(){ return iso(new Date()); }
+function addDays(s,n){ const d=new Date(s+'T00:00:00'); d.setDate(d.getDate()+n); return iso(d); }
+function wdIndex(s){ return (new Date(s+'T00:00:00').getDay()+6)%7; }
+function pretty(s,opt){ return new Date(s+'T00:00:00').toLocaleDateString('en-NZ',
+  opt || { weekday:'short', day:'numeric', month:'short' }); }
+function monthStart(s){ const d=new Date(s+'T00:00:00'); d.setDate(1); return iso(d); }
+function weekStart(s){ return addDays(s, -wdIndex(s)); }
+function daysBetween(a,b){ return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/86400000); }
 
-/* ---------- what the student is studying ---------- */
+function periodFor(date){ return S.periods.find(p => date >= p.start && date <= p.end) || null; }
+function hoursOn(date){
+  if(S.blackouts.includes(date)) return 0;
+  const p = periodFor(date);
+  return p ? (p.hours[wdIndex(date)] || 0) : 0;
+}
+function planStart(){ return S.periods.length ? S.periods.map(p=>p.start).sort()[0] : todayISO(); }
+function hueFor(sub){ return HUES[S.subjects.indexOf(sub) % HUES.length]; }
+
+/* ---------- selections ---------- */
 function externalSubjects(){
   return Object.entries(D().subjects)
-    .filter(([, sub]) => sub.standards.some(x => x.mode === 'external'))
-    .map(([name]) => name).sort();
+    .filter(([,s]) => s.standards.some(x => x.mode === 'external'))
+    .map(([n]) => n).sort();
 }
-function externalStandards(subject){
-  return D().subjects[subject].standards
-    .filter(x => x.mode === 'external')
+function externalStandards(sub){
+  return D().subjects[sub].standards.filter(x => x.mode === 'external')
     .sort((a,b) => a.ref.localeCompare(b.ref, undefined, {numeric:true}));
 }
 function chosenStandards(){
   const out = [];
-  S.subjects.forEach(sub => {
-    externalStandards(sub).forEach(st => {
-      if(S.standards[sub] && S.standards[sub].has(st.code))
-        out.push({ subject: sub, st, exam: S.exams[sub] });
-    });
-  });
+  S.subjects.forEach(sub => externalStandards(sub).forEach(st => {
+    if(S.standards[sub] && S.standards[sub].has(st.code))
+      out.push({ subject: sub, st, exam: S.exams[sub] });
+  }));
   return out;
 }
 function lastExamDate(){
-  const dates = S.subjects.map(s => S.exams[s] && S.exams[s].date).filter(Boolean);
-  return dates.length ? dates.sort().slice(-1)[0] : null;
+  const d = S.subjects.map(s => S.exams[s] && S.exams[s].date).filter(Boolean).sort();
+  return d.length ? d[d.length-1] : null;
 }
-
 /* ============================================================
    THE ALLOCATOR
    ============================================================ */
@@ -87,14 +92,13 @@ function buildSlots(){
   const end = lastExamDate();
   if(!end) return [];
   const slots = [];
-  let day = S.startDate;
+  let day = planStart();
   let guard = 0;
-  while(day <= end && guard++ < 400){
-    const hrs = S.hours[weekdayIndex(day)] || 0;
-    const blocked = S.blackouts.includes(day);
-    for(let h = 0; h < hrs; h++){
-      slots.push(blocked ? 'BLOCKED' : { date: day, index: h, item: null });
-    }
+  while(day <= end && guard++ < 500){
+    // hoursOn() already returns 0 for a blackout or a day outside every period,
+    // so an unavailable day simply produces no slots at all.
+    const hrs = hoursOn(day);
+    for(let h = 0; h < hrs; h++) slots.push({ date: day, index: h, item: null });
     day = addDays(day, 1);
   }
   return slots;
@@ -111,8 +115,7 @@ function slotBeforeExam(slot, exam){
 
 function generate(){
   const items = chosenStandards();
-  const slots = buildSlots();
-  const open = slots.filter(s => s !== 'BLOCKED');
+  const open = buildSlots();
   if(!items.length || !open.length) return null;
 
   const totalWeight = items.reduce((a,i) => a + i.st.credits, 0);
@@ -185,138 +188,174 @@ function generate(){
   });
 
   open.forEach((slot, n) => { slot.item = filled[n]; });
-  return { slots, open, items, used: filled.filter(Boolean).length };
+  S.cursor = S.cursor || todayISO();
+  return { open, items, used: filled.filter(Boolean).length };
 }
-
-/* ============================================================
-   THE REALISM CHECK
-   ============================================================ */
+/* ---------- realism ---------- */
 function realism(){
-  const perWeek = S.hours.reduce((a,b) => a+b, 0);
   const end = lastExamDate();
-  const weeks = end ? Math.max(1, Math.round(daysBetween(S.startDate, end) / 7)) : 0;
-  const items = chosenStandards();
+  if(!end) return { notes:[], total:0, weeks:0, n:0 };
   const notes = [];
-  if(perWeek === 0) notes.push({ tone:'bad', text:'You have not set any study hours yet.' });
-  if(perWeek > 20) notes.push({ tone:'warn',
-    text:`That is ${perWeek} hours a week on top of school. Most people abandon a plan like that inside a fortnight — 10 to 15 hours is a pace you can actually hold.` });
-  if(items.length && perWeek * weeks < items.length * 3) notes.push({ tone:'warn',
-    text:`${items.length} standards over ${weeks} weeks needs more hours than you have set, so some will get very little time. Either add hours or drop a standard you are less worried about.` });
-  if(S.hours.every(h => h > 0)) notes.push({ tone:'warn',
-    text:'You have not left a single day off. Build in at least one — rest is part of the plan, not a failure of it.' });
-  return { perWeek, weeks, notes };
+  S.periods.forEach(p => {
+    const w = p.hours.reduce((a,b)=>a+b,0);
+    if(w > 35) notes.push({ tone:'warn',
+      text:`${p.name} is set to ${w} hours a week. Even on study leave that is very hard to hold — 25 to 30 with rest built in is a pace people actually keep.` });
+    if(p.hours.every(h => h > 0)) notes.push({ tone:'warn',
+      text:`${p.name} has no day off. Build in at least one — rest is part of the plan, not a failure of it.` });
+    if(p.start > p.end) notes.push({ tone:'bad', text:`${p.name} ends before it starts.` });
+  });
+  const total = buildSlots().length;
+  const n = chosenStandards().length;
+  if(n && total < n * 3) notes.push({ tone:'bad',
+    text:`${n} standards need more time than you have set. Add hours, or drop a standard you are less worried about.` });
+  return { notes, total, n, weeks: Math.max(1, Math.round(daysBetween(planStart(), end)/7)) };
 }
 
+const modeLabel = m => ({ explainer:'Learn it', exam:'Practise it', recall:'Drill it' })[m] || m;
+const blocksOn = d => S.plan ? S.plan.open.filter(s => s.date === d && s.item) : [];
+const examsOn  = d => S.subjects.filter(s => S.exams[s] && S.exams[s].date === d);
+
 /* ============================================================
-   OUTPUT
+   VIEWS — long views show colour only, short views show detail
    ============================================================ */
-function weekKey(isoStr){
-  const idx = weekdayIndex(isoStr);
-  return addDays(isoStr, -idx);           // Monday of that week
+function viewBar(){
+  const views = [['day','Day'],['week','Week'],['month','Month'],['full','Full plan']];
+  const label = S.view==='day'   ? pretty(S.cursor,{weekday:'long',day:'numeric',month:'long'})
+              : S.view==='week'  ? 'Week of ' + pretty(weekStart(S.cursor))
+              : S.view==='month' ? pretty(S.cursor,{month:'long',year:'numeric'})
+              : 'Whole plan';
+  return `<div class="tt-viewbar">
+    <div class="flex gap-1">${views.map(([v,l])=>
+      `<button class="tt-view" data-v="${v}" aria-pressed="${S.view===v}">${l}</button>`).join('')}</div>
+    ${S.view!=='full' ? `<div class="tt-nav">
+      <button class="tt-arrow" data-step="-1">&lsaquo;</button>
+      <span class="tt-navlabel">${label}</span>
+      <button class="tt-arrow" data-step="1">&rsaquo;</button>
+      <button class="tt-today">Today</button></div>`
+      : `<span class="tt-navlabel">${label}</span>`}
+    <div class="tt-legend">${S.subjects.map(s=>
+      `<span class="tt-key"><i style="background:${hueFor(s)}"></i>${s}</span>`).join('')}</div>
+  </div>`;
+}
+
+function blockHTML(slot){
+  const it = slot.item;
+  const url = `?level=${S.level}&subject=${encodeURIComponent(it.subject)}&std=${it.st.code}&mode=${it.mode}`;
+  return `<div class="tt-block" style="--hue:${hueFor(it.subject)}">
+    <div class="tt-bmeta"><strong>${it.subject}</strong> · AS${it.st.code}
+      <span class="tt-mode">${modeLabel(it.mode)}</span></div>
+    <div class="tt-btitle">${it.st.title}</div>
+    <div class="tt-acts">
+      <button class="tt-copy" data-sub="${encodeURIComponent(it.subject)}" data-code="${it.st.code}" data-mode="${it.mode}">Copy prompt</button>
+      <a class="tt-open" href="${url}" title="Open in the prompt builder">&#8599;</a>
+    </div></div>`;
+}
+
+function dayView(){
+  const d = S.cursor, ex = examsOn(d), b = blocksOn(d);
+  const eve = S.subjects.filter(s => S.exams[s] && addDays(S.exams[s].date,-1) === d);
+  return `<div class="tt-dayview">
+    ${ex.length ? `<div class="tt-flagbig">EXAM TODAY — ${ex.map(s=>s+' '+S.exams[s].session).join(', ')}</div>` : ''}
+    ${!ex.length && eve.length ? `<div class="tt-flagbig tt-evebig">Night before ${eve.join(' and ')}</div>` : ''}
+    ${b.length ? b.map(blockHTML).join('')
+      : `<p class="text-sm soft">Nothing scheduled. ${hoursOn(d) ? 'Spare capacity — use it or rest.' : 'A day off.'}</p>`}
+  </div>`;
+}
+
+function weekView(){
+  const start = weekStart(S.cursor);
+  return `<div class="tt-week">${WEEKDAYS.map((w,i)=>{
+    const d = addDays(start,i), ex = examsOn(d), b = blocksOn(d);
+    const eve = S.subjects.some(s => S.exams[s] && addDays(S.exams[s].date,-1) === d);
+    return `<div class="tt-wday${d===todayISO()?' tt-today-col':''}">
+      <div class="tt-wdh">${w}<span>${pretty(d,{day:'numeric',month:'short'})}</span></div>
+      ${ex.length ? `<div class="tt-flag">EXAM</div>` : eve ? `<div class="tt-flag tt-eve">Eve</div>` : ''}
+      ${b.length ? b.map(blockHTML).join('') : `<p class="tt-empty">&mdash;</p>`}
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function monthView(){
+  const first = monthStart(S.cursor), lead = wdIndex(first);
+  const m = new Date(first+'T00:00:00').getMonth();
+  const cells = new Array(lead).fill(null);
+  let d = first;
+  while(new Date(d+'T00:00:00').getMonth() === m){ cells.push(d); d = addDays(d,1); }
+  return `<div class="tt-month">
+    ${WEEKDAYS.map(w=>`<div class="tt-mh">${w}</div>`).join('')}
+    ${cells.map(c=>{
+      if(!c) return `<div class="tt-mcell tt-mout"></div>`;
+      const b = blocksOn(c), ex = examsOn(c), counts = {};
+      b.forEach(s => counts[s.item.subject] = (counts[s.item.subject]||0)+1);
+      return `<div class="tt-mcell${c===todayISO()?' tt-today-cell':''}" data-goto="${c}" title="Open this day">
+        <span class="tt-mnum">${+c.slice(8)}</span>
+        ${ex.length?`<span class="tt-mexam">EXAM</span>`:''}
+        <div class="tt-mbars">${Object.entries(counts).map(([s,n])=>
+          `<i style="background:${hueFor(s)};flex:${n}" title="${s} — ${n}h"></i>`).join('')}</div>
+      </div>`;
+    }).join('')}</div>
+    <p class="text-xs soft mt-2">Colour only at this zoom. Click any day to open it.</p>`;
+}
+
+function fullView(){
+  const weeks = {};
+  S.plan.open.forEach(s => { const w = weekStart(s.date); (weeks[w]=weeks[w]||[]).push(s); });
+  const list = Object.keys(weeks).sort();
+  let t = `<div class="tt-scroll"><table class="tt-table"><thead><tr><th class="tt-sub">Subject</th>` +
+    list.map((w,i)=>`<th>W${i+1}<span class="tt-wk">${pretty(w,{day:'numeric',month:'short'})}</span></th>`).join('') +
+    `<th>Exam</th></tr></thead><tbody>`;
+  S.subjects.forEach(sub=>{
+    t += `<tr><td class="tt-sub"><i class="tt-dot" style="background:${hueFor(sub)}"></i>${sub}</td>`;
+    list.forEach(w=>{
+      const n = weeks[w].filter(s => s.item && s.item.subject === sub).length;
+      t += `<td class="${n?'tt-has':'tt-none'}"${n?` style="background:color-mix(in srgb,${hueFor(sub)} ${Math.min(55,n*9)}%,transparent)"`:''}>${n?n+'h':'·'}</td>`;
+    });
+    const e = S.exams[sub];
+    t += `<td class="tt-exam">${e&&e.date?pretty(e.date,{day:'numeric',month:'short'})+' '+e.session:'—'}</td></tr>`;
+  });
+  return t + `</tbody></table></div>
+    <p class="text-xs soft mt-2">Hours per week. A pale or empty row means that subject is being neglected — switch to Week view to see why.</p>`;
 }
 
 function renderPlan(){
-  const p = S.plan;
-  if(!p) return '';
-  const weeks = {};
-  p.open.forEach(slot => {
-    const wk = weekKey(slot.date);
-    (weeks[wk] = weeks[wk] || []).push(slot);
-  });
-  const weekList = Object.keys(weeks).sort();
-
-  // subject × week matrix — shows at a glance if something is being neglected
-  let matrix = `<div class="tt-scroll"><table class="tt-table"><thead><tr><th class="tt-sub">Subject</th>` +
-    weekList.map((w,i) => `<th>Wk ${i+1}<span class="tt-wk">${pretty(w).replace(/^\w+, /,'')}</span></th>`).join('') +
-    `<th>Exam</th></tr></thead><tbody>`;
-  S.subjects.forEach(sub => {
-    matrix += `<tr><td class="tt-sub">${sub}</td>`;
-    weekList.forEach(w => {
-      const n = weeks[w].filter(s => s.item && s.item.subject === sub).length;
-      matrix += `<td class="${n ? 'tt-has' : 'tt-none'}">${n ? n + 'h' : '·'}</td>`;
-    });
-    const ex = S.exams[sub];
-    matrix += `<td class="tt-exam">${ex && ex.date ? pretty(ex.date).replace(/^\w+, /,'') + ' ' + ex.session : '—'}</td></tr>`;
-  });
-  matrix += `</tbody></table></div>`;
-
-  // day-by-day, with the prompt controls on each block
-  let days = '';
-  let current = null;
-  p.open.forEach(slot => {
-    if(slot.date !== current){
-      current = slot.date;
-      const isEve = S.subjects.some(sub => S.exams[sub] && addDays(S.exams[sub].date,-1) === slot.date);
-      const examToday = S.subjects.filter(sub => S.exams[sub] && S.exams[sub].date === slot.date);
-      days += `<div class="tt-day"><div class="tt-date">${pretty(slot.date)}` +
-        (examToday.length ? `<span class="tt-flag">EXAM: ${examToday.join(', ')}</span>` : '') +
-        (isEve && !examToday.length ? `<span class="tt-flag tt-eve">Night before an exam</span>` : '') +
-        `</div>`;
-    }
-    if(!slot.item){ days += `<div class="tt-block tt-free">Free</div>`; return; }
-    const it = slot.item;
-    const url = `?level=${S.level}&subject=${encodeURIComponent(it.subject)}&std=${it.st.code}&mode=${it.mode}`;
-    days += `<div class="tt-block">
-      <div class="tt-meta"><strong>${it.subject}</strong> · AS${it.st.code} · ${modeLabel(it.mode)}</div>
-      <div class="tt-title">${it.st.title}</div>
-      <div class="tt-acts">
-        <button class="tt-copy" data-sub="${encodeURIComponent(it.subject)}" data-code="${it.st.code}" data-mode="${it.mode}">Copy prompt</button>
-        <a class="tt-open" href="${url}" title="Open this standard in the prompt builder">↗</a>
-      </div></div>`;
-  });
-  days += `</div>`;
-
+  const p = S.plan; if(!p) return '';
+  const body = S.view==='day' ? dayView() : S.view==='week' ? weekView()
+             : S.view==='month' ? monthView() : fullView();
   return `<div class="panel p-4 md:p-5">
-      <div class="flex flex-wrap items-center gap-2 mb-3">
-        <h3 class="sec-h">Your plan</h3>
-        <span class="text-xs soft">${p.used} study blocks to your last exam</span>
-        <div class="ml-auto flex gap-2">
-          <button id="tt-ics" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Add to calendar</button>
-          <button id="tt-print" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Print</button>
-          <button id="tt-regen" class="btn-go px-3 py-1.5 text-[11px]">Regenerate</button>
-        </div>
+    <div class="flex flex-wrap items-center gap-2 mb-3">
+      <h3 class="sec-h">Your plan</h3><span class="text-xs soft">${p.used} study blocks</span>
+      <div class="ml-auto flex gap-2">
+        <button id="tt-ics" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Add to calendar</button>
+        <button id="tt-print" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Print</button>
+        <button id="tt-regen" class="btn-go px-3 py-1.5 text-[11px]">Regenerate</button>
       </div>
-      ${matrix}
-      <p class="text-xs soft mt-3 mb-2">Each block links back to the prompt builder. Copy takes the prompt straight to your clipboard; the arrow opens it so you can change the mode or read the briefing.</p>
-      ${days}
-    </div>`;
+    </div>
+    ${viewBar()}${body}
+  </div>`;
 }
 
-function modeLabel(m){
-  return ({ explainer:'Learn it', exam:'Practise it', recall:'Drill it' })[m] || m;
-}
-
-/* ---------- calendar export ---------- */
+/* ---------- calendar file ---------- */
 function toICS(){
   const p = S.plan; if(!p) return '';
   const pad = n => String(n).padStart(2,'0');
-  const stamp = (date, hour) => date.replace(/-/g,'') + 'T' + pad(hour) + '0000';
-  let out = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//WHS//NCEA Master Tutor//EN','CALSCALE:GREGORIAN'];
-  p.open.forEach((slot, n) => {
-    if(!slot.item) return;
-    const it = slot.item;
-    const startHour = 16 + slot.index;                 // blocks start from 4pm
+  const at = (d,h) => d.replace(/-/g,'') + 'T' + pad(h) + '0000';
+  const out = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//WHS//NCEA Master Tutor//EN','CALSCALE:GREGORIAN'];
+  p.open.forEach((s,n)=>{
+    if(!s.item) return;
+    const it = s.item, h = Math.min(21, 16 + s.index);
     const url = location.origin + location.pathname +
       `?level=${S.level}&subject=${encodeURIComponent(it.subject)}&std=${it.st.code}&mode=${it.mode}`;
-    out.push('BEGIN:VEVENT',
-      `UID:whs-${slot.date}-${n}@ncea`,
-      `DTSTART:${stamp(slot.date, startHour)}`,
-      `DTEND:${stamp(slot.date, startHour + 1)}`,
+    out.push('BEGIN:VEVENT', `UID:whs-${s.date}-${n}@ncea`,
+      `DTSTART:${at(s.date,h)}`, `DTEND:${at(s.date,h+1)}`,
       `SUMMARY:${it.subject} — AS${it.st.code} (${modeLabel(it.mode)})`,
-      `DESCRIPTION:${it.st.title}\\n\\nOpen your prompt: ${url}`,
-      `URL:${url}`,
-      'END:VEVENT');
+      `DESCRIPTION:${it.st.title}\\n\\nOpen your prompt: ${url}`, `URL:${url}`, 'END:VEVENT');
   });
-  out.push('END:VCALENDAR');
-  return out.join('\r\n');
+  return out.concat('END:VCALENDAR').join('\r\n');
 }
-
-function download(name, text, type){
-  const blob = new Blob([text], { type });
+function download(name,text,type){
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = name;
+  a.href = URL.createObjectURL(new Blob([text],{type})); a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
 }
 
 window.Timetable = { open: render, state: S, generate, realism, toICS };
@@ -327,20 +366,25 @@ window.Timetable = { open: render, state: S, generate, realism, toICS };
 function render(){
   if(!window.NCEA_DATA || !window.NCEA_DATA[S.level]){
     R().innerHTML = `<div class="panel p-5"><p class="text-sm">Loading Level ${S.level}…</p></div>`;
-    loadLevelForTimetable();
+    const t = document.createElement('script');
+    t.src = 'ncea-l' + S.level + '.js';
+    t.onload = render;
+    t.onerror = () => R().innerHTML =
+      `<div class="panel p-5"><p class="text-sm">Could not load ncea-l${S.level}.js. It needs to sit in the same folder as this page.</p></div>`;
+    document.head.appendChild(t);
     return;
   }
-  R().innerHTML = stepSubjects() + stepStandards() + stepExams() + stepAvailability() + stepGenerate() +
-    (S.plan ? renderPlan() : '');
+  R().innerHTML = stepLevel() + stepSubjects() + stepStandards() + stepExams() +
+                  stepPeriods() + stepGo() + (S.plan ? renderPlan() : '');
   wire();
 }
 
-function loadLevelForTimetable(){
-  const tag = document.createElement('script');
-  tag.src = 'ncea-l' + S.level + '.js';
-  tag.onload = render;
-  tag.onerror = () => R().innerHTML = `<div class="panel p-5"><p class="text-sm">Could not load ncea-l${S.level}.js.</p></div>`;
-  document.head.appendChild(tag);
+function stepLevel(){
+  return `<div class="panel p-4 md:p-5">
+    <h3 class="sec-h mb-2">NCEA level</h3>
+    <div class="flex flex-wrap gap-2">${['1','2','3'].map(l=>
+      `<button class="fac-pill lvl-pill tt-lvl" data-l="${l}" aria-pressed="${S.level===l}">Level ${l}</button>`).join('')}</div>
+  </div>`;
 }
 
 function stepSubjects(){
@@ -349,21 +393,17 @@ function stepSubjects(){
   return `<div class="panel p-4 md:p-5">
     <h3 class="sec-h mb-1">Which subjects are you sitting?</h3>
     <p class="text-xs soft mb-3">Only subjects with external exams appear. Choose up to ${MAX_SUBJECTS}.</p>
-    <div class="flex flex-wrap gap-2 mb-3">
-      ${facs.map((f,i)=>`<button class="fac-pill tt-fac" data-i="${i}" aria-pressed="${S.faculty===i}"
-        style="--fac-dark:${f.dark};--fac-light:${f.light}">${f.name}</button>`).join('')}
-    </div>
-    ${S.faculty!=null ? `<div class="flex flex-wrap gap-2 mb-3">
-      ${facs[S.faculty].subjects.filter(n=>all.includes(n)).map(n=>`
-        <button class="subj-pill tt-sub-pick" data-n="${n}" aria-pressed="${S.subjects.includes(n)}"
-          style="--fac-dark:${facs[S.faculty].dark};--fac-light:${facs[S.faculty].light}">${n}</button>`).join('')}
-    </div>` : ''}
-    <div class="tt-basket">
-      ${S.subjects.length ? S.subjects.map(n=>`
-        <span class="tt-chip">${n}<button class="tt-x" data-n="${n}" title="Remove">×</button></span>`).join('')
-        : `<span class="text-xs soft">Nothing chosen yet.</span>`}
-      ${S.subjects.length ? `<span class="text-xs soft ml-2">${S.subjects.length} of ${MAX_SUBJECTS}</span>` : ''}
-    </div>
+    <div class="flex flex-wrap gap-2 mb-3">${facs.map((f,i)=>
+      `<button class="fac-pill tt-fac" data-i="${i}" aria-pressed="${S.faculty===i}"
+        style="--fac-dark:${f.dark};--fac-light:${f.light}">${f.name}</button>`).join('')}</div>
+    ${S.faculty!=null ? `<div class="flex flex-wrap gap-2 mb-3">${
+      facs[S.faculty].subjects.filter(n=>all.includes(n)).map(n=>
+      `<button class="subj-pill tt-pick" data-n="${n}" aria-pressed="${S.subjects.includes(n)}"
+        style="--fac-dark:${facs[S.faculty].dark};--fac-light:${facs[S.faculty].light}">${n}</button>`).join('')}</div>` : ''}
+    <div class="tt-basket">${S.subjects.length
+      ? S.subjects.map(n=>`<span class="tt-chip" style="background:${hueFor(n)}">${n}<button class="tt-x" data-n="${n}">&times;</button></span>`).join('')
+        + `<span class="text-xs soft ml-2">${S.subjects.length} of ${MAX_SUBJECTS}</span>`
+      : `<span class="text-xs soft">Nothing chosen yet.</span>`}</div>
   </div>`;
 }
 
@@ -371,17 +411,14 @@ function stepStandards(){
   if(!S.subjects.length) return '';
   return `<div class="panel p-4 md:p-5">
     <h3 class="sec-h mb-1">Which standards are you sitting?</h3>
-    <p class="text-xs soft mb-3">Everything is ticked to start with. Untick anything you are not doing.</p>
-    ${S.subjects.map(sub=>`
-      <div class="tt-stdgroup">
-        <p class="tt-stdsub">${sub}</p>
-        ${externalStandards(sub).map(st=>`
-          <label class="tt-check">
-            <input type="checkbox" data-sub="${sub}" data-code="${st.code}"
-              ${S.standards[sub] && S.standards[sub].has(st.code) ? 'checked' : ''}>
-            <span><strong>AS${st.code}</strong> · ${st.credits} cr — ${st.title}</span>
-          </label>`).join('')}
-      </div>`).join('')}
+    <p class="text-xs soft mb-3">All ticked to start with. Untick anything you are not doing.</p>
+    ${S.subjects.map(sub=>`<div class="tt-stdgroup">
+      <p class="tt-stdsub" style="color:${hueFor(sub)}">${sub}</p>
+      ${externalStandards(sub).map(st=>`<label class="tt-check">
+        <input type="checkbox" data-sub="${sub}" data-code="${st.code}"
+          ${S.standards[sub]&&S.standards[sub].has(st.code)?'checked':''}>
+        <span><strong>AS${st.code}</strong> · ${st.credits} cr — ${st.title}</span></label>`).join('')}
+    </div>`).join('')}
   </div>`;
 }
 
@@ -389,130 +426,132 @@ function stepExams(){
   if(!S.subjects.length) return '';
   return `<div class="panel p-4 md:p-5">
     <h3 class="sec-h mb-1">Exam dates</h3>
-    <p class="text-xs soft mb-3">Pre-filled from the ${E().year} timetable where we have them. Check yours on
-      <a href="${E().timetableUrl}" target="_blank" rel="noopener" class="underline">NZQA</a> — and change any of these if you sit at a different time.</p>
+    <p class="text-xs soft mb-3">Pre-filled from the ${E().year} timetable. Check yours on
+      <a href="${E().timetableUrl}" target="_blank" rel="noopener" class="underline">NZQA</a>.</p>
     ${S.subjects.map(sub=>{
-      const ex = S.exams[sub] || {};
-      const problem = ex.date ? E().checkDate(ex.date) : 'No date yet.';
+      const ex = S.exams[sub]||{}, prob = ex.date ? E().checkDate(ex.date) : 'No date yet.';
       return `<div class="tt-examrow">
-        <span class="tt-examsub">${sub}</span>
+        <span class="tt-examsub"><i class="tt-dot" style="background:${hueFor(sub)}"></i>${sub}</span>
         <input type="date" class="field tt-date" data-sub="${sub}" value="${ex.date||''}"
-               min="${E().window.start}" max="${E().window.end}">
-        <select class="field tt-sess" data-sub="${sub}">
-          ${E().sessions.map(s=>`<option value="${s.id}" ${ex.session===s.id?'selected':''}>${s.label} ${s.start}</option>`).join('')}
-        </select>
-        <span class="tt-warn">${problem ? problem : ''}</span>
-      </div>`;
+          min="${E().window.start}" max="${E().window.end}">
+        <select class="field tt-sess" data-sub="${sub}">${E().sessions.map(s=>
+          `<option value="${s.id}" ${ex.session===s.id?'selected':''}>${s.label} ${s.start}</option>`).join('')}</select>
+        <span class="tt-warn">${prob||''}</span></div>`;
     }).join('')}
   </div>`;
 }
 
-function stepAvailability(){
+function stepPeriods(){
   if(!S.subjects.length) return '';
   const r = realism();
   return `<div class="panel p-4 md:p-5">
     <h3 class="sec-h mb-1">When can you study?</h3>
-    <p class="text-xs soft mb-3">Hours per day. Leave a day on zero if you need it off.</p>
-    <div class="tt-hours">
-      ${WEEKDAYS.map((d,i)=>`
-        <label class="tt-hour"><span>${d}</span>
-          <input type="number" min="0" max="8" step="1" class="field tt-h" data-i="${i}" value="${S.hours[i]}">
-        </label>`).join('')}
-    </div>
-    <div class="mt-3 grid sm:grid-cols-2 gap-3">
-      <label class="block"><span class="text-[10px] font-black uppercase tracking-widest soft">Start from</span>
-        <input type="date" id="tt-start" class="field w-full mt-1" value="${S.startDate}"></label>
-      <label class="block"><span class="text-[10px] font-black uppercase tracking-widest soft">Days off (comma-separated dates)</span>
-        <input type="text" id="tt-blackouts" class="field w-full mt-1" placeholder="2026-11-21, 2026-11-22"
-               value="${S.blackouts.join(', ')}"></label>
-    </div>
-    <p class="text-xs soft mt-2">${r.perWeek} hours a week over about ${r.weeks} weeks.</p>
+    <p class="text-xs soft mb-3">How much you can do changes across the year, so set it per period.
+      Term-time is squeezed; holidays and study leave are not. Edit the dates to match your school.</p>
+    ${S.periods.map((p,i)=>`<div class="tt-period">
+      <div class="tt-pmeta">
+        <input class="field tt-pname" data-i="${i}" value="${p.name}">
+        <input type="date" class="field tt-pd" data-i="${i}" data-k="start" value="${p.start}">
+        <span class="soft text-xs">to</span>
+        <input type="date" class="field tt-pd" data-i="${i}" data-k="end" value="${p.end}">
+        <span class="text-xs soft ml-auto">${p.hours.reduce((a,b)=>a+b,0)} h/week</span>
+        <button class="tt-prem" data-i="${i}" title="Remove this period">&times;</button>
+      </div>
+      <div class="tt-hours">${WEEKDAYS.map((w,d)=>`<label class="tt-hour"><span>${w}</span>
+        <input type="number" min="0" max="10" class="field tt-ph" data-i="${i}" data-d="${d}" value="${p.hours[d]}"></label>`).join('')}</div>
+    </div>`).join('')}
+    <button id="tt-addp" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold mt-2">+ Add a period</button>
+    <label class="block mt-3"><span class="text-[10px] font-black uppercase tracking-widest soft">Individual days off</span>
+      <input type="text" id="tt-black" class="field w-full mt-1" placeholder="2026-11-21, 2026-11-22" value="${S.blackouts.join(', ')}"></label>
+    <p class="text-xs soft mt-2">${r.total} study blocks available before your last exam.</p>
     ${r.notes.map(n=>`<div class="tt-note ${n.tone}">${n.text}</div>`).join('')}
   </div>`;
 }
 
-function stepGenerate(){
+function stepGo(){
   if(!S.subjects.length) return '';
   const n = chosenStandards().length;
-  const ready = n > 0 && S.subjects.every(s => S.exams[s] && S.exams[s].date && !E().checkDate(S.exams[s].date));
+  const ready = n>0 && S.subjects.every(s => S.exams[s] && S.exams[s].date && !E().checkDate(S.exams[s].date));
   return `<div class="panel p-4 md:p-5 flex flex-wrap items-center gap-3">
-    <button id="tt-go" class="btn-go" ${ready?'':'disabled style="opacity:.5;cursor:not-allowed"'}>
-      ${S.plan ? 'Rebuild my timetable' : 'Create my study timetable'}</button>
-    <span class="text-xs soft">${n} standard${n===1?'':'s'} selected${ready?'':' — check every subject has a valid exam date'}</span>
+    <button id="tt-go" class="btn-go"${ready?'':' disabled style="opacity:.5;cursor:not-allowed"'}>
+      ${S.plan?'Rebuild my timetable':'Create my study timetable'}</button>
+    <span class="text-xs soft">${n} standard${n===1?'':'s'} selected${ready?'':' — every subject needs a valid exam date'}</span>
   </div>`;
 }
 
-/* ---------- events ---------- */
 function wire(){
-  const q = (sel, fn) => R().querySelectorAll(sel).forEach(fn);
+  const q = (s,fn) => R().querySelectorAll(s).forEach(fn);
+  const one = s => R().querySelector(s);
 
+  q('.tt-lvl', b => b.onclick = () => {
+    S.level = b.dataset.l; S.faculty=null; S.subjects=[]; S.standards={}; S.exams={}; S.plan=null; render();
+  });
   q('.tt-fac', b => b.onclick = () => { S.faculty = +b.dataset.i; render(); });
-
-  q('.tt-sub-pick', b => b.onclick = () => {
+  q('.tt-pick', b => b.onclick = () => {
     const n = b.dataset.n;
-    if(S.subjects.includes(n)) S.subjects = S.subjects.filter(x => x !== n);
+    if(S.subjects.includes(n)) S.subjects = S.subjects.filter(x=>x!==n);
     else if(S.subjects.length < MAX_SUBJECTS){
       S.subjects.push(n);
-      S.standards[n] = new Set(externalStandards(n).map(x => x.code));
+      S.standards[n] = new Set(externalStandards(n).map(x=>x.code));
       const d = E().dateFor(S.level, n);
-      S.exams[n] = d ? { ...d } : { date:'', session:'AM' };
+      S.exams[n] = d ? { date:d.date, session:d.session } : { date:'', session:'AM' };
     }
     S.plan = null; render();
   });
-
-  q('.tt-x', b => b.onclick = () => {
-    S.subjects = S.subjects.filter(x => x !== b.dataset.n);
-    S.plan = null; render();
-  });
-
+  q('.tt-x', b => b.onclick = () => { S.subjects = S.subjects.filter(x=>x!==b.dataset.n); S.plan=null; render(); });
   q('.tt-check input', el => el.onchange = () => {
-    const set = S.standards[el.dataset.sub];
-    el.checked ? set.add(el.dataset.code) : set.delete(el.dataset.code);
+    const s = S.standards[el.dataset.sub];
+    el.checked ? s.add(el.dataset.code) : s.delete(el.dataset.code);
     S.plan = null;
   });
+  q('.tt-date', el => el.onchange = () => { S.exams[el.dataset.sub].date = el.value; S.plan=null; render(); });
+  q('.tt-sess', el => el.onchange = () => { S.exams[el.dataset.sub].session = el.value; S.plan=null; });
 
-  q('.tt-date', el => el.onchange = () => {
-    S.exams[el.dataset.sub].date = el.value; S.plan = null; render();
+  q('.tt-pname', el => el.onchange = () => { S.periods[+el.dataset.i].name = el.value; });
+  q('.tt-pd', el => el.onchange = () => { S.periods[+el.dataset.i][el.dataset.k] = el.value; S.plan=null; render(); });
+  q('.tt-ph', el => el.onchange = () => {
+    S.periods[+el.dataset.i].hours[+el.dataset.d] = Math.max(0, Math.min(10, +el.value||0));
+    S.plan=null; render();
   });
-  q('.tt-sess', el => el.onchange = () => {
-    S.exams[el.dataset.sub].session = el.value; S.plan = null;
-  });
-
-  q('.tt-h', el => el.onchange = () => {
-    S.hours[+el.dataset.i] = Math.max(0, Math.min(8, +el.value || 0));
-    S.plan = null; render();
-  });
-
-  const start = R().querySelector('#tt-start');
-  if(start) start.onchange = () => { S.startDate = start.value; S.plan = null; render(); };
-
-  const bl = R().querySelector('#tt-blackouts');
+  q('.tt-prem', b => b.onclick = () => { S.periods.splice(+b.dataset.i,1); S.plan=null; render(); });
+  const addp = one('#tt-addp');
+  if(addp) addp.onclick = () => {
+    const last = S.periods[S.periods.length-1];
+    S.periods.push({ name:'New period',
+      start: last ? addDays(last.end,1) : todayISO(),
+      end:   last ? addDays(last.end,14) : addDays(todayISO(),14),
+      hours:[2,2,2,2,2,2,0] });
+    render();
+  };
+  const bl = one('#tt-black');
   if(bl) bl.onchange = () => {
-    S.blackouts = bl.value.split(',').map(x => x.trim()).filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x));
-    S.plan = null; render();
+    S.blackouts = bl.value.split(',').map(x=>x.trim()).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x));
+    S.plan=null; render();
   };
 
-  const go = R().querySelector('#tt-go');
-  if(go) go.onclick = () => { S.plan = generate(); render(); window.scrollBy({top:300, behavior:'smooth'}); };
+  const go = one('#tt-go');
+  if(go) go.onclick = () => { S.plan = generate(); S.view='week'; S.cursor=todayISO(); render(); };
+  const rg = one('#tt-regen'); if(rg) rg.onclick = () => { S.plan = generate(); render(); };
 
-  const regen = R().querySelector('#tt-regen');
-  if(regen) regen.onclick = () => { S.plan = generate(); render(); };
+  q('.tt-view', b => b.onclick = () => { S.view = b.dataset.v; render(); });
+  q('.tt-arrow', b => b.onclick = () => {
+    const n = +b.dataset.step;
+    if(S.view==='day') S.cursor = addDays(S.cursor,n);
+    else if(S.view==='week') S.cursor = addDays(S.cursor,7*n);
+    else { const d=new Date(S.cursor+'T00:00:00'); d.setMonth(d.getMonth()+n); S.cursor=iso(d); }
+    render();
+  });
+  const td = one('.tt-today'); if(td) td.onclick = () => { S.cursor = todayISO(); render(); };
+  q('.tt-mcell[data-goto]', c => c.onclick = () => { S.cursor = c.dataset.goto; S.view='day'; render(); });
 
   q('.tt-copy', b => b.onclick = async () => {
-    const text = window.composePrompt({
-      level: S.level, subject: decodeURIComponent(b.dataset.sub),
-      code: b.dataset.code, mode: b.dataset.mode
-    });
+    const text = window.composePrompt({ level:S.level, subject:decodeURIComponent(b.dataset.sub),
+      code:b.dataset.code, mode:b.dataset.mode });
     try { await navigator.clipboard.writeText(text); } catch { return; }
-    const old = b.textContent; b.textContent = 'Copied ✓';
-    setTimeout(()=>b.textContent = old, 1500);
+    const o = b.textContent; b.textContent='Copied ✓'; setTimeout(()=>b.textContent=o,1500);
   });
-
-  const ics = R().querySelector('#tt-ics');
-  if(ics) ics.onclick = () => download('ncea-study-plan.ics', toICS(), 'text/calendar');
-
-  const pr = R().querySelector('#tt-print');
-  if(pr) pr.onclick = () => window.print();
+  const ics = one('#tt-ics'); if(ics) ics.onclick = () => download('ncea-study-plan.ics', toICS(), 'text/calendar');
+  const pr  = one('#tt-print'); if(pr) pr.onclick = () => window.print();
 }
 
 })();
