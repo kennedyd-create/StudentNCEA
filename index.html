@@ -335,11 +335,23 @@ body.dark-mode .tt-note.bad{ color:#fca5a5; }
   border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); cursor:pointer; }
 .tt-fm[aria-pressed="true"]{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
 
-/* AI / no-AI switch and offline method text */
-.tt-how-switch{ display:flex; gap:.25rem; margin-left:.4rem; }
-.tt-hm{ font-size:.625rem; font-weight:800; padding:.22rem .6rem; border-radius:.4rem;
-  border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); cursor:pointer; }
-.tt-hm[aria-pressed="true"]{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
+/* How-to-study switch: centred in the header and deliberately in the school
+   gold rather than the faculty colour, so it reads as a setting rather than
+   as part of the subject colour scheme. */
+.tt-planhead{ display:flex; flex-wrap:wrap; align-items:center; gap:.6rem; }
+.tt-ph-side{ display:flex; align-items:center; gap:.5rem; flex:1 1 12rem; }
+.tt-ph-right{ justify-content:flex-end; }
+.tt-how-switch{ display:flex; gap:.15rem; padding:.2rem; border-radius:.55rem;
+  background:color-mix(in srgb, var(--gold) 22%, transparent);
+  border:1px solid color-mix(in srgb, var(--gold) 55%, transparent);
+  margin:0 auto; order:0; }
+@media (max-width:720px){ .tt-how-switch{ order:3; flex:1 1 100%; justify-content:center; } }
+.tt-hm{ font-size:.6875rem; font-weight:800; padding:.28rem .7rem; border-radius:.4rem;
+  border:0; background:transparent; color:var(--ink-soft); cursor:pointer; white-space:nowrap; }
+.tt-hm:hover{ color:var(--ink); }
+.tt-hm[aria-pressed="true"]{ background:var(--gold); color:#3b2a06; box-shadow:0 1px 3px rgba(0,0,0,.25); }
+body.dark-mode .tt-hm[aria-pressed="true"]{ color:#241a04; }
+
 .tt-how{ flex:1 1 100%; font-size:.6875rem; line-height:1.5; color:var(--ink);
   background:color-mix(in srgb,var(--hue) 12%,transparent);
   border-left:3px solid var(--hue); border-radius:.3rem; padding:.35rem .5rem; margin-top:.15rem; }
