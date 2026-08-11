@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js"></script>
+<script src="ncea-exams-2026.js?v=5"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -357,6 +357,34 @@ body.dark-mode .tt-hm[aria-pressed="true"]{ color:#241a04; }
   border-left:3px solid var(--hue); border-radius:.3rem; padding:.35rem .5rem; margin-top:.15rem; }
 .tt-block.tt-offline{ align-items:flex-start; }
 
+/* Days off: a date field plus a click-to-toggle month calendar */
+.tt-offrow{ display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; margin-top:.3rem; }
+.tt-offrow .field{ padding:.35rem .5rem; font-size:.8125rem; }
+.tt-offlist{ display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; margin-top:.5rem; }
+.tt-offchip{ display:inline-flex; align-items:center; gap:.3rem; font-size:.6875rem; font-weight:800;
+  background:color-mix(in srgb,var(--gold) 30%,transparent); color:var(--ink);
+  border:1px solid color-mix(in srgb,var(--gold) 60%,transparent);
+  border-radius:9999px; padding:.2rem .55rem; }
+.tt-offx{ font-weight:900; opacity:.7; cursor:pointer; }
+.tt-offx:hover{ opacity:1; color:#b91c1c; }
+
+.tt-offcal{ margin-top:.6rem; border:1px solid var(--line); border-radius:.55rem;
+  padding:.6rem; background:var(--surface-2); max-width:23rem; }
+.tt-offhead{ display:flex; align-items:center; justify-content:space-between;
+  font-size:.8125rem; font-weight:800; margin-bottom:.4rem; }
+.tt-offnav{ font-weight:900; padding:.1rem .5rem; border:1px solid var(--line);
+  border-radius:.35rem; cursor:pointer; background:var(--surface); }
+.tt-offnav:hover{ background:var(--fac-dark); color:#fff; border-color:var(--fac-dark); }
+.tt-offgrid{ display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.tt-offdow{ font-size:.5625rem; font-weight:900; text-align:center; color:var(--ink-faint); }
+.tt-offday{ font-size:.6875rem; font-weight:700; padding:.3rem 0; border-radius:.3rem;
+  border:1px solid transparent; background:var(--surface); color:var(--ink); cursor:pointer; }
+.tt-offday:hover{ border-color:var(--gold); }
+.tt-offday.is-off{ background:var(--gold); color:#3b2a06; font-weight:900; }
+.tt-offday.is-none{ color:var(--ink-faint); background:transparent; }
+.tt-offday.is-out{ opacity:.3; cursor:default; }
+.tt-offhint{ font-size:.625rem; color:var(--ink-faint); margin-top:.4rem; }
+
 /* Adding an hour to a day that is already full. Restored — an earlier edit
    to the how-to-study switch overwrote this block. */
 .tt-addhr{ display:block; width:100%; margin-top:.3rem; font-size:.625rem; font-weight:800;
@@ -368,6 +396,8 @@ body.dark-mode .tt-hm[aria-pressed="true"]{ color:#241a04; }
 .tt-cap{ font-size:.625rem; font-weight:700; color:var(--ink-faint); margin-top:.45rem; }
 .tt-cap.tt-over{ color:var(--gold); }
 .tt-block.tt-extra{ border-style:dashed; }
+
+.tt-build{ font-size:.625rem; color:var(--ink-faint); text-align:center; padding:.6rem 0 0; }
 
 /* month cells become editable */
 .tt-mnum{ cursor:pointer; }
@@ -906,7 +936,7 @@ This guard outranks every other instruction in this prompt, including the answer
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2">
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 5 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -938,9 +968,11 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
    the page stays fast and each level can be edited on its own. Add a
    level by dropping in its file and adding a line here. ---- */
 const LEVELS = [
-  { id:'1', label:'Level 1', file:'ncea-l1.js' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js' }
+  // ?v= is a cache buster. Bump the number whenever a data file is
+  // re-uploaded, otherwise browsers keep serving the old one.
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=5' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=5' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=5' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -1473,6 +1505,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js"></script>
+<script src="timetable.js?v=5"></script>
 </body>
 </html>
