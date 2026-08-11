@@ -59,6 +59,7 @@ window.NCEA_EXAMS = {
       'Biology':                   { date:'2026-11-17', session:'PM' },
       'Health':                    { date:'2026-11-18', session:'AM' },
       'Psychology':                { date:'2026-11-18', session:'PM' },
+      'Economics':                 { date:'2026-11-18', session:'PM' },
       'Drama':                     { date:'2026-11-20', session:'AM' },
       'Chemistry':                 { date:'2026-11-20', session:'PM' },
       'Statistics':                { date:'2026-11-24', session:'AM' },
