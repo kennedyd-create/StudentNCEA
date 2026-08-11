@@ -11,6 +11,8 @@
    ============================================================ */
 (function () {
 
+const TT_BUILD = 'build 4 — mix/none switch, add-hour, regenerate warning';
+
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
 const D = () => window.NCEA_DATA[S.level];
@@ -724,7 +726,7 @@ function render(){
   if(!window.NCEA_DATA || !window.NCEA_DATA[S.level]){
     R().innerHTML = `<div class="panel p-5"><p class="text-sm">Loading Level ${S.level}…</p></div>`;
     const t = document.createElement('script');
-    t.src = 'ncea-l' + S.level + '.js';
+    t.src = 'ncea-l' + S.level + '.js?v=4';
     t.onload = render;
     t.onerror = () => R().innerHTML =
       `<div class="panel p-5"><p class="text-sm">Could not load ncea-l${S.level}.js. It needs to sit in the same folder as this page.</p></div>`;
@@ -733,7 +735,8 @@ function render(){
   }
   if(S.savedPlan) rehydrate();
   R().innerHTML = stepLevel() + stepSubjects() + stepStandards() + stepExams() +
-                  stepPeriods() + stepGo() + (S.plan ? renderPlan() : '');
+                  stepPeriods() + stepGo() + (S.plan ? renderPlan() : '') +
+                  `<p class="tt-build">${TT_BUILD}</p>`;
   wire();
   save();
 }
