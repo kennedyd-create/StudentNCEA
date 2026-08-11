@@ -268,9 +268,9 @@ body.dark-mode .tt-note.bad{ color:#fca5a5; }
   background:var(--hue); color:#fff; border-radius:9999px; padding:.05rem .4rem; margin-left:.3rem; }
 .tt-btitle{ font-size:.6875rem; color:var(--ink-soft); flex:1 1 12rem; }
 .tt-acts{ margin-left:auto; display:flex; gap:.3rem; }
-.tt-copy,.tt-open{ font-size:.625rem; font-weight:800; border:1px solid var(--line-strong);
+.tt-copy,.tt-gem,.tt-open{ font-size:.625rem; font-weight:800; border:1px solid var(--line-strong);
   border-radius:.35rem; padding:.2rem .45rem; cursor:pointer; color:var(--ink-soft); white-space:nowrap; }
-.tt-copy:hover,.tt-open:hover{ background:var(--hue,var(--fac-dark)); color:#fff; border-color:transparent; }
+.tt-copy:hover,.tt-gem:hover,.tt-open:hover{ background:var(--hue,var(--fac-dark)); color:#fff; border-color:transparent; }
 .tt-week{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.4rem; }
 @media (max-width:900px){ .tt-week{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
 .tt-wday{ border:1px solid var(--line); border-radius:.5rem; padding:.4rem; background:var(--surface-2); min-height:5rem; }
@@ -357,6 +357,18 @@ body.dark-mode .tt-hm[aria-pressed="true"]{ color:#241a04; }
   border-left:3px solid var(--hue); border-radius:.3rem; padding:.35rem .5rem; margin-top:.15rem; }
 .tt-block.tt-offline{ align-items:flex-start; }
 
+/* Adding an hour to a day that is already full. Restored — an earlier edit
+   to the how-to-study switch overwrote this block. */
+.tt-addhr{ display:block; width:100%; margin-top:.3rem; font-size:.625rem; font-weight:800;
+  color:var(--ink-faint); border:1px dashed var(--line-strong); border-radius:.35rem;
+  padding:.3rem; background:transparent; cursor:pointer; }
+.tt-addhr:hover{ border-color:var(--gold); color:var(--gold); background:var(--surface-2); }
+.tt-addsm{ padding:.18rem; font-size:.6875rem; }
+.tt-maddhr{ margin-top:.15rem; padding:0; font-size:.55rem; line-height:1.4; }
+.tt-cap{ font-size:.625rem; font-weight:700; color:var(--ink-faint); margin-top:.45rem; }
+.tt-cap.tt-over{ color:var(--gold); }
+.tt-block.tt-extra{ border-style:dashed; }
+
 /* month cells become editable */
 .tt-mnum{ cursor:pointer; }
 .tt-mnum:hover{ text-decoration:underline; }
@@ -374,6 +386,7 @@ body.dark-mode .tt-hm[aria-pressed="true"]{ color:#241a04; }
 .tt-table thead th{ background:var(--fac-dark); color:#fff; font-weight:800; }
 .tt-wk{ display:block; font-size:.5625rem; font-weight:600; opacity:.85; }
 .tt-sub{ text-align:left!important; font-weight:800; white-space:nowrap; background:var(--surface-2); }
+.tt-has{ font-weight:800; }
 .tt-none{ color:var(--ink-faint); }
 .tt-exam{ font-weight:800; background:var(--surface-2); white-space:nowrap; }
 
