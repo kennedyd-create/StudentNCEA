@@ -38,8 +38,64 @@ const S = {
   blackouts: [],
   plan: null,
   view: 'week',
+  fullMode: 'subject',      // 'subject' matrix or 'calendar' months
+  withTopics: true,         // allocate specific topics inside each standard
+  armed: null,              // subject picked from the tab bar, ready to place
   cursor: null
 };
+
+/* ---------- saving between visits ----------
+   Everything lives on the student's own device. No account, nothing sent
+   anywhere. The plan is stored in a compact form and rebuilt on load. */
+const STORE = 'whs_tt_v1';
+function save(){
+  try {
+    localStorage.setItem(STORE, JSON.stringify({
+      level:S.level, faculty:S.faculty, subjects:S.subjects,
+      standards: Object.fromEntries(Object.entries(S.standards).map(([k,v]) => [k, [...v]])),
+      exams:S.exams, periods:S.periods, blackouts:S.blackouts,
+      withTopics:S.withTopics, view:S.view, fullMode:S.fullMode, cursor:S.cursor,
+      plan: S.plan ? S.plan.open.map(x => x.item
+        ? { d:x.date, i:x.index, s:x.item.subject, c:x.item.st.code, m:x.item.mode, t:x.item.topic||'' }
+        : { d:x.date, i:x.index }) : null
+    }));
+  } catch(e){ /* private browsing, quota — not worth interrupting the student */ }
+}
+function load(){
+  let raw; try { raw = localStorage.getItem(STORE); } catch(e){ return false; }
+  if(!raw) return false;
+  try {
+    const o = JSON.parse(raw);
+    Object.assign(S, {
+      level:o.level||'3', faculty:o.faculty, subjects:o.subjects||[],
+      exams:o.exams||{}, periods:o.periods||S.periods, blackouts:o.blackouts||[],
+      withTopics: o.withTopics !== false, view:o.view||'week',
+      fullMode:o.fullMode||'subject', cursor:o.cursor||todayISO()
+    });
+    S.standards = {};
+    Object.entries(o.standards||{}).forEach(([k,v]) => S.standards[k] = new Set(v));
+    S.savedPlan = o.plan || null;
+    return true;
+  } catch(e){ return false; }
+}
+function rehydrate(){
+  if(!S.savedPlan || !window.NCEA_DATA || !window.NCEA_DATA[S.level]) return;
+  const open = S.savedPlan.map(x => {
+    const slot = { date:x.d, index:x.i, item:null };
+    if(x.s && D().subjects[x.s]){
+      const st = D().subjects[x.s].standards.find(y => y.code === x.c);
+      if(st) slot.item = { subject:x.s, st, mode:x.m, topic:x.t||'' };
+    }
+    return slot;
+  });
+  S.plan = { open, items: chosenStandards(), used: open.filter(o=>o.item).length };
+  S.savedPlan = null;
+}
+function wipe(){
+  try { localStorage.removeItem(STORE); } catch(e){}
+  S.faculty=null; S.subjects=[]; S.standards={}; S.exams={}; S.blackouts=[];
+  S.plan=null; S.savedPlan=null; S.armed=null; S.cursor=todayISO();
+}
 
 /* ---------- dates ----------
    All date maths runs in UTC. Parsing 'YYYY-MM-DD' as local time and then
@@ -154,13 +210,16 @@ function generate(){
   const wanted = [];
   items.forEach(i => {
     const room = Math.max(1, i.deadline - 1);
+    // Work through the standard's own topic list in order, then loop.
+    const topics = (S.withTopics && i.st.topics && i.st.topics.length) ? i.st.topics : [];
     for(let n = 0; n < i.blocks; n++){
       const pos = Math.round(((n + 0.5) / i.blocks) * room);
       const phase = n / i.blocks;
       wanted.push({
         item: i,
         target: Math.min(pos, i.deadline - 1),
-        mode: phase < 0.34 ? 'explainer' : phase < 0.72 ? 'exam' : 'recall'
+        mode: phase < 0.34 ? 'explainer' : phase < 0.72 ? 'exam' : 'recall',
+        topic: topics.length ? topics[n % topics.length] : ''
       });
     }
   });
@@ -187,7 +246,7 @@ function generate(){
       // keep looking a little past the first hit, but do not scan the whole plan
       if(best >= 0 && d > bestScore + 8) break;
     }
-    if(best >= 0) filled[best] = { subject: w.item.subject, st: w.item.st, mode: w.mode };
+    if(best >= 0) filled[best] = { subject: w.item.subject, st: w.item.st, mode: w.mode, topic: w.topic };
   });
 
   // The day before an exam belongs to that subject: relabel anything there.
@@ -226,6 +285,24 @@ function realism(){
   return { notes, total, n, weeks: Math.max(1, Math.round(daysBetween(planStart(), end)/7)) };
 }
 
+/* Choosing sensibly when a student drops a subject onto a day: take the
+   standard that currently has the least time, and set the mode by how close
+   the exam is. */
+function pickStandardFor(subject, slot){
+  const mine = chosenStandards().filter(x => x.subject === subject);
+  if(!mine.length) return null;
+  const count = {};
+  S.plan.open.forEach(x => { if(x.item && x.item.subject === subject)
+    count[x.item.st.code] = (count[x.item.st.code]||0)+1; });
+  return mine.sort((a,b) => (count[a.st.code]||0) - (count[b.st.code]||0))[0].st;
+}
+function modeForDate(date, subject){
+  const ex = S.exams[subject];
+  if(!ex || !ex.date) return 'explainer';
+  const left = daysBetween(date, ex.date);
+  return left <= 7 ? 'recall' : left <= 21 ? 'exam' : 'explainer';
+}
+
 const modeLabel = m => ({ explainer:'Learn it', exam:'Practise it', recall:'Drill it' })[m] || m;
 const blocksOn = d => S.plan ? S.plan.open.filter(s => s.date === d && s.item) : [];
 const examsOn  = d => S.subjects.filter(s => S.exams[s] && S.exams[s].date === d);
@@ -253,66 +330,81 @@ function viewBar(){
   </div>`;
 }
 
-function blockHTML(slot){
+function blockHTML(slot, n){
   const it = slot.item;
-  const url = `?level=${S.level}&subject=${encodeURIComponent(it.subject)}&std=${it.st.code}&mode=${it.mode}`;
+  const q = `?level=${S.level}&subject=${encodeURIComponent(it.subject)}&std=${it.st.code}&mode=${it.mode}` +
+            (it.topic ? `&topic=${encodeURIComponent(it.topic)}` : '');
   return `<div class="tt-block" style="--hue:${hueFor(it.subject)}">
+    <button class="tt-del" data-slot="${n}" title="Clear this block">&times;</button>
     <div class="tt-bmeta"><strong>${it.subject}</strong> · AS${it.st.code}
       <span class="tt-mode">${modeLabel(it.mode)}</span></div>
-    <div class="tt-btitle">${it.st.title}</div>
+    <div class="tt-btitle">${it.topic ? it.topic : it.st.title}</div>
     <div class="tt-acts">
-      <button class="tt-copy" data-sub="${encodeURIComponent(it.subject)}" data-code="${it.st.code}" data-mode="${it.mode}">Copy prompt</button>
-      <a class="tt-open" href="${url}" title="Open in the prompt builder">&#8599;</a>
+      <a class="tt-open" href="${q}" title="Open this in the prompt builder">Open &#8599;</a>
+      <button class="tt-gem" data-sub="${encodeURIComponent(it.subject)}" data-code="${it.st.code}"
+        data-mode="${it.mode}" data-topic="${encodeURIComponent(it.topic||'')}"
+        title="Copy the prompt and open Gemini">Gemini &#8599;</button>
     </div></div>`;
 }
 
+/* An unused slot is a place the student can drop a subject into. */
+function emptyHTML(n){
+  return `<button class="tt-slot" data-empty="${n}" title="${S.armed ? 'Place ' + S.armed + ' here' : 'Pick a subject above first'}">+</button>`;
+}
+
 function dayView(){
-  const d = S.cursor, ex = examsOn(d), b = blocksOn(d);
+  const d = S.cursor, ex = examsOn(d);
+  const b = S.plan ? S.plan.open.map((s,n)=>({s,n})).filter(x => x.s.date === d) : [];
   const eve = S.subjects.filter(s => S.exams[s] && addDays(S.exams[s].date,-1) === d);
   return `<div class="tt-dayview">
     ${ex.length ? `<div class="tt-flagbig">EXAM TODAY — ${ex.map(s=>s+' '+S.exams[s].session).join(', ')}</div>` : ''}
     ${!ex.length && eve.length ? `<div class="tt-flagbig tt-evebig">Night before ${eve.join(' and ')}</div>` : ''}
-    ${b.length ? b.map(blockHTML).join('')
-      : `<p class="text-sm soft">Nothing scheduled. ${hoursOn(d) ? 'Spare capacity — use it or rest.' : 'A day off.'}</p>`}
+    ${b.length ? b.map(x => x.s.item ? blockHTML(x.s, x.n) : emptyHTML(x.n)).join('')
+      : `<p class="text-sm soft">A day off.</p>`}
   </div>`;
 }
 
 function weekView(){
   const start = weekStart(S.cursor);
   return `<div class="tt-week">${WEEKDAYS.map((w,i)=>{
-    const d = addDays(start,i), ex = examsOn(d), b = blocksOn(d);
+    const d = addDays(start,i), ex = examsOn(d);
+    const b = S.plan ? S.plan.open.map((s,n)=>({s,n})).filter(x => x.s.date === d) : [];
     const eve = S.subjects.some(s => S.exams[s] && addDays(S.exams[s].date,-1) === d);
     return `<div class="tt-wday${d===todayISO()?' tt-today-col':''}">
       <div class="tt-wdh">${w}<span>${pretty(d,{day:'numeric',month:'short'})}</span></div>
       ${ex.length ? `<div class="tt-flag">EXAM</div>` : eve ? `<div class="tt-flag tt-eve">Eve</div>` : ''}
-      ${b.length ? b.map(blockHTML).join('') : `<p class="tt-empty">&mdash;</p>`}
+      ${b.length ? b.map(x => x.s.item ? blockHTML(x.s, x.n) : emptyHTML(x.n)).join('') : `<p class="tt-empty">&mdash;</p>`}
     </div>`;
   }).join('')}</div>`;
 }
 
-function monthView(){
-  const first = monthStart(S.cursor), lead = wdIndex(first);
+function monthView(anchor){
+  const first = monthStart(anchor || S.cursor), lead = wdIndex(first);
   const m = monthOf(first);
   const cells = new Array(lead).fill(null);
   let d = first;
   while(monthOf(d) === m){ cells.push(d); d = addDays(d,1); }
-  return `<div class="tt-month">
+  return `<div class="tt-monthwrap">
+    <p class="tt-mtitle">${pretty(first,{month:'long', year:'numeric'})}</p>
+    <div class="tt-month">
     ${WEEKDAYS.map(w=>`<div class="tt-mh">${w}</div>`).join('')}
     ${cells.map(c=>{
       if(!c) return `<div class="tt-mcell tt-mout"></div>`;
       const b = blocksOn(c), ex = examsOn(c), counts = {};
-      b.forEach(s => counts[s.item.subject] = (counts[s.item.subject]||0)+1);
+      b.forEach(x => counts[x.item.subject] = (counts[x.item.subject]||0)+1);
+      const names = Object.entries(counts)
+        .sort((a,b2)=>b2[1]-a[1])
+        .map(([sub,n])=>`<span class="tt-mname" style="--hue:${hueFor(sub)}">${sub}<b>${n}</b></span>`).join('');
       return `<div class="tt-mcell${c===todayISO()?' tt-today-cell':''}" data-goto="${c}" title="Open this day">
         <span class="tt-mnum">${+c.slice(8)}</span>
         ${ex.length?`<span class="tt-mexam">EXAM</span>`:''}
-        <div class="tt-mbars">${Object.entries(counts).map(([s,n])=>
-          `<i style="background:${hueFor(s)};flex:${n}" title="${s} — ${n}h"></i>`).join('')}</div>
+        <div class="tt-mnames">${names||''}</div>
       </div>`;
-    }).join('')}</div>
-    <p class="text-xs soft mt-2">Colour only at this zoom. Click any day to open it.</p>`;
+    }).join('')}
+    </div></div>`;
 }
 
-function fullView(){
+function subjectMatrix(){
   const weeks = {};
   S.plan.open.forEach(s => { const w = weekStart(s.date); (weeks[w]=weeks[w]||[]).push(s); });
   const list = Object.keys(weeks).sort();
@@ -329,23 +421,49 @@ function fullView(){
     t += `<td class="tt-exam">${e&&e.date?pretty(e.date,{day:'numeric',month:'short'})+' '+e.session:'—'}</td></tr>`;
   });
   return t + `</tbody></table></div>
-    <p class="text-xs soft mt-2">Hours per week. A pale or empty row means that subject is being neglected — switch to Week view to see why.</p>`;
+    <p class="text-xs soft mt-2">Hours per week. A pale or empty row means that subject is being neglected.</p>`;
+}
+
+function fullCalendar(){
+  const dates = S.plan.open.map(s => s.date).sort();
+  if(!dates.length) return '';
+  let m = monthStart(dates[0]);
+  const last = monthStart(dates[dates.length-1]);
+  const out = [];
+  let guard = 0;
+  while(m <= last && guard++ < 18){ out.push(monthView(m)); m = addMonths(m, 1); }
+  return `<div class="tt-months">${out.join('')}</div>`;
+}
+
+function fullView(){
+  return `<div class="tt-fullswitch">
+      <button class="tt-fm" data-m="subject" aria-pressed="${S.fullMode==='subject'}">By subject</button>
+      <button class="tt-fm" data-m="calendar" aria-pressed="${S.fullMode==='calendar'}">Calendar</button>
+    </div>
+    ${S.fullMode==='calendar' ? fullCalendar() : subjectMatrix()}`;
 }
 
 function renderPlan(){
   const p = S.plan; if(!p) return '';
   const body = S.view==='day' ? dayView() : S.view==='week' ? weekView()
              : S.view==='month' ? monthView() : fullView();
-  return `<div class="panel p-4 md:p-5">
+  return `<div class="panel p-4 md:p-5 tt-plan">
     <div class="flex flex-wrap items-center gap-2 mb-3">
       <h3 class="sec-h">Your plan</h3><span class="text-xs soft">${p.used} study blocks</span>
       <div class="ml-auto flex gap-2">
         <button id="tt-ics" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Add to calendar</button>
-        <button id="tt-print" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Print</button>
+        <button id="tt-print" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Print this view</button>
         <button id="tt-regen" class="btn-go px-3 py-1.5 text-[11px]">Regenerate</button>
       </div>
     </div>
-    ${viewBar()}${body}
+    ${viewBar()}
+    ${S.view!=='full' ? `<div class="tt-armbar">
+      <span class="tt-armlabel">${S.armed ? 'Click a + to place ' + S.armed : 'Add a block:'}</span>
+      ${S.subjects.map(sub=>`<button class="tt-arm" data-s="${sub}" aria-pressed="${S.armed===sub}"
+        style="--hue:${hueFor(sub)}">${sub}</button>`).join('')}
+      ${S.armed?`<button class="tt-arm tt-armoff">Cancel</button>`:''}
+    </div>` : ''}
+    ${body}
   </div>`;
 }
 
@@ -367,13 +485,41 @@ function toICS(){
   });
   return out.concat('END:VCALENDAR').join('\r\n');
 }
+/* Print just the plan. Opening a clean window avoids fighting the page's
+   own layout and lets the student Save as PDF from the same dialog. */
+function printPlan(){
+  const node = R().querySelector('.tt-plan');
+  if(!node) return;
+  const css = [...document.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  const w = window.open('', '_blank', 'width=1100,height=800');
+  if(!w) return;
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>NCEA study plan</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <style>${css}
+      body{ background:#fff; padding:18px; font-family:Manrope,sans-serif; }
+      .tt-acts,.tt-del,.tt-slot,.tt-armbar,.tt-viewbar,.tt-fullswitch{ display:none!important; }
+      .panel{ box-shadow:none!important; border:0!important; }
+      @page{ margin:12mm; }
+    </style></head><body>
+    <h1 style="font-size:17px;font-weight:800;margin-bottom:2px">NCEA study plan</h1>
+    <p style="font-size:11px;color:#555;margin-bottom:12px">${S.subjects.join(' · ')}</p>
+    ${node.innerHTML}
+    </body></html>`);
+  w.document.close();
+  setTimeout(()=>{ w.focus(); w.print(); }, 400);
+}
+
 function download(name,text,type){
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([text],{type})); a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
 }
 
-window.Timetable = { open: render, state: S, generate, realism, toICS };
+load();
+S.cursor = S.cursor || todayISO();
+
+window.Timetable = { open: render, state: S, generate, realism, toICS, reset: wipe };
 
 /* ============================================================
    UI
@@ -389,9 +535,11 @@ function render(){
     document.head.appendChild(t);
     return;
   }
+  if(S.savedPlan) rehydrate();
   R().innerHTML = stepLevel() + stepSubjects() + stepStandards() + stepExams() +
                   stepPeriods() + stepGo() + (S.plan ? renderPlan() : '');
   wire();
+  save();
 }
 
 function stepLevel(){
@@ -490,7 +638,10 @@ function stepGo(){
   return `<div class="panel p-4 md:p-5 flex flex-wrap items-center gap-3">
     <button id="tt-go" class="btn-go"${ready?'':' disabled style="opacity:.5;cursor:not-allowed"'}>
       ${S.plan?'Rebuild my timetable':'Create my study timetable'}</button>
+    <label class="tt-toggle"><input type="checkbox" id="tt-topics" ${S.withTopics?'checked':''}>
+      <span>Give each block a specific topic</span></label>
     <span class="text-xs soft">${n} standard${n===1?'':'s'} selected${ready?'':' — every subject needs a valid exam date'}</span>
+    <button id="tt-reset" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold ml-auto">Start again</button>
   </div>`;
 }
 
@@ -566,7 +717,49 @@ function wire(){
     const o = b.textContent; b.textContent='Copied ✓'; setTimeout(()=>b.textContent=o,1500);
   });
   const ics = one('#tt-ics'); if(ics) ics.onclick = () => download('ncea-study-plan.ics', toICS(), 'text/calendar');
-  const pr  = one('#tt-print'); if(pr) pr.onclick = () => window.print();
+  const pr  = one('#tt-print'); if(pr) pr.onclick = printPlan;
+
+  const tp = one('#tt-topics');
+  if(tp) tp.onchange = () => { S.withTopics = tp.checked; S.plan = null; render(); };
+
+  const rs = one('#tt-reset');
+  if(rs) rs.onclick = () => {
+    if(confirm('Clear your saved timetable and start again?')){ wipe(); render(); }
+  };
+
+  q('.tt-fm', b => b.onclick = () => { S.fullMode = b.dataset.m; render(); });
+
+  // arm a subject, then click a + to place it
+  q('.tt-arm', b => b.onclick = () => {
+    S.armed = b.classList.contains('tt-armoff') ? null
+            : (S.armed === b.dataset.s ? null : b.dataset.s);
+    render();
+  });
+  q('.tt-del', b => b.onclick = () => {
+    S.plan.open[+b.dataset.slot].item = null;
+    S.plan.used = S.plan.open.filter(x=>x.item).length;
+    save(); render();
+  });
+  q('.tt-slot', b => b.onclick = () => {
+    if(!S.armed) return;
+    const slot = S.plan.open[+b.dataset.empty];
+    const st = pickStandardFor(S.armed, slot);
+    if(!st) return;
+    slot.item = { subject:S.armed, st, mode: modeForDate(slot.date, S.armed), topic:'' };
+    S.plan.used = S.plan.open.filter(x=>x.item).length;
+    save(); render();
+  });
+
+  q('.tt-gem', b => b.onclick = async () => {
+    const text = window.composePrompt({ level:S.level, subject:decodeURIComponent(b.dataset.sub),
+      code:b.dataset.code, mode:b.dataset.mode, topic:decodeURIComponent(b.dataset.topic||'') });
+    let ok = true;
+    try { await navigator.clipboard.writeText(text); }
+    catch(e){ ok = false; }
+    if(!ok){ alert('Your browser blocked the copy. Use Open ↗ instead, then copy from there.'); return; }
+    const o = b.textContent; b.textContent = 'Copied ✓';
+    setTimeout(()=>{ b.textContent = o; window.open('https://gemini.google.com/app','_blank','noopener'); }, 500);
+  });
 }
 
 })();
