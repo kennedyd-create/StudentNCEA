@@ -763,21 +763,59 @@ window.Timetable = { open: render, state: S, generate, realism, toICS, reset: wi
 /* ============================================================
    UI
    ============================================================ */
+let ttLoading = null;      // level id currently being fetched
+
 function render(){
+  const root = R();
+  if(!root) return;
+
   if(!window.NCEA_DATA || !window.NCEA_DATA[S.level]){
-    R().innerHTML = `<div class="panel p-5"><p class="text-sm">Loading Level ${S.level}…</p></div>`;
+    root.innerHTML = `<div class="panel p-5"><p class="text-sm">Loading Level ${S.level}…</p></div>`;
+    if(ttLoading === S.level) return;          // already on its way
+    ttLoading = S.level;
+
+    const src = 'ncea-l' + S.level + '.js';
+    // The engine may already have injected this file. Adding it a second time
+    // does nothing useful — the data file guards itself — so reuse the
+    // existing tag and wait for it rather than loading a duplicate.
+    const existing = [...document.querySelectorAll('script')]
+      .find(x => x.src && x.src.indexOf(src) !== -1);
+
+    const done = () => {
+      ttLoading = null;
+      if(window.NCEA_DATA && window.NCEA_DATA[S.level]) render();
+      else fail();
+    };
+    const fail = () => {
+      ttLoading = null;
+      root.innerHTML = `<div class="panel p-5">
+        <p class="text-sm"><strong>Could not load ${src}.</strong></p>
+        <p class="text-xs soft mt-2">It needs to sit in the same folder as this page.
+        If you have just uploaded new files, refresh with Ctrl+Shift+R (Cmd+Shift+R on a Mac).</p></div>`;
+    };
+
+    if(existing){
+      // it may already have finished, in which case the data is there now
+      if(window.NCEA_DATA && window.NCEA_DATA[S.level]){ ttLoading = null; render(); return; }
+      existing.addEventListener('load', done);
+      existing.addEventListener('error', fail);
+      // a tag that loaded before we started listening would never fire again
+      setTimeout(() => { if(ttLoading === S.level) done(); }, 1500);
+      return;
+    }
+
     const t = document.createElement('script');
-    t.src = 'ncea-l' + S.level + '.js?v=7';
-    t.onload = render;
-    t.onerror = () => R().innerHTML =
-      `<div class="panel p-5"><p class="text-sm">Could not load ncea-l${S.level}.js. It needs to sit in the same folder as this page.</p></div>`;
+    t.src = src + '?v=7';
+    t.onload = done;
+    t.onerror = fail;
     document.head.appendChild(t);
     return;
   }
+
   if(S.savedPlan) rehydrate();
-  R().innerHTML = stepLevel() + stepSubjects() + stepStandards() + stepExams() +
-                  stepPeriods() + stepGo() + (S.plan ? renderPlan() : '') +
-                  `<p class="tt-build">${TT_BUILD}</p>`;
+  root.innerHTML = stepLevel() + stepSubjects() + stepStandards() + stepExams() +
+                   stepPeriods() + stepGo() + (S.plan ? renderPlan() : '') +
+                   `<p class="tt-build">${TT_BUILD}</p>`;
   wire();
   save();
 }
