@@ -301,6 +301,40 @@ body.dark-mode .tt-note.bad{ color:#fca5a5; }
 .tt-mbars{ display:flex; gap:2px; margin-top:.3rem; height:.5rem; }
 .tt-mbars i{ border-radius:1px; }
 
+/* placement bar, block controls, empty slots */
+.tt-armbar{ display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; margin-bottom:.7rem;
+  padding:.45rem .6rem; border:1px dashed var(--line); border-radius:.5rem; background:var(--surface-2); }
+.tt-armlabel{ font-size:.6875rem; font-weight:800; color:var(--ink-soft); margin-right:.3rem; }
+.tt-arm{ font-size:.6875rem; font-weight:800; padding:.22rem .55rem; border-radius:9999px; cursor:pointer;
+  border:1px solid var(--hue,var(--line)); color:var(--hue,var(--ink-soft)); background:transparent; }
+.tt-arm[aria-pressed="true"]{ background:var(--hue); color:#fff; }
+.tt-armoff{ border-color:var(--line-strong); color:var(--ink-soft); }
+.tt-block{ position:relative; }
+.tt-del{ position:absolute; top:2px; right:3px; font-size:.75rem; font-weight:900; line-height:1;
+  color:var(--ink-faint); cursor:pointer; opacity:0; transition:opacity .12s; }
+.tt-block:hover .tt-del{ opacity:1; }
+.tt-del:hover{ color:#b91c1c; }
+.tt-slot{ display:block; width:100%; border:1px dashed var(--line-strong); border-radius:.45rem;
+  padding:.3rem; margin-bottom:.3rem; font-size:.75rem; font-weight:800; color:var(--ink-faint);
+  background:transparent; cursor:pointer; }
+.tt-slot:hover{ border-color:var(--fac-dark); color:var(--fac-dark); background:var(--surface-2); }
+.tt-toggle{ display:inline-flex; align-items:center; gap:.4rem; font-size:.75rem; font-weight:700; cursor:pointer; }
+
+/* month cells carry subject names as well as colour */
+.tt-monthwrap{ margin-bottom:1.1rem; }
+.tt-mtitle{ font-size:.8125rem; font-weight:900; color:var(--fac-dark); margin-bottom:.35rem; }
+.tt-mnames{ display:flex; flex-direction:column; gap:1px; margin-top:.2rem; }
+.tt-mname{ font-size:.5rem; font-weight:800; color:#fff; background:var(--hue);
+  border-radius:.2rem; padding:.05rem .25rem; display:flex; justify-content:space-between; gap:.2rem;
+  overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.tt-mname b{ opacity:.85; }
+.tt-mcell{ min-height:4.6rem; }
+.tt-months{ display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:1rem; }
+.tt-fullswitch{ display:flex; gap:.35rem; margin-bottom:.7rem; }
+.tt-fm{ font-size:.6875rem; font-weight:800; padding:.25rem .6rem; border-radius:.4rem;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); cursor:pointer; }
+.tt-fm[aria-pressed="true"]{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
+
 /* full plan matrix */
 .tt-scroll{ overflow-x:auto; }
 .tt-table{ width:100%; border-collapse:collapse; font-size:.75rem; }
