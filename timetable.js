@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 7 — gold exam markers, date confirmation';
+const TT_BUILD = 'build 8 — exam days kept clear';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -130,8 +130,13 @@ function weekStart(s){ return addDays(s, -wdIndex(s)); }
 function daysBetween(a,b){ return Math.round((parse(b)-parse(a))/86400000); }
 
 function periodFor(date){ return S.periods.find(p => date >= p.start && date <= p.end) || null; }
+function isExamDay(date){
+  return S.subjects.some(sub => S.exams[sub] && S.exams[sub].date === date);
+}
 function hoursOn(date){
   if(S.blackouts.includes(date)) return 0;
+  // Exam days are for sitting exams. Nothing gets scheduled on them.
+  if(isExamDay(date)) return 0;
   const p = periodFor(date);
   return p ? (p.hours[wdIndex(date)] || 0) : 0;
 }
@@ -197,13 +202,16 @@ function generate(){
   const open = buildSlots();
   if(!items.length || !open.length) return null;
 
-  const totalWeight = items.reduce((a,i) => a + i.st.credits, 0);
+  items.forEach(i => { i.deadline = open.filter(s => slotBeforeExam(s, i.exam)).length; });
 
-  // How many blocks each standard earns, weighted by credits, minimum three
-  // so every standard gets an orientation, a working and a consolidation pass.
+  // Blocks are weighted by credits AND by how much of the plan each standard
+  // can actually use. Weighting on credits alone leaves a subject examined
+  // late with nothing to do in its final week, because its allocation is
+  // spread thin across a much longer window.
+  const totalWeight = items.reduce((a,i) => a + i.st.credits * (i.deadline / open.length), 0) || 1;
   items.forEach(i => {
-    i.blocks = Math.max(3, Math.round(open.length * i.st.credits / totalWeight));
-    i.deadline = open.filter(s => slotBeforeExam(s, i.exam)).length;
+    const share = i.st.credits * (i.deadline / open.length) / totalWeight;
+    i.blocks = Math.max(3, Math.round(open.length * share));
   });
 
   // Trim proportionally if we have asked for more than the student has time for.
@@ -260,7 +268,10 @@ function generate(){
   // The day before an exam belongs to that subject: relabel anything there.
   items.forEach(i => {
     if(!i.exam || !i.exam.date) return;
-    const eve = addDays(i.exam.date, -1);
+    // the last day that actually has study slots before this exam
+    let eve = addDays(i.exam.date, -1);
+    let back = 0;
+    while(back++ < 10 && !open.some(o => o.date === eve)) eve = addDays(eve, -1);
     open.forEach((slot, n) => {
       if(slot.date === eve && filled[n] && filled[n].subject !== i.subject && !filled[n].locked){
         // only take the slot if that subject has time left elsewhere
@@ -437,6 +448,10 @@ function pickStandardFor(subject, slot){
    Tuesday should be able to have it, and the day shows it is over plan. */
 function addHourTo(date){
   if(!S.plan) return;
+  if(isExamDay(date)){
+    alert('You sit an exam that day — the plan keeps exam days clear.');
+    return;
+  }
   let last = -1, maxIdx = -1;
   S.plan.open.forEach((x,n) => { if(x.date === date){ last = n; maxIdx = Math.max(maxIdx, x.index); } });
   const slot = { date, index: maxIdx + 1, item: null, extra: true };
@@ -477,6 +492,7 @@ function dayCapacity(date){
   const on = S.plan.open.filter(x => x.date === date);
   const planned = hoursOn(date);
   const extra = on.filter(x => x.extra).length;
+  if(isExamDay(date)) return `<p class="tt-cap tt-over">Exam day — nothing scheduled.</p>`;
   if(!on.length && !planned) return '';
   return `<p class="tt-cap${extra?' tt-over':''}">${on.length} hour${on.length===1?'':'s'} on this day` +
     (extra ? ` — ${extra} more than you planned for` : planned ? '' : ' — a day you had set aside') + `</p>`;
@@ -805,7 +821,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=7';
+    t.src = src + '?v=8';
     t.onload = done;
     t.onerror = fail;
     document.head.appendChild(t);
@@ -967,9 +983,11 @@ function offPicker(){
         if(!c) return `<span></span>`;
         const off = S.blackouts.includes(c);
         const outside = !periodFor(c) || (end && c > end);
-        const none = hoursOn(c) === 0 && !off;
-        return `<button class="tt-offday${off?' is-off':''}${outside?' is-out':''}${none?' is-none':''}"
-          data-d="${c}" title="${off ? 'A day off — click to undo'
+        const exam = isExamDay(c);
+        const none = hoursOn(c) === 0 && !off && !exam;
+        return `<button class="tt-offday${off?' is-off':''}${outside?' is-out':''}${none?' is-none':''}${exam?' is-exam':''}"
+          data-d="${c}" title="${exam ? 'You sit an exam that day'
+            : off ? 'A day off — click to undo'
             : outside ? 'Outside your study period'
             : none ? 'Already zero hours that weekday' : 'Click to take this day off'}">${+c.slice(8)}</button>`;
       }).join('')}
