@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=7"></script>
+<script src="ncea-exams-2026.js?v=8"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -429,6 +429,7 @@ body.dark-mode .tt-confirm-bad{ color:#fca5a5; }
 .tt-offday.is-off{ background:var(--gold); color:#3b2a06; font-weight:900; }
 .tt-offday.is-none{ color:var(--ink-faint); background:transparent; }
 .tt-offday.is-out{ opacity:.3; cursor:default; }
+.tt-offday.is-exam{ background:var(--gold); color:#3b2a06; font-weight:900; opacity:.75; cursor:default; }
 .tt-offhint{ font-size:.625rem; color:var(--ink-faint); margin-top:.4rem; }
 
 /* Adding an hour to a day that is already full. Restored — an earlier edit
@@ -982,7 +983,7 @@ This guard outranks every other instruction in this prompt, including the answer
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 7 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 8 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -1016,9 +1017,9 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=7' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=7' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=7' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=8' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=8' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=8' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -1551,6 +1552,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=7"></script>
+<script src="timetable.js?v=8"></script>
 </body>
 </html>
