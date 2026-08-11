@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 4 — mix/none switch, add-hour, regenerate warning';
+const TT_BUILD = 'build 5 — days-off calendar';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -44,6 +44,8 @@ const S = {
   withTopics: true,         // allocate specific topics inside each standard
   howMode: 'ai',            // 'ai' | 'mix' | 'offline' | 'none'
   armed: null,              // subject picked from the tab bar, ready to place
+  pickerOpen: false,        // the days-off calendar
+  pickerMonth: null,
   cursor: null
 };
 
@@ -726,7 +728,7 @@ function render(){
   if(!window.NCEA_DATA || !window.NCEA_DATA[S.level]){
     R().innerHTML = `<div class="panel p-5"><p class="text-sm">Loading Level ${S.level}…</p></div>`;
     const t = document.createElement('script');
-    t.src = 'ncea-l' + S.level + '.js?v=4';
+    t.src = 'ncea-l' + S.level + '.js?v=5';
     t.onload = render;
     t.onerror = () => R().innerHTML =
       `<div class="panel p-5"><p class="text-sm">Could not load ncea-l${S.level}.js. It needs to sit in the same folder as this page.</p></div>`;
@@ -823,10 +825,56 @@ function stepPeriods(){
         <input type="number" min="0" max="10" class="field tt-ph" data-i="${i}" data-d="${d}" value="${p.hours[d]}"></label>`).join('')}</div>
     </div>`).join('')}
     <button id="tt-addp" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold mt-2">+ Add a period</button>
-    <label class="block mt-3"><span class="text-[10px] font-black uppercase tracking-widest soft">Individual days off</span>
-      <input type="text" id="tt-black" class="field w-full mt-1" placeholder="2026-11-21, 2026-11-22" value="${S.blackouts.join(', ')}"></label>
+    <div class="mt-3">
+      <span class="text-[10px] font-black uppercase tracking-widest soft">Individual days off</span>
+      <div class="tt-offrow">
+        <input type="date" id="tt-offdate" class="field" min="${planStart()}">
+        <button id="tt-offadd" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Add this day</button>
+        <button id="tt-offcal" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">
+          ${S.pickerOpen ? 'Close calendar' : 'Pick from a calendar'}</button>
+      </div>
+      ${S.pickerOpen ? offPicker() : ''}
+      <div class="tt-offlist">
+        ${S.blackouts.length
+          ? S.blackouts.slice().sort().map(d =>
+              `<span class="tt-offchip">${pretty(d)}<button class="tt-offx" data-d="${d}" title="Remove">&times;</button></span>`).join('')
+          : `<span class="text-xs soft">No days off set. Weekends already follow the hours you set above.</span>`}
+      </div>
+    </div>
     <p class="text-xs soft mt-2">${r.total} study blocks available before your last exam.</p>
     ${r.notes.map(n=>`<div class="tt-note ${n.tone}">${n.text}</div>`).join('')}
+  </div>`;
+}
+
+/* A month grid for marking days off. Clicking a day toggles it, so a long
+   weekend away is three clicks rather than typing three dates. */
+function offPicker(){
+  const m = monthStart(S.pickerMonth || planStart());
+  const lead = wdIndex(m), mi = monthOf(m);
+  const cells = new Array(lead).fill(null);
+  let d = m;
+  while(monthOf(d) === mi){ cells.push(d); d = addDays(d,1); }
+  const end = lastExamDate();
+  return `<div class="tt-offcal">
+    <div class="tt-offhead">
+      <button class="tt-offnav" data-step="-1">&lsaquo;</button>
+      <span>${pretty(m,{month:'long', year:'numeric'})}</span>
+      <button class="tt-offnav" data-step="1">&rsaquo;</button>
+    </div>
+    <div class="tt-offgrid">
+      ${WEEKDAYS.map(w=>`<div class="tt-offdow">${w[0]}</div>`).join('')}
+      ${cells.map(c=>{
+        if(!c) return `<span></span>`;
+        const off = S.blackouts.includes(c);
+        const outside = !periodFor(c) || (end && c > end);
+        const none = hoursOn(c) === 0 && !off;
+        return `<button class="tt-offday${off?' is-off':''}${outside?' is-out':''}${none?' is-none':''}"
+          data-d="${c}" title="${off ? 'A day off — click to undo'
+            : outside ? 'Outside your study period'
+            : none ? 'Already zero hours that weekday' : 'Click to take this day off'}">${+c.slice(8)}</button>`;
+      }).join('')}
+    </div>
+    <p class="tt-offhint">Click a date to take it off. Grey days already have no study hours.</p>
   </div>`;
 }
 
@@ -888,11 +936,30 @@ function wire(){
       hours:[2,2,2,2,2,2,0] });
     render();
   };
-  const bl = one('#tt-black');
-  if(bl) bl.onchange = () => {
-    S.blackouts = bl.value.split(',').map(x=>x.trim()).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x));
-    S.plan=null; render();
+  const addOff = d => {
+    if(!d || S.blackouts.includes(d)) return;
+    S.blackouts.push(d); S.plan = null; render();
   };
+  const oa = one('#tt-offadd');
+  if(oa) oa.onclick = () => { const el = one('#tt-offdate'); addOff(el && el.value); };
+  const oc = one('#tt-offcal');
+  if(oc) oc.onclick = () => {
+    S.pickerOpen = !S.pickerOpen;
+    S.pickerMonth = S.pickerMonth || planStart();
+    render();
+  };
+  q('.tt-offx', b => b.onclick = () => {
+    S.blackouts = S.blackouts.filter(x => x !== b.dataset.d); S.plan = null; render();
+  });
+  q('.tt-offnav', b => b.onclick = () => {
+    S.pickerMonth = addMonths(monthStart(S.pickerMonth || planStart()), +b.dataset.step); render();
+  });
+  q('.tt-offday', b => b.onclick = () => {
+    const d = b.dataset.d;
+    if(S.blackouts.includes(d)) S.blackouts = S.blackouts.filter(x => x !== d);
+    else S.blackouts.push(d);
+    S.plan = null; render();
+  });
 
   const go = one('#tt-go');
   if(go) go.onclick = () => { S.plan = generate(); S.view='week'; S.cursor=todayISO(); render(); };
