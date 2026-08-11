@@ -40,6 +40,7 @@ const S = {
   view: 'week',
   fullMode: 'subject',      // 'subject' matrix or 'calendar' months
   withTopics: true,         // allocate specific topics inside each standard
+  howMode: 'ai',            // 'ai' prompts, or 'offline' study methods
   armed: null,              // subject picked from the tab bar, ready to place
   cursor: null
 };
@@ -54,7 +55,7 @@ function save(){
       level:S.level, faculty:S.faculty, subjects:S.subjects,
       standards: Object.fromEntries(Object.entries(S.standards).map(([k,v]) => [k, [...v]])),
       exams:S.exams, periods:S.periods, blackouts:S.blackouts,
-      withTopics:S.withTopics, view:S.view, fullMode:S.fullMode, cursor:S.cursor,
+      withTopics:S.withTopics, howMode:S.howMode, view:S.view, fullMode:S.fullMode, cursor:S.cursor,
       plan: S.plan ? S.plan.open.map(x => x.item
         ? { d:x.date, i:x.index, s:x.item.subject, c:x.item.st.code, m:x.item.mode, t:x.item.topic||'' }
         : { d:x.date, i:x.index }) : null
@@ -69,7 +70,7 @@ function load(){
     Object.assign(S, {
       level:o.level||'3', faculty:o.faculty, subjects:o.subjects||[],
       exams:o.exams||{}, periods:o.periods||S.periods, blackouts:o.blackouts||[],
-      withTopics: o.withTopics !== false, view:o.view||'week',
+      withTopics: o.withTopics !== false, howMode:o.howMode||'ai', view:o.view||'week',
       fullMode:o.fullMode||'subject', cursor:o.cursor||todayISO()
     });
     S.standards = {};
@@ -265,6 +266,134 @@ function generate(){
   S.cursor = S.cursor || todayISO();
   return { open, items, used: filled.filter(Boolean).length };
 }
+/* ============================================================
+   NON-AI STUDY METHODS
+   Every block can be done without a screen. Methods are chosen by
+   what the block is for (learn / practise / drill) and by how the
+   subject actually works, so a Calculus block gets worked problems
+   and a History block gets an essay plan.
+   ============================================================ */
+const SUBJECT_TYPE = {
+  'Calculus':'quant', 'Statistics':'quant', 'Mathematics and Statistics':'quant',
+  'Physics':'quant', 'Chemistry':'quant', 'Physics, Earth and Space Science':'quant',
+  'Biology':'science', 'Earth & Space Science':'science', 'Science':'science',
+  'Chemistry and Biology':'science', 'Psychology':'science',
+  'English':'essay', 'History':'essay', 'Classical Studies':'essay',
+  'Art History':'essay', 'Media Studies':'essay', 'Drama':'essay', 'Music':'essay',
+  'Geography':'evidence', 'Business Studies':'evidence', 'Commerce':'evidence',
+  'Health':'evidence', 'Health Studies':'evidence', 'Physical Education':'evidence',
+  'Te Reo Māori':'language', 'Te Ao Haka':'language',
+  'Digital Technologies':'science'
+};
+const typeOf = sub => SUBJECT_TYPE[sub] || 'evidence';
+
+const METHODS = {
+  explainer: {
+    quant: [
+      'Work through the examples in your textbook or workbook with the answers covered, then check.',
+      'Write the method out as numbered steps in your own words, then do one question following only your steps.',
+      'Take a worked example from class and redo it with different numbers you make up.',
+      'Make a one-page formula sheet from memory, then fill the gaps from your notes in a different colour.'
+    ],
+    science: [
+      'Draw the process as a labelled diagram from memory, then correct it against your notes in another colour.',
+      'Turn your class notes into Cornell notes — cues down the left, summary at the bottom.',
+      'Write a one-page summary of this topic without looking, then highlight what you had to leave out.',
+      'Explain the mechanism out loud to someone at home, or to an empty room. Where you stumble is what to reread.'
+    ],
+    essay: [
+      'Reread the key section of the text and write ten quotations with a line on what each shows.',
+      'Build a mind map of the ideas, with evidence hanging off each branch.',
+      'Write a one-page summary of this aspect in your own words, no notes open.',
+      'Teach this idea to someone for five minutes. What you cannot explain simply, you do not have yet.'
+    ],
+    evidence: [
+      'Make a case-study fact sheet: names, figures, dates, places. One page, no sentences.',
+      'Draw the process or issue as a flow diagram showing cause and effect.',
+      'Write a one-page summary from memory, then add what you missed in a different colour.',
+      'Explain this to a family member and get them to ask you why after every sentence.'
+    ],
+    language: [
+      'Kōrero: say the new structures aloud twenty times until they stop feeling foreign.',
+      'Write out the sentence patterns by hand, then build five of your own from each.',
+      'Read a short passage aloud, then retell it in your own words without looking.',
+      'Make vocabulary cards with the word on one side and a full sentence on the other.'
+    ]
+  },
+  exam: {
+    quant: [
+      'Do a past paper question under time, then mark it against the assessment schedule.',
+      'Redo three questions you got wrong last time, from scratch, without looking at the working.',
+      'Set yourself six questions of increasing difficulty and do them in one sitting.',
+      'Do a full past paper section under exam conditions — no notes, timer on, phone in another room.'
+    ],
+    science: [
+      'Do a past paper question, then mark it against the assessment schedule and write what you missed.',
+      'Practise annotated diagrams under time — the marks are in the labels, not the drawing.',
+      'Answer one Excellence-level question and check whether you actually justified rather than described.',
+      'Work through a resource-based question using only the resource, not your memory.'
+    ],
+    essay: [
+      'Write an essay plan for a past exam question in fifteen minutes — thesis, three points, evidence for each.',
+      'Write one full paragraph under time, then check it has a claim, evidence and an explanation of effect.',
+      'Take a past question and write three different opening paragraphs, then pick the strongest.',
+      'Write a full essay under exam conditions, then mark it against the assessment schedule.'
+    ],
+    evidence: [
+      'Answer a past paper question, then check every claim you made has a name, figure or date attached.',
+      'Write a full explanation under time, then underline where you explained rather than described.',
+      'Practise the resource-based skills: read the figures off the graph, state the units, interpret in context.',
+      'Take a past question and write the Excellence sentence only — the one that evaluates or justifies.'
+    ],
+    language: [
+      'Write a response to a past exam prompt under time, then check macrons and tense markers.',
+      'Practise a five-minute conversation with someone, unscripted, on this topic.',
+      'Read an unfamiliar passage and answer questions on it without a dictionary.',
+      'Write the same idea three ways, using a different structure each time.'
+    ]
+  },
+  recall: {
+    quant: [
+      'Blurting: write down every formula and method for this topic from memory, then check and fill gaps.',
+      'Flashcards for formulae and conditions — which method suits which situation.',
+      'Cover the worked example, do it, uncover, compare. Repeat until it is automatic.',
+      'Quick-fire: twenty short questions, no working, just the method you would use.'
+    ],
+    science: [
+      'Blurting: write everything you know about this topic on a blank page, then check what you missed.',
+      'Flashcards for terminology and processes. Test yourself both ways round.',
+      'Recite the process aloud from memory, in order, without prompts.',
+      'Redraw the key diagram from memory and label it fully.'
+    ],
+    essay: [
+      'Blurting: write down every quotation and technique you can remember, then check the text.',
+      'Flashcards with the quotation on one side and its effect on the other.',
+      'Recite your essay plan from memory — thesis, points, evidence.',
+      'Test a classmate on their text and let them test you on yours.'
+    ],
+    evidence: [
+      'Blurting: write every fact, figure and date for this case study from memory, then check.',
+      'Flashcards for case-study specifics. Vague answers do not count — push for the number.',
+      'Recite the case study aloud to someone and have them check your figures against your notes.',
+      'Cover your fact sheet and rebuild it on a blank page.'
+    ],
+    language: [
+      'Vocabulary drill — cover and recall, both directions.',
+      'Say the structures aloud from memory, then check against your notes.',
+      'Write out five sentences from memory using this week\u2019s patterns.',
+      'Listen to a waiata or recording and write down what you understand, then check.'
+    ]
+  }
+};
+
+function methodFor(item, slotIndex){
+  const pool = (METHODS[item.mode] || METHODS.explainer)[typeOf(item.subject)] ||
+               METHODS[item.mode].evidence;
+  // stable choice, so the same block does not change method on every re-render
+  const key = (item.st.code.charCodeAt(3) + slotIndex) % pool.length;
+  return pool[key];
+}
+
 /* ---------- realism ---------- */
 function realism(){
   const end = lastExamDate();
@@ -296,6 +425,18 @@ function pickStandardFor(subject, slot){
     count[x.item.st.code] = (count[x.item.st.code]||0)+1; });
   return mine.sort((a,b) => (count[a.st.code]||0) - (count[b.st.code]||0))[0].st;
 }
+function placeInto(n){
+  if(!S.armed || !S.plan) return;
+  const slot = S.plan.open[n];
+  const st = pickStandardFor(S.armed, slot);
+  if(!st) return;
+  const topics = (S.withTopics && st.topics && st.topics.length) ? st.topics : [];
+  slot.item = { subject:S.armed, st, mode: modeForDate(slot.date, S.armed),
+                topic: topics.length ? topics[n % topics.length] : '' };
+  S.plan.used = S.plan.open.filter(x=>x.item).length;
+  save(); render();
+}
+
 function modeForDate(date, subject){
   const ex = S.exams[subject];
   if(!ex || !ex.date) return 'explainer';
@@ -334,17 +475,20 @@ function blockHTML(slot, n){
   const it = slot.item;
   const q = `?level=${S.level}&subject=${encodeURIComponent(it.subject)}&std=${it.st.code}&mode=${it.mode}` +
             (it.topic ? `&topic=${encodeURIComponent(it.topic)}` : '');
-  return `<div class="tt-block" style="--hue:${hueFor(it.subject)}">
+  const actions = S.howMode === 'ai'
+    ? `<div class="tt-acts">
+         <a class="tt-open" href="${q}" title="Open this in the prompt builder">Open &#8599;</a>
+         <button class="tt-gem" data-sub="${encodeURIComponent(it.subject)}" data-code="${it.st.code}"
+           data-mode="${it.mode}" data-topic="${encodeURIComponent(it.topic||'')}"
+           title="Copy the prompt and open Gemini">Gemini &#8599;</button>
+       </div>`
+    : `<div class="tt-how">${methodFor(it, n)}</div>`;
+  return `<div class="tt-block${S.howMode==='offline'?' tt-offline':''}" style="--hue:${hueFor(it.subject)}">
     <button class="tt-del" data-slot="${n}" title="Clear this block">&times;</button>
     <div class="tt-bmeta"><strong>${it.subject}</strong> · AS${it.st.code}
       <span class="tt-mode">${modeLabel(it.mode)}</span></div>
     <div class="tt-btitle">${it.topic ? it.topic : it.st.title}</div>
-    <div class="tt-acts">
-      <a class="tt-open" href="${q}" title="Open this in the prompt builder">Open &#8599;</a>
-      <button class="tt-gem" data-sub="${encodeURIComponent(it.subject)}" data-code="${it.st.code}"
-        data-mode="${it.mode}" data-topic="${encodeURIComponent(it.topic||'')}"
-        title="Copy the prompt and open Gemini">Gemini &#8599;</button>
-    </div></div>`;
+    ${actions}</div>`;
 }
 
 /* An unused slot is a place the student can drop a subject into. */
@@ -390,15 +534,17 @@ function monthView(anchor){
     ${WEEKDAYS.map(w=>`<div class="tt-mh">${w}</div>`).join('')}
     ${cells.map(c=>{
       if(!c) return `<div class="tt-mcell tt-mout"></div>`;
-      const b = blocksOn(c), ex = examsOn(c), counts = {};
-      b.forEach(x => counts[x.item.subject] = (counts[x.item.subject]||0)+1);
-      const names = Object.entries(counts)
-        .sort((a,b2)=>b2[1]-a[1])
-        .map(([sub,n])=>`<span class="tt-mname" style="--hue:${hueFor(sub)}">${sub}<b>${n}</b></span>`).join('');
-      return `<div class="tt-mcell${c===todayISO()?' tt-today-cell':''}" data-goto="${c}" title="Open this day">
-        <span class="tt-mnum">${+c.slice(8)}</span>
+      const ex = examsOn(c);
+      const rows = S.plan ? S.plan.open.map((x,n)=>({x,n})).filter(o => o.x.date === c) : [];
+      const chips = rows.map(o => o.x.item
+        ? `<span class="tt-mname" style="--hue:${hueFor(o.x.item.subject)}" title="${o.x.item.subject} — AS${o.x.item.st.code}">
+             ${o.x.item.subject}<button class="tt-del tt-mdel" data-slot="${o.n}" title="Clear">&times;</button></span>`
+        : `<button class="tt-mslot" data-empty="${o.n}" title="${S.armed?'Place '+S.armed+' here':'Pick a subject above first'}">+</button>`
+      ).join('');
+      return `<div class="tt-mcell${c===todayISO()?' tt-today-cell':''}">
+        <span class="tt-mnum" data-goto="${c}" title="Open this day">${+c.slice(8)}</span>
         ${ex.length?`<span class="tt-mexam">EXAM</span>`:''}
-        <div class="tt-mnames">${names||''}</div>
+        <div class="tt-mnames">${chips}</div>
       </div>`;
     }).join('')}
     </div></div>`;
@@ -450,6 +596,10 @@ function renderPlan(){
   return `<div class="panel p-4 md:p-5 tt-plan">
     <div class="flex flex-wrap items-center gap-2 mb-3">
       <h3 class="sec-h">Your plan</h3><span class="text-xs soft">${p.used} study blocks</span>
+      <div class="tt-how-switch">
+        <button class="tt-hm" data-h="ai" aria-pressed="${S.howMode==='ai'}">With AI</button>
+        <button class="tt-hm" data-h="offline" aria-pressed="${S.howMode==='offline'}">Without AI</button>
+      </div>
       <div class="ml-auto flex gap-2">
         <button id="tt-ics" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Add to calendar</button>
         <button id="tt-print" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Print this view</button>
@@ -457,12 +607,12 @@ function renderPlan(){
       </div>
     </div>
     ${viewBar()}
-    ${S.view!=='full' ? `<div class="tt-armbar">
+    ${`<div class="tt-armbar">
       <span class="tt-armlabel">${S.armed ? 'Click a + to place ' + S.armed : 'Add a block:'}</span>
       ${S.subjects.map(sub=>`<button class="tt-arm" data-s="${sub}" aria-pressed="${S.armed===sub}"
         style="--hue:${hueFor(sub)}">${sub}</button>`).join('')}
       ${S.armed?`<button class="tt-arm tt-armoff">Cancel</button>`:''}
-    </div>` : ''}
+    </div>`}
     ${body}
   </div>`;
 }
@@ -708,7 +858,6 @@ function wire(){
     render();
   });
   const td = one('.tt-today'); if(td) td.onclick = () => { S.cursor = todayISO(); render(); };
-  q('.tt-mcell[data-goto]', c => c.onclick = () => { S.cursor = c.dataset.goto; S.view='day'; render(); });
 
   q('.tt-copy', b => b.onclick = async () => {
     const text = window.composePrompt({ level:S.level, subject:decodeURIComponent(b.dataset.sub),
@@ -728,6 +877,9 @@ function wire(){
   };
 
   q('.tt-fm', b => b.onclick = () => { S.fullMode = b.dataset.m; render(); });
+  q('.tt-hm', b => b.onclick = () => { S.howMode = b.dataset.h; render(); });
+  q('.tt-mnum[data-goto]', c => c.onclick = () => { S.cursor = c.dataset.goto; S.view='day'; render(); });
+  q('.tt-mslot', b => b.onclick = () => placeInto(+b.dataset.empty));
 
   // arm a subject, then click a + to place it
   q('.tt-arm', b => b.onclick = () => {
@@ -740,15 +892,7 @@ function wire(){
     S.plan.used = S.plan.open.filter(x=>x.item).length;
     save(); render();
   });
-  q('.tt-slot', b => b.onclick = () => {
-    if(!S.armed) return;
-    const slot = S.plan.open[+b.dataset.empty];
-    const st = pickStandardFor(S.armed, slot);
-    if(!st) return;
-    slot.item = { subject:S.armed, st, mode: modeForDate(slot.date, S.armed), topic:'' };
-    S.plan.used = S.plan.open.filter(x=>x.item).length;
-    save(); render();
-  });
+  q('.tt-slot', b => b.onclick = () => placeInto(+b.dataset.empty));
 
   q('.tt-gem', b => b.onclick = async () => {
     const text = window.composePrompt({ level:S.level, subject:decodeURIComponent(b.dataset.sub),
