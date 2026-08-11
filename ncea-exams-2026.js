@@ -86,12 +86,18 @@ window.NCEA_EXAMS = {
 
   /* ---- helpers used by the timetable builder ---- */
 
+  /* Dates are parsed in UTC. Parsing 'YYYY-MM-DD' as local time shifts the
+     weekday west of the date line — in New Zealand a Saturday read as a
+     Friday, so weekend entries were being accepted. */
+  parse(s){ const [y,m,d] = s.split('-').map(Number); return new Date(Date.UTC(y, m-1, d)); },
+
   // Exams run Monday to Friday only, and not on anniversary days.
   isExamDay(iso){
-    const d = new Date(iso + 'T00:00:00');
+    if (!iso) return false;
+    const d = this.parse(iso);
     if (isNaN(d)) return false;
     if (iso < this.window.start || iso > this.window.end) return false;
-    const day = d.getDay();
+    const day = d.getUTCDay();
     if (day === 0 || day === 6) return false;
     return !this.noSessionDays.some(n => n.date === iso);
   },
@@ -99,13 +105,13 @@ window.NCEA_EXAMS = {
   // Returns null if the date is fine, otherwise a plain-English problem.
   checkDate(iso){
     if (!iso) return 'No date entered.';
-    const d = new Date(iso + 'T00:00:00');
+    const d = this.parse(iso);
     if (isNaN(d)) return 'That is not a valid date.';
     if (iso < this.window.start)
       return `Exams do not start until ${this.pretty(this.window.start)}.`;
     if (iso > this.window.end)
       return `Exams finish on ${this.pretty(this.window.end)}.`;
-    const day = d.getDay();
+    const day = d.getUTCDay();
     if (day === 0 || day === 6) return 'That is a weekend — no exams are scheduled.';
     const off = this.noSessionDays.find(n => n.date === iso);
     if (off) return `No sessions that day — ${off.reason}.`;
@@ -113,8 +119,8 @@ window.NCEA_EXAMS = {
   },
 
   pretty(iso){
-    return new Date(iso + 'T00:00:00').toLocaleDateString('en-NZ',
-      { weekday:'short', day:'numeric', month:'short' });
+    return this.parse(iso).toLocaleDateString('en-NZ',
+      { timeZone:'UTC', weekday:'short', day:'numeric', month:'short' });
   }
 };
 
