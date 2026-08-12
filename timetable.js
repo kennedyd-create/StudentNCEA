@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 8 — exam days kept clear';
+const TT_BUILD = 'build 11 — Scholarship added';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -131,7 +131,8 @@ function daysBetween(a,b){ return Math.round((parse(b)-parse(a))/86400000); }
 
 function periodFor(date){ return S.periods.find(p => date >= p.start && date <= p.end) || null; }
 function isExamDay(date){
-  return S.subjects.some(sub => S.exams[sub] && S.exams[sub].date === date);
+  // Portfolio submission days are not exam days — you can still work that day.
+  return S.subjects.some(sub => S.exams[sub] && !S.exams[sub].portfolio && S.exams[sub].date === date);
 }
 function hoursOn(date){
   if(S.blackouts.includes(date)) return 0;
@@ -208,9 +209,11 @@ function generate(){
   // can actually use. Weighting on credits alone leaves a subject examined
   // late with nothing to do in its final week, because its allocation is
   // spread thin across a much longer window.
-  const totalWeight = items.reduce((a,i) => a + i.st.credits * (i.deadline / open.length), 0) || 1;
+  // Scholarship standards carry no credits, so fall back to an equal weight.
+  const wt = i => (i.st.credits || 5) * (i.deadline / open.length);
+  const totalWeight = items.reduce((a,i) => a + wt(i), 0) || 1;
   items.forEach(i => {
-    const share = i.st.credits * (i.deadline / open.length) / totalWeight;
+    const share = wt(i) / totalWeight;
     i.blocks = Math.max(3, Math.round(open.length * share));
   });
 
@@ -502,6 +505,7 @@ function dayCapacity(date){
    every block before it is working toward. */
 function examBanner(date, size){
   const sitting = S.subjects.filter(s => S.exams[s] && S.exams[s].date === date);
+  const isPf = sub => S.exams[sub] && S.exams[sub].portfolio;
   const eve     = S.subjects.filter(s => S.exams[s] && addDays(S.exams[s].date,-1) === date);
   if(!sitting.length && !eve.length) return '';
 
@@ -509,13 +513,16 @@ function examBanner(date, size){
   const out = [];
 
   sitting.forEach(sub => {
+    const word = isPf(sub) ? 'DUE' : 'EXAM';
+    const when = isPf(sub) ? 'Portfolio submission'
+      : ((E().sessions.find(x=>x.id===S.exams[sub].session)||{}).label||'') + ' · ' + time(sub);
     if(size === 'xs') out.push(
-      `<span class="tt-exam-xs" title="${sub} exam — ${S.exams[sub].session} ${time(sub)}">${sub}</span>`);
+      `<span class="tt-exam-xs" title="${sub} — ${when}">${sub}</span>`);
     else if(size === 'sm') out.push(
-      `<div class="tt-exambar tt-exam-sm"><strong>${sub}</strong><span>EXAM ${S.exams[sub].session} ${time(sub)}</span></div>`);
+      `<div class="tt-exambar tt-exam-sm"><strong>${sub}</strong><span>${word}${isPf(sub)?'':' '+S.exams[sub].session+' '+time(sub)}</span></div>`);
     else out.push(
-      `<div class="tt-exambar"><span class="tt-exampill">EXAM</span><strong>${sub}</strong>
-        <span class="tt-examwhen">${(E().sessions.find(x=>x.id===S.exams[sub].session)||{}).label||''} · ${time(sub)}</span></div>`);
+      `<div class="tt-exambar"><span class="tt-exampill">${word}</span><strong>${sub}</strong>
+        <span class="tt-examwhen">${when}</span></div>`);
   });
 
   // The night before is its own kind of day — same gold, quieter treatment,
@@ -790,7 +797,7 @@ function render(){
     if(ttLoading === S.level) return;          // already on its way
     ttLoading = S.level;
 
-    const src = 'ncea-l' + S.level + '.js';
+    const src = S.level === 'S' ? 'ncea-scholarship.js' : 'ncea-l' + S.level + '.js';
     // The engine may already have injected this file. Adding it a second time
     // does nothing useful — the data file guards itself — so reuse the
     // existing tag and wait for it rather than loading a duplicate.
@@ -821,7 +828,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=8';
+    t.src = src + '?v=11';
     t.onload = done;
     t.onerror = fail;
     document.head.appendChild(t);
@@ -839,8 +846,9 @@ function render(){
 function stepLevel(){
   return `<div class="panel p-4 md:p-5">
     <h3 class="sec-h mb-2">NCEA level</h3>
-    <div class="flex flex-wrap gap-2">${['1','2','3'].map(l=>
-      `<button class="fac-pill lvl-pill tt-lvl" data-l="${l}" aria-pressed="${S.level===l}">Level ${l}</button>`).join('')}</div>
+    <div class="flex flex-wrap gap-2">${[['1','Level 1'],['2','Level 2'],['3','Level 3'],['S','Scholarship']].map(([l,lab])=>
+      `<button class="fac-pill lvl-pill tt-lvl" data-l="${l}" aria-pressed="${S.level===l}">${lab}</button>`).join('')}</div>
+    <p class="text-xs soft mt-2">Sitting Scholarship as well as Level 3? Build one plan for each — they are different exams on different days.</p>
   </div>`;
 }
 
@@ -886,7 +894,15 @@ function stepExams(){
     <p class="text-xs soft mb-3">Pre-filled from the ${E().year} timetable. Check yours on
       <a href="${E().timetableUrl}" target="_blank" rel="noopener" class="underline">NZQA</a>.</p>
     ${S.subjects.map(sub=>{
-      const ex = S.exams[sub]||{}, prob = ex.date ? E().checkDate(ex.date) : 'No date yet.';
+      const ex = S.exams[sub]||{};
+      // A portfolio subject has no sat examination — the school sets a
+      // submission date, so any weekday is valid and there is no session.
+      if(ex.portfolio) return `<div class="tt-examrow">
+        <span class="tt-examsub"><i class="tt-dot" style="background:${hueFor(sub)}"></i>${sub}</span>
+        <input type="date" class="field tt-date" data-sub="${sub}" value="${ex.date||''}">
+        <span class="tt-pfolio">Portfolio — enter your submission date</span>
+        <span class="tt-warn">${ex.date?'':'No date yet.'}</span></div>`;
+      const prob = ex.date ? E().checkDate(ex.date) : 'No date yet.';
       return `<div class="tt-examrow">
         <span class="tt-examsub"><i class="tt-dot" style="background:${hueFor(sub)}"></i>${sub}</span>
         <input type="date" class="field tt-date" data-sub="${sub}" value="${ex.date||''}"
@@ -902,7 +918,12 @@ function stepExams(){
 /* Wrong exam dates would quietly wreck the whole plan, so the student has to
    look at them once and say they are right before anything gets built. */
 function examConfirmBox(){
-  const bad = S.subjects.filter(s => !S.exams[s] || !S.exams[s].date || E().checkDate(S.exams[s].date));
+  const ok = sub => {
+    const e = S.exams[sub];
+    if(!e || !e.date) return false;
+    return e.portfolio ? true : !E().checkDate(e.date);   // portfolios are not sat, so any date works
+  };
+  const bad = S.subjects.filter(s => !ok(s));
   if(bad.length) return `<div class="tt-confirm tt-confirm-bad">
     Still to sort: ${bad.join(', ')}. Every subject needs a date inside the exam period.</div>`;
   if(S.examsConfirmed) return `<div class="tt-confirm tt-confirm-ok">
@@ -914,8 +935,8 @@ function examConfirmBox(){
       const ex = S.exams[sub];
       const sess = E().sessions.find(x => x.id === ex.session) || {};
       return `<li><i class="tt-dot" style="background:${hueFor(sub)}"></i>
-        <strong>${sub}</strong> — ${pretty(ex.date,{weekday:'long', day:'numeric', month:'long'})},
-        ${sess.label||''} ${sess.start||''}</li>`;
+        <strong>${sub}</strong> — ${pretty(ex.date,{weekday:'long', day:'numeric', month:'long'})}${
+        ex.portfolio ? ' — portfolio submission' : ', ' + (sess.label||'') + ' ' + (sess.start||'')}</li>`;
     }).join('')}</ul>
     <button id="tt-confirm" class="btn-go">These dates and times are right</button>
   </div>`;
@@ -999,7 +1020,8 @@ function offPicker(){
 function stepGo(){
   if(!S.subjects.length) return '';
   const n = chosenStandards().length;
-  const dated = S.subjects.every(s => S.exams[s] && S.exams[s].date && !E().checkDate(S.exams[s].date));
+  const dated = S.subjects.every(s => S.exams[s] && S.exams[s].date &&
+    (S.exams[s].portfolio || !E().checkDate(S.exams[s].date)));
   const ready = n>0 && dated && S.examsConfirmed;
   return `<div class="panel p-4 md:p-5 flex flex-wrap items-center gap-3">
     <button id="tt-go" class="btn-go"${ready?'':' disabled style="opacity:.5;cursor:not-allowed"'}>
@@ -1028,7 +1050,8 @@ function wire(){
       S.subjects.push(n);
       S.standards[n] = new Set(externalStandards(n).map(x=>x.code));
       const d = E().dateFor(S.level, n);
-      S.exams[n] = d ? { date:d.date, session:d.session } : { date:'', session:'AM' };
+      S.exams[n] = d ? { date:d.date||'', session:d.session||'AM', portfolio:!!d.portfolio }
+                     : { date:'', session:'AM' };
     }
     S.examsConfirmed = false; S.plan = null; render();
   });
