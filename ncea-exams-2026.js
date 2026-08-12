@@ -75,14 +75,69 @@ window.NCEA_EXAMS = {
       // Te Ao Haka's TAPā assessments were moved into the exam period;
       // this date was confirmed against the published timetable.
     },
-    '2': {},
-    '1': {}
+    '2': {
+      'Geography':                 { date:'2026-11-10', session:'AM' },
+      'English':                   { date:'2026-11-12', session:'AM' },
+      'Chemistry':                 { date:'2026-11-16', session:'PM' },
+      'Te Reo Māori':              { date:'2026-11-16', session:'AM' },
+      'Art History':               { date:'2026-11-18', session:'AM' },
+      'Physics':                   { date:'2026-11-18', session:'PM' },
+      'Mathematics and Statistics':{ date:'2026-11-19', session:'AM' },
+      'Biology':                   { date:'2026-11-20', session:'AM' },
+      'Drama':                     { date:'2026-11-20', session:'PM' },
+      'Business Studies':          { date:'2026-11-23', session:'PM' },
+      'History':                   { date:'2026-11-24', session:'PM' },
+      'Classical Studies':         { date:'2026-11-25', session:'PM' },
+      'Media Studies':             { date:'2026-11-26', session:'AM' },
+      'Health':                    { date:'2026-11-26', session:'PM' },
+      'Digital Technologies':      { date:'2026-11-27', session:'PM' },
+      'Earth & Space Science':     { date:'2026-12-01', session:'AM' },
+      'Music':                     { date:'2026-12-01', session:'PM' }
+      // Physical Education and Psychology have no externals at Level 2.
+    },
+    '1': {
+      'Mathematics and Statistics':{ date:'2026-11-10', session:'AM' },
+      'Physics, Earth and Space Science':{ date:'2026-11-12', session:'PM' },
+      'Te Reo Māori':              { date:'2026-11-16', session:'PM' },
+      'English':                   { date:'2026-11-17', session:'AM' },
+      'Geography':                 { date:'2026-11-17', session:'PM' },
+      'History':                   { date:'2026-11-18', session:'AM' },
+      'Chemistry and Biology':     { date:'2026-11-19', session:'PM' },
+      'Commerce':                  { date:'2026-11-24', session:'AM' },
+      'Health Studies':            { date:'2026-11-25', session:'AM' },
+      'Science':                   { date:'2026-11-25', session:'PM' },
+      'Digital Technologies':      { date:'2026-11-26', session:'AM' },
+      // No sat examination — these are externally assessed by PORTFOLIO,
+      // submitted digitally on a date the school sets. The student enters
+      // their own submission date and the plan runs up to it.
+      'Drama':             { portfolio:true },
+      'Music':             { portfolio:true },
+      'Physical Education':{ portfolio:true }
+    }
+  },
+
+  /* New Zealand Scholarship sits in the same examination period. These are
+     held here ready for when Scholarship subjects are added to the tool —
+     nothing reads them yet. Scholarship has no credits and no A/M/E bands:
+     one three-hour paper per subject, graded Scholarship or Outstanding. */
+  scholarshipDates: {
+    'Classical Studies': { date:'2026-11-10', session:'AM' },
+    'Geography':         { date:'2026-11-11', session:'PM' },
+    'Chemistry':         { date:'2026-11-12', session:'AM' },
+    'Statistics':        { date:'2026-11-16', session:'PM' },
+    'Physics':           { date:'2026-11-18', session:'AM' },
+    'Biology':           { date:'2026-11-19', session:'AM' },
+    'English':           { date:'2026-11-23', session:'AM' },
+    'Calculus':          { date:'2026-11-25', session:'AM' },
+    'Drama':             { date:'2026-11-25', session:'PM' },
+    'History':           { date:'2026-11-27', session:'PM' }
   },
 
   // Pre-filled date for a subject, or null if we do not have one.
+  // Level 'S' reads the Scholarship table.
   dateFor(level, subject){
-    const lvl = this.subjectDates[level];
-    return (lvl && lvl[subject]) ? lvl[subject] : null;
+    const table = level === 'S' ? this.scholarshipDates : this.subjectDates[level];
+    return (table && table[subject]) ? table[subject] : null;
   },
 
   /* ---- helpers used by the timetable builder ---- */
