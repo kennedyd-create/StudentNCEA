@@ -1,1121 +1,1229 @@
 /* ============================================================
-   NCEA LEVEL 1 — standards data
-   Loaded on demand by whs-ncea-engine.html. Keep this file in
-   the same folder as the engine.
+   STUDY TIMETABLE
+   Builds a real revision schedule, not a prompt asking for one.
 
-   NOTE ON SHELF LIFE: these are the new-style Level 1 standards
-   introduced in 2024 — four per subject, 5 credits each. NCEA
-   Level 1 is scheduled to be replaced in 2028, so expect to
-   rewrite this file rather than amend it.
-
-   To add a subject: copy a subject block and swap the standards.
-   To add it to a faculty: add its name to that faculty's
-   subjects list below.
-
-   verified:true  = code / title / credits / internal-external
-   confirmed against NZQA or ncea.education.govt.nz.
-   Teaching fields are drafts for the subject teacher to review.
+   Borrowed from the WHS Year Planner: a flat slot array with a
+   BLOCKED sentinel, so the allocator physically cannot schedule
+   into an unavailable day. Deliberately inverted where revision
+   differs from unit planning — allocation is automatic rather
+   than manual, interleaved rather than contiguous, and anchored
+   backwards from fixed exam dates.
    ============================================================ */
 (function () {
 
-const FACULTIES = [
- { name:'Social Sciences', dark:'#7900CC', light:'#F5EFFF', subjects:['Geography','History','Commerce'] },
- { name:'Science',         dark:'#007040', light:'#E4F4E5', subjects:['Science','Chemistry and Biology','Physics, Earth and Space Science'] },
- { name:'Maths',           dark:'#9F1559', light:'#F8E7EE', subjects:['Mathematics and Statistics'] },
- { name:'English',         dark:'#22229D', light:'#EBF5FA', subjects:['English'] },
- { name:'Māori',           dark:'#1A6ABE', light:'#ECFBFF', subjects:['Te Reo Māori'] },
- { name:'Technology',      dark:'#DB2026', light:'#FDECE7', subjects:['Digital Technologies'] },
- { name:'Arts',            dark:'#9A6300', light:'#FFF7EE', subjects:['Drama','Music'] },
- { name:'PE & Health',     dark:'#BF0000', light:'#FFEDED', subjects:['Physical Education','Health Studies'] }
-];
+const TT_BUILD = 'build 14 — plan renders';
 
-const SUBJECTS = {
+const R = () => document.getElementById('tt-root');
+const E = () => window.NCEA_EXAMS;
+const D = () => window.NCEA_DATA[S.level];
+/* A chosen subject is stored as "level::Subject", so a student can mix
+   Level 3 standards and a Scholarship subject in the same timetable. */
+const key   = (lvl, name) => lvl + '::' + name;
+const kLvl  = k => k.split('::')[0];
+const kName = k => k.split('::')[1];
+const kData = k => window.NCEA_DATA[kLvl(k)];
 
-'Geography':{
-  lens:'Level 1 Geography is built around te taiao and the interconnections between whenua, wai, āhuarangi and koiora, and asks "What is where, why there, and why care?" The four Big Ideas are: te taiao is interconnected with ngā tangata; te taiao can be shaped by natural processes; tikanga informs the relationships between ngā tangata and te taiao; and perspectives and power influence te taiao. The subject focuses on Aotearoa New Zealand and the wider Pacific.',
-  discipline:'Geography reasons from located evidence. Every claim needs a place, and most need a figure and a date. At Level 1 the step up from describing to explaining is what separates Achieved from Merit — say how and why, not just what.',
-  verifyNote:'Four standards, 5 credits each, 20 credits in total — two internal and two external. Evidence for the internals may be presented in te reo Māori, English, or New Zealand Sign Language.',
-  standards:[
-  { code:'91932', ref:'1.1', credits:5, mode:'internal', verified:true,
-    title:'Demonstrate understanding of the spatial distribution of a phenomenon and its impacts on place',
-    bigIdea:'Find where something is happening, work out the pattern in where it is, and show what it does to those places.',
-    format:'Internally assessed. Evidence may be an extended task, an investigation, digital evidence such as recorded interviews, photographs or film, or a portfolio. Your teacher may only give GENERAL feedback during the assessment — work that has received sustained or detailed feedback cannot be submitted. Evidence can be in te reo Māori, English, or New Zealand Sign Language.',
-    evidence:'Named places, maps showing the distribution, figures with dates, and specific impacts on the people and environments of those places.',
-    criteria:{achieved:'Demonstrate understanding of the spatial distribution of the phenomenon and its impacts on place.',
-      merit:'Demonstrate in-depth understanding — explain the pattern of distribution and how the impacts occur.',
-      excellence:'Demonstrate comprehensive understanding — explain the relationships between the distribution, its causes and its impacts.'},
-    bandShift:{aToM:'Explain WHY the phenomenon is distributed the way it is, and HOW it produces its impacts — not just where it is and what happens.',
-      mToE:'Connect the distribution, its causes and its impacts into one account, and show how the impacts differ between places.'},
-    verbs:['describe','explain','identify','show understanding'],
-    topics:['Spatial distribution and pattern','Mapping a phenomenon','Scale: local, regional, national','Impacts on place','Impacts on people','Change over time','Geographic terminology'],
-    contexts:['A phenomenon agreed with your kaiako — often a hazard, a land use, a population pattern, or an environmental change in Aotearoa or the Pacific'],
-    misconceptions:['Describing the phenomenon rather than its distribution — the pattern of WHERE it occurs is the point.',
-      'Treating a map as decoration rather than as the evidence for the pattern.',
-      'Assuming impacts are the same everywhere the phenomenon occurs.'],
-    pitfalls:['Maps without a title, key, scale or north arrow.',
-      'General statements with no named places or figures.',
-      'Impacts listed with no explanation of how the phenomenon causes them.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
+const MAX_SUBJECTS = 6;
+const WEEKDAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const HUES = ['#7900CC','#007040','#9F1559','#22229D','#DB2026','#9A6300'];
 
-  { code:'91933', ref:'1.2', credits:5, mode:'internal', verified:true,
-    title:'Explore an environment using data',
-    bigIdea:'Collect real data about a real place, turn it into something you can see, and work out what it tells you.',
-    format:'Internally assessed. Your evidence MUST include data that you have processed and presented yourself into an appropriate visual, and that visual must be accurate. Your teacher may only give general feedback during the assessment. Evidence can be in te reo Māori, English, or New Zealand Sign Language. This standard can also contribute to the numeracy or pāngarau co-requisite during the transition period.',
-    evidence:'Your own collected or sourced data, processed by you, presented in an accurate visual — map, graph or diagram — with conclusions drawn from what the visual shows.',
-    criteria:{achieved:'Explore an environment using data, presenting it appropriately.',
-      merit:'Explore in depth — process and present data accurately and explain what it shows about the environment.',
-      excellence:'Explore comprehensively — connect the data to the geographic processes and features of the environment.'},
-    bandShift:{aToM:'Explain what the data actually shows about the environment, rather than presenting it and stopping.',
-      mToE:'Link what the data shows to the geographic processes shaping the environment.'},
-    verbs:['collect','process','present','describe','explain'],
-    topics:['Collecting primary data','Using secondary data','Choosing an appropriate visual','Maps, graphs and diagrams','Accuracy in presentation','Drawing conclusions from data','Fieldwork techniques'],
-    contexts:['An environment agreed with your kaiako — often local fieldwork'],
-    misconceptions:['Thinking any graph will do — the visual has to suit the data you collected.',
-      'Believing the data speaks for itself without you explaining what it shows.',
-      'Treating accuracy as optional when the standard requires the visual to be accurate.'],
-    pitfalls:['A visual produced by software without you processing the data yourself.',
-      'Axes, keys or units missing, which makes the visual inaccurate.',
-      'Data presented but never interpreted.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'91934', ref:'1.3', credits:5, mode:'external', verified:true,
-    title:'Demonstrate understanding of how natural processes shape an environment',
-    bigIdea:'Show how nature builds and changes a place — the processes at work, and what they produce.',
-    format:'End-of-year examination. You study one environment shaped by natural processes and answer questions about it, often supported by resource material.',
-    evidence:'A named New Zealand or Pacific environment, the natural processes named correctly, and specific landforms or features linked to the processes that made them.',
-    criteria:{achieved:'Demonstrate understanding of how natural processes shape an environment.',
-      merit:'Demonstrate in-depth understanding — explain how the processes operate and what they produce.',
-      excellence:'Demonstrate comprehensive understanding — explain how the processes interact and how the environment changes over time.'},
-    bandShift:{aToM:'Explain HOW the process works step by step and what feature it creates, rather than naming processes.',
-      mToE:'Show the processes interacting with each other, and how the environment has changed over time as a result.'},
-    verbs:['identify','describe','explain'],
-    topics:['Fluvial processes and river landforms','Coastal processes and landforms','Volcanic and tectonic processes','Glacial processes','Weathering, erosion, transport and deposition','Interaction between processes','Change over time','Pūrākau and science as ways of understanding formation'],
-    contexts:['One environment studied in class, in Aotearoa New Zealand or the wider Pacific'],
-    misconceptions:['Using weathering and erosion as if they mean the same thing.',
-      'Saying a process "makes" a landform without explaining the steps in between.',
-      'Assuming natural processes work at a constant rate.',
-      'Treating the environment as finished rather than still changing.'],
-    pitfalls:['Processes named with no explanation of how they work.',
-      'No named environment or landforms.',
-      'Diagrams drawn but not labelled or annotated.',
-      'Writing everything known about the environment instead of answering the question asked.'] },
-
-  { code:'91935', ref:'1.4', credits:5, mode:'external', verified:true,
-    title:'Demonstrate understanding of decision-making in response to a geographic challenge in the wider Pacific region',
-    bigIdea:'A real challenge in the Pacific, real people deciding what to do about it — show who decided, why, and what followed.',
-    format:'End-of-year examination. The context is the wider Pacific region, and questions focus on the decision-making rather than only the challenge itself.',
-    evidence:'The challenge named and located, the groups involved named with their perspectives, the decision described, and its consequences evidenced.',
-    criteria:{achieved:'Demonstrate understanding of decision-making in response to a geographic challenge in the wider Pacific region.',
-      merit:'Demonstrate in-depth understanding — explain the perspectives behind the decisions and their consequences.',
-      excellence:'Demonstrate comprehensive understanding — explain how perspectives and power shaped the decision and its outcomes.'},
-    bandShift:{aToM:'Explain the perspectives behind each group\u2019s position, and how the decision produced its consequences.',
-      mToE:'Show how differences in POWER shaped whose perspective prevailed — this is the Big Idea the standard is built on.'},
-    verbs:['identify','describe','explain'],
-    topics:['Geographic challenges in the Pacific','Climate change and sea level rise','Resource use and management','Perspectives and values','Power and who gets to decide','Consequences of decisions','Kaitiakitanga and tikanga in decision-making'],
-    contexts:['A geographic challenge in the wider Pacific region studied in class'],
-    misconceptions:['Treating all groups as having equal say, when power differences are central to this standard.',
-      'Confusing a perspective (the values behind a view) with a viewpoint (what someone thinks).',
-      'Presenting Pacific communities as passive rather than as decision-makers.'],
-    pitfalls:['The challenge described at length with the decision-making barely covered.',
-      'Groups referred to generally rather than named.',
-      'No consideration of power, which is where the higher grades sit.',
-      'Consequences asserted without evidence.'] }
-  ]},
-
-'History':{
-  lens:'Level 1 History is built around whanaungatanga, vā and fonua, and around historical concepts used as lenses on the past — cause and effect, continuity and change, significance, and perspectives. The focus is contexts of significance to Aotearoa New Zealand, and mātauranga Māori concepts sit alongside historical ones.',
-  discipline:'History reasons from evidence to argument. Every claim is dated and attributed, sources are interrogated rather than quoted, and what happened is kept separate from how people have interpreted it.',
-  verifyNote:'Four standards, 5 credits each, 20 credits in total — two internal and two external. AS92025 and AS92026 are on the approved list for the literacy co-requisite during the transition period.',
-  standards:[
-  { code:'92024', ref:'1.1', credits:5, mode:'internal', verified:true,
-    title:'Engage with a variety of primary sources in a historical context',
-    bigIdea:'Get your hands on real sources from the past — objects, photographs, letters, oral traditions — and work out what each one can actually tell you.',
-    format:'Internally assessed. Evidence may be an extended task, an investigation, digital evidence, or a portfolio. Your kaiako may only give GENERAL feedback during the assessment. Evidence can be in te reo Māori, English, or New Zealand Sign Language.',
-    evidence:'Several DIFFERENT types of primary source, each identified by type, with what it shows and its limitations, selected deliberately for your focus question.',
-    criteria:{achieved:'Engage with a variety of primary sources in a historical context, identifying and describing them.',
-      merit:'Engage in depth — select appropriate sources for a focus question and explain what they show.',
-      excellence:'Engage comprehensively — identify the main ideas across sources and explain how they answer the focus question.'},
-    bandShift:{aToM:'Choose your sources deliberately for the focus question, and explain what each one actually shows, instead of describing whatever you found.',
-      mToE:'Draw the main ideas out ACROSS several sources and show how together they answer the focus question.'},
-    verbs:['identify','describe','select','explain'],
-    topics:['Types of primary source: oral history traditions, artefacts, photographs, documents','Primary versus secondary sources','Writing a focus question','Selecting sources for a purpose','What a source can and cannot tell you','Mātauranga Māori concepts as sources of understanding'],
-    contexts:['A historical context of significance to Aotearoa New Zealand, agreed with your kaiako — often local'],
-    misconceptions:['Thinking primary means old — a source is primary relative to the event, not to today.',
-      'Treating oral history traditions as less reliable than written documents rather than as a different kind of evidence.',
-      'Assuming a source has to be truthful to be useful — an inaccurate source still shows what people believed.'],
-    pitfalls:['Only one type of source used, when the standard asks for a variety.',
-      'Sources described but never connected to the focus question.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'92025', ref:'1.2', credits:5, mode:'internal', verified:true,
-    title:'Demonstrate understanding of the significance of a historical context',
-    bigIdea:'Take one piece of the past and argue why it mattered — to the people then, and to us now.',
-    format:'Internally assessed, and on the approved list for the literacy co-requisite during the transition period. Your kaiako may only give general feedback during the assessment. Evidence can be in te reo Māori, English, or New Zealand Sign Language.',
-    evidence:'Dated specifics, named people and groups, and reasons for significance supported by evidence rather than asserted.',
-    criteria:{achieved:'Demonstrate understanding of the significance of a historical context, describing why it matters.',
-      merit:'Demonstrate in-depth understanding — explain the reasons for its significance, supported by evidence.',
-      excellence:'Demonstrate comprehensive understanding — explain significance for different groups and over time.'},
-    bandShift:{aToM:'Explain WHY it was significant with evidence behind each reason, rather than stating that it was important.',
-      mToE:'Show that significance differs — for different groups at the time, and between then and now.'},
-    verbs:['describe','explain','show understanding'],
-    topics:['What makes something historically significant','Significance at the time versus since','Significance for different groups','Consequences and legacy','Using evidence to support a claim','Structuring a written explanation'],
-    contexts:['A historical context of significance to Aotearoa New Zealand, agreed with your kaiako'],
-    misconceptions:['Equating significance with fame or size rather than with consequence and meaning.',
-      'Assuming an event was significant to everyone in the same way.',
-      'Believing significance is a fact to be recalled rather than an argument to be made.'],
-    pitfalls:['Significance asserted with no reasons or evidence.',
-      'A narrative of what happened instead of an argument about why it mattered.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'92026', ref:'1.3', credits:5, mode:'external', verified:true,
-    title:'Demonstrate understanding of historical concepts in contexts of significance to Aotearoa New Zealand',
-    bigIdea:'Use the historian\u2019s tools — cause and effect, change, significance, perspectives — on both a context you have studied and one you have never seen.',
-    format:'End-of-year examination, and on the approved list for the literacy co-requisite. You are expected to write an explanation covering BOTH a familiar context you have learned AND an unfamiliar one presented through sources in the paper. Note that submitted reports were removed as a method of external assessment at Level 1 from 2025.',
-    evidence:'Specific historical detail — names, dates, places, figures — used to support each concept, plus evidence read directly from the unfamiliar sources supplied.',
-    criteria:{achieved:'Identify and describe historical concepts using relevant evidence, in familiar and unfamiliar contexts.',
-      merit:'Explain historical concepts, using evidence to back up the points being made.',
-      excellence:'Explain comprehensively — use evidence to develop the explanation so it strengthens the argument.'},
-    bandShift:{aToM:'Move from describing a concept to explaining it, with evidence chosen to back up each point.',
-      mToE:'Use the evidence to DEVELOP the explanation rather than just support it — build the argument with it.'},
-    verbs:['identify','describe','explain'],
-    topics:['Cause and effect','Continuity and change','Historical significance','Perspectives','Applying concepts to an unfamiliar context','Structuring a written explanation','Using historical evidence'],
-    contexts:['A familiar context studied in class, plus an unfamiliar context supplied in the examination'],
-    misconceptions:['Believing prior knowledge will carry the unfamiliar section — the concepts and the supplied sources do that work.',
-      'Treating chronology as causation: that one thing followed another does not show it caused it.',
-      'Confusing a perspective with an opinion.'],
-    pitfalls:['The unfamiliar context answered from general knowledge rather than from the sources given.',
-      'Concepts named but never applied to the actual context.',
-      'Evidence dropped in without being connected to the point being made.'] },
-
-  { code:'92027', ref:'1.4', credits:5, mode:'external', verified:true,
-    title:'Demonstrate understanding of perspectives on a historical context',
-    bigIdea:'People living through the same events saw them completely differently. Work out who saw what, and why.',
-    format:'End-of-year examination. You write a structured explanation of differing perspectives on a historical context you have STUDIED — a place, event, person or group. There is no resource booklet for this standard, so the detail has to come from your own learning. Note that differing perspectives can mean opposing views between individuals or groups, OR differences of perspective WITHIN a single group. The wider historical context — the ideas, assumptions and historical factors of the time — is part of the explanation.',
-    evidence:'Perspectives attributed to named people or groups from the context you studied, with the ideas, assumptions and historical factors of the time that shaped them.',
-    criteria:{achieved:'Demonstrate understanding of perspectives on a historical context, describing them.',
-      merit:'Demonstrate in-depth understanding — explain what shaped the different perspectives.',
-      excellence:'Demonstrate comprehensive understanding — explain how and why perspectives differ, using evidence.'},
-    bandShift:{aToM:'Explain what shaped each perspective — position, interest, and the information available to that person.',
-      mToE:'Explain how and why the perspectives differ from each other, and what that reveals about the context.'},
-    verbs:['identify','describe','explain'],
-    topics:['What a perspective is','What shapes a perspective','Perspectives of people at the time','Later interpretations','Comparing perspectives','Perspectives in mātauranga Māori'],
-    contexts:['A historical context of significance to Aotearoa New Zealand studied in class — for example the 1981 Springbok tour, or the Mau movement'],
-    misconceptions:['Treating perspective as personal opinion rather than a position shaped by circumstance and interest.',
-      'Judging people of the past by present-day values without acknowledging you are doing it.',
-      'Assuming there were only two perspectives on any event, or that a group held one shared view.'],
-    pitfalls:['Perspectives listed side by side with no explanation of why they differ.',
-      'Positions described without saying whose they were.',
-      'The wider historical context left out — the ideas, assumptions and factors of the time are part of the explanation.',
-      'Only opposing perspectives between groups covered, missing differences WITHIN a group.'] }
-  ]},
-
-'Science':{
-  lens:'Level 1 Science is about how science actually works — how ideas develop, how claims are tested, and how science informs decisions in a local context. It is as much about the nature of science as about content.',
-  discipline:'Science reasons from evidence. A science IDEA is a relationship, theory or model that explains a phenomenon — not an observation or a fact. Level 1 keeps asking you to tell those apart.',
-  verifyNote:'Four standards, 5 credits each, 20 credits — two internal, two external. Note that Level 1 Science splits into several subjects: Science, Chemistry and Biology (ChemBio), Physics Earth and Space Science (PESS), and Agricultural and Horticultural Science.',
-  standards:[
-  { code:'91920', ref:'1.1', credits:5, mode:'internal', verified:true,
-    title:'Demonstrate understanding of a science-informed response to a local issue',
-    bigIdea:'Take a real issue in your area, work out the science behind it, and look at how people are responding — including who holds which view.',
-    format:'Internally assessed. Your kaiako may only give general feedback during the assessment. Evidence can be in te reo Māori, English, or New Zealand Sign Language.',
-    evidence:'A science IDEA described — a relationship, theory or model, not an observation — plus a second perspective held by a PARTICULAR group, a named science-informed response, and understanding of tiakitanga as responsible science practice.',
-    criteria:{achieved:'Describe a science idea relevant to the issue, outline a second perspective held by a particular group, and identify a science-informed response.',
-      merit:'Explain the science idea and how it informs the response, with detail.',
-      excellence:'Explain comprehensively — link the science, the perspectives and the response, and evaluate the response.'},
-    bandShift:{aToM:'Explain how the science idea actually informs the response, rather than describing them separately.',
-      mToE:'Bring the science, the perspectives and the response together, and judge how well the response addresses the issue.'},
-    verbs:['describe','outline','identify','explain'],
-    topics:['What counts as a science idea','Local issues with a science dimension','Perspectives held by particular groups','Science-informed responses','Tiakitanga and responsible science practice','Evaluating a response'],
-    contexts:['A local issue agreed with your kaiako — for example predator control and 1080, water quality, or coastal erosion'],
-    misconceptions:['Describing an observation or a fact and calling it a science idea — an idea is a relationship, theory or model.',
-      'Attributing a perspective to "the public" or "some people" rather than to a particular identified group.',
-      'Treating tiakitanga as an add-on rather than as part of responsible science practice.'],
-    pitfalls:['A science idea that is really just a description of what happens.',
-      'A second perspective from an individual or a vague broad group rather than a particular one.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'91921', ref:'1.2', credits:5, mode:'internal', verified:true,
-    title:'Demonstrate understanding of the use of a range of scientific investigative approaches in a context',
-    bigIdea:'Scientists do not only do fair-test experiments. Show you understand the different ways science actually investigates things.',
-    format:'Internally assessed. Your kaiako may only give general feedback during the assessment. Evidence can be in te reo Māori, English, or New Zealand Sign Language.',
-    evidence:'Several DIFFERENT investigative approaches named and described, each with what it is good for and what it cannot tell you, applied to the actual context.',
-    criteria:{achieved:'Describe a range of scientific investigative approaches used in the context.',
-      merit:'Explain why particular approaches suit particular questions in the context.',
-      excellence:'Explain comprehensively — link the approaches, their strengths and limitations, and what they contribute together.'},
-    bandShift:{aToM:'Explain WHY each approach suits the question being asked, rather than describing what it is.',
-      mToE:'Show how the approaches complement each other, and what each can and cannot establish.'},
-    verbs:['describe','explain','compare'],
-    topics:['Fair testing','Pattern seeking','Classifying and identifying','Modelling','Exploring over time','Using secondary data','Strengths and limitations of each approach','Mātauranga Māori approaches to observing te taiao'],
-    contexts:['A scientific context agreed with your kaiako'],
-    misconceptions:['Believing the fair test is the only real scientific method.',
-      'Assuming an approach that cannot be controlled is unscientific — much of astronomy, geology and ecology works this way.',
-      'Confusing the approach with the equipment used.'],
-    pitfalls:['Only one or two approaches covered when the standard asks for a range.',
-      'Approaches described generically with no link to the actual context.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'91922', ref:'1.3', credits:5, mode:'external', verified:true,
-    title:'Describe features of science that have contributed to the development of a science idea in a local context',
-    bigIdea:'Science ideas do not appear fully formed. Show how one actually developed — the evidence, the arguments, the people.',
-    format:'End-of-year examination. Submitted reports were removed as a method of external assessment at Level 1 from 2025, so this is examined.',
-    evidence:'The science idea stated precisely, the features of science named, and specific evidence and events in the idea\u2019s development, located in a real context.',
-    criteria:{achieved:'Describe features of science that contributed to the development of the science idea.',
-      merit:'Explain how those features contributed to its development.',
-      excellence:'Explain comprehensively — link the features to each other and to how the idea changed over time.'},
-    bandShift:{aToM:'Explain HOW each feature of science contributed, rather than naming features and describing the idea separately.',
-      mToE:'Show the features working together and account for how and why the idea changed.'},
-    verbs:['identify','describe','explain'],
-    topics:['Features of science: evidence, peer review, replication, revision','Science as a community activity','How ideas change with new evidence','Tentativeness and durability of science ideas','Science in a local context','Mātauranga Māori and science as knowledge systems'],
-    contexts:['A science idea developed in a local context, studied in class'],
-    misconceptions:['Believing science ideas are proven once and then fixed.',
-      'Treating a change in a science idea as science failing, rather than as science working.',
-      'Confusing a feature of science with a step in a method.'],
-    pitfalls:['The science idea described but its DEVELOPMENT never covered.',
-      'Features of science listed generically with no evidence from the actual context.',
-      'No named people, evidence or events in the development story.'] },
-
-  { code:'91923', ref:'1.4', credits:5, mode:'external', verified:true,
-    title:'Demonstrate understanding of science-related claims in communicated information',
-    bigIdea:'Someone on the internet says something science-y. Work out whether it actually holds up.',
-    format:'End-of-year examination. You are given communicated information — articles, advertisements, posts — containing science-related claims, and asked to evaluate them.',
-    evidence:'The specific claim quoted, the science behind it explained accurately, and the evaluation supported by reference to the source and the evidence it offers.',
-    criteria:{achieved:'Describe science-related claims in the information and the science relevant to them.',
-      merit:'Explain the science behind the claims and whether the information supports them.',
-      excellence:'Evaluate the claims comprehensively, justifying your judgement with reference to the science and the source.'},
-    bandShift:{aToM:'Explain the actual science behind the claim, so your judgement rests on science rather than impression.',
-      mToE:'Evaluate the source as well as the claim — who made it, what evidence they offer, what they leave out.'},
-    verbs:['identify','describe','explain','evaluate'],
-    topics:['Identifying a science-related claim','The science behind a claim','Evidence quality','Source purpose and reliability','Correlation and causation in reporting','Misleading use of data and graphs','Reaching a justified judgement'],
-    contexts:['Communicated information supplied in the examination — you cannot revise the material, only the skills'],
-    misconceptions:['Judging a claim by whether it sounds plausible rather than by the science.',
-      'Assuming anything quoting a scientist or a study is reliable.',
-      'Treating a correlation reported in media as a demonstrated cause.'],
-    pitfalls:['The claim evaluated with no science explained behind it.',
-      'General criticism of the source with no reference to its specific claims.',
-      'Answering from prior knowledge instead of the material supplied.'] }
-  ]},
-
-'Chemistry and Biology':{
-  lens:'Level 1 ChemBio combines living systems and chemical systems: microorganisms and their environment, chemical reactions, genetic variation, and the physical properties of materials. It is the Level 1 pathway into both Biology and Chemistry.',
-  discipline:'Chemistry and Biology explain at more than one level at once — particle, cell, organism, system. A Level 1 answer names the mechanism and links what happens underneath to what you can observe.',
-  verifyNote:'Four standards, 20 credits — two internal (5 and 6 credits) and two external (5 and 4 credits). Note the credits are NOT all 5 in this subject.',
-  standards:[
-  { code:'92020', ref:'1.1', credits:5, mode:'internal', verified:true,
-    title:'Demonstrate understanding of the relationship between a microorganism and the environment',
-    bigIdea:'Something too small to see, shaping an environment you can. Show how the microorganism and its surroundings affect each other.',
-    format:'Internally assessed. Your kaiako may only give general feedback during the assessment. Evidence can be in te reo Māori, English, or New Zealand Sign Language.',
-    evidence:'The microorganism named specifically, the environmental conditions described with actual values where possible, and the relationship shown working in both directions.',
-    criteria:{achieved:'Describe the relationship between the microorganism and its environment.',
-      merit:'Explain how the microorganism and the environment affect each other.',
-      excellence:'Explain comprehensively — link the biology to the wider effects on the environment or on people.'},
-    bandShift:{aToM:'Explain the mechanism — how the conditions affect the microorganism and how it changes its environment in turn.',
-      mToE:'Connect the relationship to its wider consequences for the ecosystem, an industry, or human health.'},
-    verbs:['describe','explain','discuss'],
-    topics:['Types of microorganism','Conditions for growth: temperature, pH, moisture, nutrients','Respiration and fermentation','Decomposition and nutrient cycling','Microorganisms in food and industry','Microorganisms and disease','Effects on the environment'],
-    contexts:['A microorganism and environment agreed with your kaiako — often bread, yoghurt, compost, or a waterway'],
-    misconceptions:['Assuming all microorganisms are harmful.',
-      'Treating the relationship as one-way, when the environment shapes the microorganism and the microorganism changes the environment.',
-      'Confusing bacteria, fungi and viruses as if they behaved the same way.'],
-    pitfalls:['The microorganism named only by group rather than specifically.',
-      'Conditions described without figures.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'92021', ref:'1.2', credits:6, mode:'internal', verified:true,
-    title:'Demonstrate understanding of chemical reactions in context',
-    bigIdea:'What is actually happening when substances react — and why it matters in the real situation you are studying.',
-    format:'Internally assessed, and at 6 credits the largest standard in this subject. Your kaiako may only give general feedback during the assessment.',
-    evidence:'Word and symbol equations, observations of the reaction, and the chemistry linked to the real context rather than described in isolation.',
-    criteria:{achieved:'Describe chemical reactions in the context, including equations.',
-      merit:'Explain the reactions and what is happening at particle level.',
-      excellence:'Explain comprehensively — link the chemistry to the context and to the effects it produces.'},
-    bandShift:{aToM:'Explain what the particles are doing, not just what you can observe.',
-      mToE:'Link the particle-level chemistry to the real context and its consequences.'},
-    verbs:['describe','explain','write equations'],
-    topics:['Types of reaction: combustion, acid-base, precipitation, oxidation','Word and symbol equations','Balancing equations','Signs a reaction has occurred','Rate of reaction and factors affecting it','Particle-level explanations','Chemistry in everyday contexts'],
-    contexts:['A chemical context agreed with your kaiako — often corrosion, cooking, water treatment or fuels'],
-    misconceptions:['Describing what you can see and calling it an explanation — the particle level is where the explanation lives.',
-      'Thinking a substance disappears in a reaction rather than being rearranged.',
-      'Confusing a chemical change with a physical one.'],
-    pitfalls:['Equations unbalanced or missing.',
-      'Observations recorded with no chemistry explaining them.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'92022', ref:'1.3', credits:5, mode:'external', verified:true,
-    title:'Demonstrate understanding of genetic variation in relation to an identified characteristic',
-    bigIdea:'Why individuals differ — where the variation comes from, and how it passes on.',
-    format:'End-of-year examination. You are given a characteristic to work with and asked about the genetics behind its variation.',
-    evidence:'Correct genetic notation, Punnett squares set out properly, and the source of the variation named and explained.',
-    criteria:{achieved:'Describe genetic variation in relation to the characteristic.',
-      merit:'Explain how the variation arises and how it is inherited.',
-      excellence:'Explain comprehensively — link the sources of variation to inheritance and to variation in a population.'},
-    bandShift:{aToM:'Explain HOW the variation arises and is passed on, rather than describing that individuals differ.',
-      mToE:'Link the genetics of the individual to variation across a population.'},
-    verbs:['identify','describe','explain'],
-    topics:['DNA, genes and alleles','Dominant and recessive alleles','Genotype and phenotype','Punnett squares','Meiosis and variation','Mutation','Environmental influence on phenotype','Variation in populations'],
-    contexts:['A characteristic supplied in the examination'],
-    misconceptions:['Confusing genotype with phenotype.',
-      'Believing mutations arise because an organism needs them.',
-      'Assuming every characteristic is controlled by a single gene.',
-      'Thinking dominant means most common.'],
-    pitfalls:['Punnett squares drawn without stating the genotypes and phenotypes they produce.',
-      'Variation described but its source never explained.',
-      'Genetic terms used loosely or interchangeably.'] },
-
-  { code:'92023', ref:'1.4', credits:4, mode:'external', verified:true,
-    title:'Demonstrate understanding of how the physical properties of materials inform their use',
-    bigIdea:'Why things are made of what they are made of — properties, structure, and fitness for purpose.',
-    format:'End-of-year examination, and at 4 credits the smallest standard in this subject.',
-    evidence:'Named materials with specific measured properties, linked to specific uses, with the structure behind each property explained.',
-    criteria:{achieved:'Describe physical properties of materials and how they inform their use.',
-      merit:'Explain how the properties arise from structure and why they suit the use.',
-      excellence:'Explain comprehensively — compare materials and justify which is best suited to a use.'},
-    bandShift:{aToM:'Explain WHY the material has that property — what its structure is doing — and why that suits the use.',
-      mToE:'Compare materials for a use and justify which is best suited, including trade-offs.'},
-    verbs:['identify','describe','explain','compare'],
-    topics:['Physical properties: strength, density, conductivity, melting point, flexibility','Structure and bonding at particle level','Metals, polymers, ceramics and composites','Matching material to purpose','Trade-offs in material choice','Sustainability of materials'],
-    contexts:['Materials and uses supplied in the examination or studied in class'],
-    misconceptions:['Treating strong and hard as the same property.',
-      'Assuming the best material is the one with the highest value of a property, ignoring cost, mass and durability.',
-      'Describing a property without connecting it to structure.'],
-    pitfalls:['Properties listed with no link to the actual use.',
-      'No particle-level explanation of where the property comes from.',
-      'Comparisons made without stating what the material is being compared for.'] }
-  ]},
-
-'Physics, Earth and Space Science':{
-  lens:'Level 1 PESS combines physical systems with Earth and space systems: human-induced change in the Earth system, investigating a physical phenomenon, the Sun–Earth–Moon system, and energy. It is the Level 1 pathway into Physics and into Earth and Space Science.',
-  discipline:'Physics and Earth science reason from a model of the situation to the evidence and back. Name the principle before the numbers, and say what the result means physically.',
-  verifyNote:'Four standards, 5 credits each, 20 credits — two internal and two external.',
-  standards:[
-  { code:'92044', ref:'1.1', credits:5, mode:'internal', verified:true,
-    title:'Demonstrate understanding of human-induced change within the Earth system',
-    bigIdea:'People are changing the Earth system. Show how one of those changes actually works, from cause through to consequence.',
-    format:'Internally assessed. Your kaiako may only give general feedback during the assessment. Evidence can be in te reo Māori, English, or New Zealand Sign Language.',
-    evidence:'The change named and located, with data showing it, the mechanism traced through the Earth system, and consequences evidenced.',
-    criteria:{achieved:'Describe a human-induced change within the Earth system.',
-      merit:'Explain how the human activity produces the change within the system.',
-      excellence:'Explain comprehensively — link the change across parts of the Earth system and to its consequences.'},
-    bandShift:{aToM:'Explain the mechanism — how the human activity actually produces the change — rather than stating that it does.',
-      mToE:'Show the change moving between parts of the Earth system — atmosphere, hydrosphere, geosphere, biosphere — and its consequences.'},
-    verbs:['describe','explain','discuss'],
-    topics:['Spheres of the Earth system and their interactions','Carbon cycle and climate change','Ocean acidification','Land use change and erosion','Water quality','Feedback loops','Evidence for human-induced change','Kaitiakitanga and responses'],
-    contexts:['A human-induced change agreed with your kaiako, often local'],
-    misconceptions:['Treating the parts of the Earth system as separate rather than connected.',
-      'Confusing weather with climate.',
-      'Assuming a change is human-induced without evidence distinguishing it from natural variation.'],
-    pitfalls:['The change described with no mechanism explained.',
-      'No data or figures showing the change.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'92045', ref:'1.2', credits:5, mode:'internal', verified:true,
-    title:'Demonstrate understanding of a physical phenomenon through investigation',
-    bigIdea:'Investigate something physical yourself, and explain what your results actually show about the physics.',
-    format:'Internally assessed practical investigation. Your kaiako may only give general feedback during the assessment.',
-    evidence:'Your own data with repeats, processed and graphed appropriately, and the pattern explained using physics ideas.',
-    criteria:{achieved:'Investigate a physical phenomenon and describe the findings.',
-      merit:'Explain the findings using physics ideas.',
-      excellence:'Explain comprehensively — link the findings to the physics and discuss the reliability of the investigation.'},
-    bandShift:{aToM:'Explain the pattern in your data using physics, rather than describing what the numbers did.',
-      mToE:'Link the findings to the underlying physics and judge how much your data can support.'},
-    verbs:['investigate','measure','describe','explain'],
-    topics:['Aim and variables','Fair testing and controls','Repeats and averaging','Graphing results','Identifying a relationship','Explaining with physics ideas','Reliability and sources of error'],
-    contexts:['A physical phenomenon agreed with your kaiako — often motion, light, heat, sound or electricity'],
-    misconceptions:['Treating an unexpected result as a mistake rather than as data.',
-      'Confusing the independent and dependent variables.',
-      'Believing more decimal places means a more accurate measurement.'],
-    pitfalls:['Too few repeats to say anything about reliability.',
-      'Graphs without labelled axes or units.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'92046', ref:'1.3', credits:5, mode:'external', verified:true,
-    title:'Demonstrate understanding of the effect on the Earth of interactions between the Sun and the Earth-Moon system',
-    bigIdea:'Day, night, seasons, tides, eclipses — all of it comes from three bodies moving in relation to each other.',
-    format:'End-of-year examination. Diagrams are often the clearest way to show these relationships, so practise drawing and annotating them.',
-    evidence:'Clear annotated diagrams showing the positions and motions involved, with the effect explained from the geometry.',
-    criteria:{achieved:'Describe interactions between the Sun and the Earth-Moon system and their effects on Earth.',
-      merit:'Explain how the interactions produce the effects.',
-      excellence:'Explain comprehensively — link the geometry and motion to the pattern of effects observed on Earth.'},
-    bandShift:{aToM:'Explain how the positions and motions PRODUCE the effect, rather than describing what we observe.',
-      mToE:'Link the geometry to the pattern — why the effect varies through the year, the month, or with latitude.'},
-    verbs:['identify','describe','explain'],
-    topics:['Earth\u2019s rotation and day and night','Earth\u2019s tilt and the seasons','Phases of the Moon','Solar and lunar eclipses','Tides and the Moon','Māori lunar calendar — maramataka','Matariki and the Māori new year'],
-    contexts:['The Sun–Earth–Moon system; questions may be set in Aotearoa or Pacific contexts'],
-    misconceptions:['Thinking the seasons are caused by Earth\u2019s distance from the Sun rather than by its tilt.',
-      'Believing the Moon has a dark side that never receives sunlight.',
-      'Assuming eclipses would happen every month if the orbits were in the same plane.',
-      'Confusing the Moon\u2019s phases with Earth\u2019s shadow falling on it.'],
-    pitfalls:['Diagrams drawn without labels, scale or direction of motion.',
-      'Effects described without the geometry that causes them.',
-      'Southern Hemisphere seasons and Moon orientation reversed from Northern Hemisphere textbooks.'] },
-
-  { code:'92047', ref:'1.4', credits:5, mode:'external', verified:true,
-    title:'Demonstrate understanding of a physical system using energy concepts',
-    bigIdea:'Follow the energy — where it starts, what it becomes, and what gets wasted along the way.',
-    format:'End-of-year examination. Show working for any calculations, with units.',
-    evidence:'Energy stores and transfers named correctly, calculations shown with units, and efficiency losses accounted for rather than ignored.',
-    criteria:{achieved:'Describe a physical system using energy concepts, including calculations.',
-      merit:'Explain the energy transfers and transformations within the system.',
-      excellence:'Explain comprehensively — account for efficiency and energy losses across the whole system.'},
-    bandShift:{aToM:'Explain what happens to the energy at each stage, rather than naming the stores involved.',
-      mToE:'Account for the whole system including where energy is lost, and use that to explain efficiency.'},
-    verbs:['identify','describe','calculate','explain'],
-    topics:['Energy stores: kinetic, gravitational potential, elastic, thermal, chemical','Energy transfers and transformations','Conservation of energy','Work and power','Efficiency and wasted energy','Energy in electrical circuits','Renewable and non-renewable energy sources'],
-    contexts:['A physical system supplied in the examination or studied in class'],
-    misconceptions:['Saying energy is "used up" rather than transferred or dissipated.',
-      'Confusing energy with force or with power.',
-      'Believing a system can be 100 percent efficient.',
-      'Treating heat as a substance rather than as energy transferred.'],
-    pitfalls:['Calculations without units or working shown.',
-      'Energy transfers described without naming the stores.',
-      'Wasted energy ignored, which is usually where the higher grades sit.'] }
-  ]},
-
-'Mathematics and Statistics':{
-  lens:'Level 1 Mathematics and Statistics is one subject with four standards — two internal, two external — covering number and algebra, geometry and measurement, statistics and probability. It splits into Mathematics and Statistics at Level 2, and into Calculus and Statistics at Level 3.',
-  discipline:'Mathematics rewards a visible chain of reasoning. Show the method, not just the answer — method credit survives an arithmetic slip. Statistics adds a second demand: every conclusion must be written in the context of the data, not as a bare number.',
-  verifyNote:'Four standards, 5 credits each, 20 credits in total. Most schools teach the two internals (AS91944 and AS91945) in the first half of the year, giving a 10-credit buffer before the two externals in Terms 3 and 4.',
-  standards:[
-  { code:'91944', ref:'1.1', credits:5, mode:'internal', verified:true,
-    title:'Explore data using a statistical enquiry process',
-    bigIdea:'Ask a real question, get real data, and let the data answer it — properly, with the conclusion written about the actual thing you investigated.',
-    format:'Internally assessed investigation, usually run over four to six weeks. Your kaiako may only give general feedback during the assessment — this is why a draft feedback cycle matters and why you should not leave it to the last week.',
-    evidence:'A clear investigative question, the data itself, appropriate displays, and a conclusion that answers the question in context using features of the data.',
-    criteria:{achieved:'Explore data using a statistical enquiry process, describing features of the data.',
-      merit:'Explore in depth — link features of the data to the investigative question and the context.',
-      excellence:'Explore comprehensively — integrate statistical and contextual knowledge and reflect on the process.'},
-    bandShift:{aToM:'Write about the data IN CONTEXT — what the shape, centre and spread mean for the actual thing you investigated, not just what the graph looks like.',
-      mToE:'Reflect on the investigation itself — sampling variability, the limits of what your data can show, and what you would do differently.'},
-    verbs:['pose','collect','display','describe','explain','reflect'],
-    topics:['The statistical enquiry cycle','Writing an investigative question','Sampling and sample size','Dot plots, box plots and histograms','Centre, spread, shape and unusual values','Comparing distributions','Writing a conclusion in context','Sampling variability'],
-    contexts:['A dataset and question agreed with your kaiako, often about your school or community'],
-    misconceptions:['Describing what the graph looks like and calling it analysis — the features have to mean something about the real situation.',
-      'Believing a bigger sample removes the need to think about variability.',
-      'Treating an outlier as an error to delete rather than as data to explain.'],
-    pitfalls:['A conclusion that reports numbers without answering the investigative question.',
-      'Context dropped the moment the statistics start.',
-      'Displays without labels, units or a title.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'91945', ref:'1.2', credits:5, mode:'internal', verified:true,
-    title:'Use mathematical methods to explore problems that relate to life in Aotearoa New Zealand or the Pacific',
-    bigIdea:'Real problems from around here — and the maths that actually solves them.',
-    format:'Internally assessed. Your kaiako may only give general feedback during the assessment. The context must relate to life in Aotearoa New Zealand or the Pacific, so the problem is genuinely local rather than generic.',
-    evidence:'Full working for each method used, with units, and answers interpreted back in the real situation rather than left as bare numbers.',
-    criteria:{achieved:'Use mathematical methods to explore the problem, showing correct method.',
-      merit:'Use them in depth — link the methods to the context and explain the reasoning.',
-      excellence:'Use them comprehensively — justify the choices made and evaluate the solution in context.'},
-    bandShift:{aToM:'Explain why the method suits this problem, and interpret the answer in the real situation.',
-      mToE:'Justify your choices — including assumptions you made and their effect — and judge how good the solution actually is.'},
-    verbs:['apply','calculate','model','explain','justify'],
-    topics:['Proportional reasoning and rates','Percentages and financial maths','Measurement, area and volume','Scale and units','Linear relationships','Using formulae','Estimation and reasonableness','Interpreting an answer in context'],
-    contexts:['A problem relating to life in Aotearoa New Zealand or the Pacific, agreed with your kaiako'],
-    misconceptions:['Believing the answer is the end of the task, when interpreting it in context is what earns the higher grades.',
-      'Treating assumptions as something to hide rather than to state.',
-      'Rounding early and then presenting a precise-looking final figure.'],
-    pitfalls:['Working not shown, so no method credit is available.',
-      'Units missing or inconsistent.',
-      'The answer left as a number with no meaning attached to it.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'91946', ref:'1.3', credits:5, mode:'external', verified:true,
-    title:'Interpret and apply mathematical and statistical information in context',
-    bigIdea:'You are given real information — graphs, tables, statements — and asked what it actually means and what follows from it.',
-    format:'End-of-year examination, sat alongside AS91947. The specifications state that candidates are expected to demonstrate understanding of the mathematical concepts rather than directly transferring results from a graphing calculator, so show your reasoning.',
-    evidence:'Values read accurately from the supplied information, working shown with units, and every interpretation expressed in terms of the context given.',
-    criteria:{achieved:'Interpret and apply mathematical and statistical information in context.',
-      merit:'Interpret and apply in depth — explain what the information shows and why.',
-      excellence:'Interpret and apply comprehensively — reason from the information to a justified conclusion.'},
-    bandShift:{aToM:'Explain what the information means for the situation, rather than reading values off it.',
-      mToE:'Reason from the information to a conclusion and justify it, including what the information cannot tell you.'},
-    verbs:['identify','interpret','calculate','apply','explain','justify'],
-    topics:['Reading graphs, tables and charts','Rates, ratios and proportions','Percentages and percentage change','Statistical information in the media','Misleading graphs and claims','Making predictions from information','Interpreting in context'],
-    contexts:['Information supplied in the examination, set in real contexts'],
-    misconceptions:['Believing the calculator does the thinking — the specifications explicitly guard against transferring results without understanding.',
-      'Confusing a percentage change with a percentage point change.',
-      'Assuming a trend continues beyond the data shown.'],
-    pitfalls:['Values read off a graph without units or with the scale misread.',
-      'Interpretations that are generic rather than about the actual context.',
-      'Working omitted, so a correct answer earns less than it could.'] },
-
-  { code:'91947', ref:'1.4', credits:5, mode:'external', verified:true,
-    title:'Demonstrate mathematical reasoning',
-    bigIdea:'Show how you got there. This standard is about the argument, not the answer.',
-    format:'End-of-year examination, sat alongside AS91946. Reasoning must be visible — the specifications expect understanding of concepts rather than results transferred from a graphing calculator.',
-    evidence:'Every step of the algebra or geometry written out, reasons given for the steps, and the result stated clearly.',
-    criteria:{achieved:'Demonstrate mathematical reasoning, showing correct method.',
-      merit:'Demonstrate reasoning in depth — connect steps and explain why they follow.',
-      excellence:'Demonstrate reasoning comprehensively — construct a logical argument and justify the conclusion.'},
-    bandShift:{aToM:'Explain WHY each step follows from the last, rather than showing a sequence of lines.',
-      mToE:'Build a complete logical argument, including generalising or proving rather than solving one case.'},
-    verbs:['solve','simplify','factorise','reason','justify','generalise'],
-    topics:['Expanding and factorising','Linear and quadratic equations','Simultaneous equations','Exponents','Patterns and generalisation','Geometric reasoning and angle rules','Pythagoras and trigonometry','Constructing a logical argument'],
-    contexts:['Any appropriate context, including unfamiliar ones'],
-    misconceptions:['Thinking the answer is the point — this standard assesses the reasoning that produced it.',
-      'Believing a pattern shown for three cases proves the general rule.',
-      'Losing a solution by dividing both sides of an equation by a variable.'],
-    pitfalls:['Steps skipped, so the reasoning cannot be followed.',
-      'A rule used without stating which rule it is.',
-      'Answers given as decimals where exact form was expected.',
-      'Generalising asserted rather than shown.'] }
-  ]},
-
-'English':{
-  lens:'Level 1 English works across verbal, written and visual language. The four standards cover how context shapes language, developing your own writing, understanding a studied text, and reading unfamiliar texts. Note the standards were renumbered in 2025 — AS91926 is now 1.2 and AS91925 is now 1.3.',
-  discipline:'English argues from the text. Every claim is anchored to a quotation or a specific moment, and the analysis explains how the writer\u2019s choice creates the effect. At Level 1 the step from Achieved to Merit is explaining that effect rather than naming the technique.',
-  verifyNote:'Four standards, 5 credits each, 20 credits — two internal and two external. Both externals are online digital examinations, with paper by exception. All responses must be written in English.',
-  standards:[
-  { code:'91924', ref:'1.1', credits:5, mode:'internal', verified:true,
-    title:'Demonstrate understanding of how context shapes verbal language use',
-    bigIdea:'People talk differently depending on who they are with and where they are. Show you understand why, and what changes.',
-    format:'Internally assessed. Your kaiako may only give general feedback during the assessment. Conditions of assessment are published on NCEA.education.',
-    evidence:'Real examples of verbal language in specific contexts — recordings, transcripts, observed speech — with the features identified and linked to the context.',
-    criteria:{achieved:'Demonstrate understanding of how context shapes verbal language use, describing the features used.',
-      merit:'Demonstrate in-depth understanding — explain how and why the context shapes the language.',
-      excellence:'Demonstrate comprehensive understanding — explain the relationship between context, purpose, audience and language choices.'},
-    bandShift:{aToM:'Explain WHY the context produces those language choices, rather than noticing that the language differs.',
-      mToE:'Connect context, purpose and audience together and show how they shape the language as a whole.'},
-    verbs:['identify','describe','explain'],
-    topics:['Formal and informal register','Audience and purpose','Slang, jargon and dialect','New Zealand English and te reo Māori in everyday speech','Code-switching','Tone and body language','Verbal language in different settings'],
-    contexts:['Verbal language contexts agreed with your kaiako — often your own community, school, media or workplace speech'],
-    misconceptions:['Treating informal language as incorrect rather than as suited to a different context.',
-      'Assuming there is one proper way to speak English.',
-      'Describing what someone said rather than how they said it and why.'],
-    pitfalls:['Examples described with no link to the context that shaped them.',
-      'General statements about how people talk, with no actual recorded or observed evidence.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'91926', ref:'1.2', credits:5, mode:'internal', verified:true,
-    title:'Develop ideas in writing using stylistic and written conventions',
-    bigIdea:'Write something of your own, and shape it deliberately — the ideas AND the way you put them.',
-    format:'Internally assessed writing, developed through planning, drafting and revision. Your kaiako may only give general feedback during the assessment — work that has received detailed feedback cannot be submitted.',
-    evidence:'Your own writing showing developed ideas, with deliberate language features and structural features, and evidence of drafting.',
-    criteria:{achieved:'Develop ideas in writing using stylistic and written conventions.',
-      merit:'Develop ideas convincingly — controlled use of language and structural features suited to purpose.',
-      excellence:'Develop ideas effectively — crafted, sustained writing with deliberate control throughout.'},
-    bandShift:{aToM:'Sustain and develop the idea across the whole piece, with language choices that clearly serve your purpose.',
-      mToE:'Craft it — deliberate structural decisions and a controlled voice that holds from first line to last.'},
-    verbs:['develop','craft','structure','write'],
-    topics:['Developing an idea','Language features: imagery, word choice, sentence variety','Structural features: how a text is shaped and organised','Purpose and audience','Planning and drafting','Written conventions: spelling, punctuation, grammar'],
-    contexts:['The writing types set by your kaiako'],
-    misconceptions:['Confusing length with development — a longer piece is not a more developed one.',
-      'Treating redrafting as proofreading rather than rethinking structure and expression.',
-      'Believing stylistic features must be decorative; the best ones are the ones you barely notice.'],
-    pitfalls:['A piece that opens strongly and loses control halfway.',
-      'Ideas introduced but never developed.',
-      'Note: this is your own assessed writing. An AI must not draft or reword any part of it, and NZQA requires any use of generative AI to be acknowledged.'] },
-
-  { code:'91925', ref:'1.3', credits:5, mode:'external', verified:true,
-    title:'Demonstrate understanding of specific aspects of studied text',
-    bigIdea:'A text you have studied all year, and one question that decides what you write about it.',
-    format:'End-of-year online digital examination, paper by exception. You select ONE option from a range of questions and/or statements. All responses must be written in English, and information written in planning spaces is not marked. NZQA publishes annotated Achieved, Merit and Excellence exemplar scripts for this standard — reading all three side by side is the fastest way to see the difference.',
-    evidence:'Direct quotation or specific detail from your studied text, with the writer\u2019s techniques named and their effect explained.',
-    criteria:{achieved:'Demonstrate understanding of specific aspects of the studied text, using examples from the text.',
-      merit:'Demonstrate in-depth understanding — explain how the aspects work and the effects they create.',
-      excellence:'Demonstrate comprehensive understanding — explain the significance of the aspects to the text as a whole.'},
-    bandShift:{aToM:'Explain the EFFECT the writer\u2019s choice creates, rather than identifying the technique and moving on.',
-      mToE:'Link the aspect to the text\u2019s bigger ideas — what the writer is doing overall and why it matters.'},
-    verbs:['identify','describe','explain'],
-    topics:['Character','Setting','Theme and key ideas','Language features and their effects','Structure','Choosing the best option for your text','Using examples from the text'],
-    contexts:['The text you studied in class — novel, film, short stories, poetry, drama or non-fiction'],
-    misconceptions:['Believing a memorised essay can be reshaped onto whichever option appears.',
-      'Thinking naming a technique is explaining it.',
-      'Assuming more writing scores better than focused writing.'],
-    pitfalls:['Retelling the plot instead of answering the option chosen.',
-      'Choosing an option that does not suit your text well — spend time on that choice.',
-      'Examples given without being unpacked.',
-      'Answering only part of the option when it has more than one part.'] },
-
-  { code:'91927', ref:'1.4', credits:5, mode:'external', verified:true,
-    title:'Demonstrate understanding of significant aspects of unfamiliar texts',
-    bigIdea:'Texts you have never seen, read closely under time pressure — the skill is the thing you revise, not the content.',
-    format:'End-of-year online digital examination with a resource booklet of unfamiliar texts. One of the unfamiliar texts will be BASED IN A MĀORI CONTEXT — this was revised in 2025 from the earlier wording about a text by a Māori author. Annotated exemplar scripts at all three grades are published by NZQA.',
-    evidence:'Short quotations from the supplied texts, precisely chosen, with the language feature named and its effect on the reader explained.',
-    criteria:{achieved:'Demonstrate understanding of significant aspects of the unfamiliar texts, using examples.',
-      merit:'Demonstrate in-depth understanding — explain how language choices create meaning and effect.',
-      excellence:'Demonstrate comprehensive understanding — explain the significance of those choices to the text\u2019s purpose.'},
-    bandShift:{aToM:'Explain how the specific language choice creates the effect, rather than spotting features.',
-      mToE:'Connect the detail to what the whole text is trying to do and why the writer built it that way.'},
-    verbs:['identify','describe','explain'],
-    topics:['Close reading under time pressure','Language features and their effects','Tone and voice','Purpose and audience','Structure of a short text','Reading texts in a Māori context','Selecting short, precise quotations'],
-    contexts:['Unfamiliar texts supplied in the examination resource booklet, one based in a Māori context'],
-    misconceptions:['Believing prior knowledge of similar texts helps more than careful reading of these ones.',
-      'Rushing a text because it looks difficult, when the same skills apply to all of them.',
-      'Treating a text in a Māori context as requiring specialist knowledge rather than close reading.'],
-    pitfalls:['Feature-spotting: listing devices without analysing effect.',
-      'Time mismanaged, leaving the last text thin.',
-      'Quotations too long, so the analysis gets crowded out.'] }
-  ]},
-
-'Te Reo Māori':{
-  lens:'Level 1 Te Reo Māori works across kōrero, whakarongo, pānui and tuhi, in contexts that are familiar and relevant to the ākonga, and connects to the revitalisation of te reo for the good of the collective.',
-  discipline:'A language subject is assessed on what you can do with the reo, not on what you know about it. Range, accuracy and appropriateness are rewarded together, and reaching for a more ambitious structure and nearly getting it usually beats staying safe.',
-  language:`LANGUAGE — THIS SUBJECT IS ASSESSED IN TE REO MĀORI
-This section overrides the New Zealand English requirement above.
-
-Work in te reo Māori by default. All modelled language, examples, practice questions and drills must be in te reo Māori, with macrons used correctly throughout.
-
-You may explain grammar, structure or assessment technique in English where the student would otherwise be lost, and you should switch to English if they ask — most Level 1 ākonga are early second-language learners and metalanguage in English is a legitimate scaffold. Ask once which they prefer, then follow it.
-
-MITA / DIALECT: iwi and regional variation is legitimate reo, not error. Do not "correct" a student's mita toward a single standard form. If a form is dialectal, say so neutrally and note the variant they may meet in an assessment, then leave the choice to them and their kaiako.
-
-TIKANGA: some language belongs to particular contexts, occasions or people. Where a phrase carries tapu, whakapapa or marae protocol, say so rather than treating it as neutral vocabulary, and direct the student to their kaiako or whānau rather than ruling on it yourself.
-
-Never translate, draft, script or reword any part of the student's assessed work, in either language.`,
-  verifyNote:'Three of the four standards are loaded — AS92092, AS92093 and AS92095, all confirmed. The reading standard (1.3) exists but its exact title needs confirming against NZQA before it goes in. All four are 5 credits. AS92092 and AS92095 are approved for Te Reo Matatini and Literacy during the transition period (2024–2027).',
-  standards:[
-  { code:'92092', ref:'1.1', credits:5, mode:'internal', verified:true,
-    title:'Te kōrerorero i ngā pārongo, i ngā ariā me ngā whakaaro',
-    bigIdea:'Hold a real conversation in te reo Māori — unrehearsed, unscripted, sharing and responding to ideas.',
-    format:'Internally assessed. One recorded conversation of 1 to 1.5 minutes per ākonga, in pairs or groups, taking place in REAL TIME. The conversation must be unrehearsed and unscripted, and you must refer to both past and present events or experiences. Approved for Te Reo Matatini and Literacy during the transition period.',
-    evidence:'A genuine unscripted interaction using varied language, referring to past AND present events, with interactive strategies that keep the conversation going.',
-    criteria:{achieved:'Interact in spoken reo Māori to share and respond to information, ideas and opinions, using relevant language and referring to past and present events.',
-      merit:'Interact capably — using interactive strategies to support the conversation.',
-      excellence:'Interact skilfully — using interactive strategies that enhance the conversation.'},
-    bandShift:{aToM:'Use interactive strategies that SUPPORT the conversation — questions, agreement, clarification, following up on what the other person said.',
-      mToE:'Use strategies that ENHANCE it — extending ideas, adding detail unprompted, and keeping the exchange genuinely two-way.'},
-    verbs:['kōrerorero','whakautu','pātai','whakamārama'],
-    topics:['Unrehearsed conversation','Referring to past events','Referring to present events','Interactive strategies: questioning, clarifying, extending','Range of structures and vocabulary','Pronunciation and rhythm','Recovering when you get stuck'],
-    contexts:['Events or experiences that are familiar and relevant to you'],
-    misconceptions:['Thinking a memorised script counts — the standard requires unrehearsed, unscripted, real-time conversation.',
-      'Believing accuracy matters more than range and interaction.',
-      'Treating a pause or a repair as failure rather than as a normal part of conversation.'],
-    pitfalls:['Short answers that leave all the work to the other speaker.',
-      'Only present-tense content, when past AND present events are required.',
-      'Note: this is assessed work, and it must be unscripted. An AI must not write, script or rehearse it with you, and NZQA requires any use of generative AI to be acknowledged.'] },
-
-  { code:'92093', ref:'1.2', credits:5, mode:'internal', verified:true,
-    title:'Te whakapuaki whakaaro e pā ana ki tētahi horopaki e ora nei te reo',
-    bigIdea:'Say what you think about the life of the language — where te reo is spoken, how it survives, and your part in that.',
-    format:'Internally assessed, with NO teacher feedback during the assessment. One piece of work in your chosen format: spoken reo Māori, written reo Māori, or a combination. If spoken, you may draft a written script to prepare but the script itself is not assessed — and simply reading aloud what you also submit as written evidence will NOT meet the standard. Evidence submitted here may not also be submitted for AS92092.',
-    evidence:'Your own communicated ideas about a language vitality context, with the spoken and written parts complementing rather than duplicating each other if you use both.',
-    criteria:{achieved:'Communicate in te reo Māori in relation to a language vitality context.',
-      merit:'Communicate capably — ideas developed with a range of language used with control.',
-      excellence:'Communicate skilfully — ideas developed convincingly with a wide range of language used appropriately.'},
-    bandShift:{aToM:'Develop your ideas rather than listing them, and vary the language you use to express them.',
-      mToE:'Sustain a wide range of language used appropriately to the context, with ideas genuinely developed.'},
-    verbs:['whakapuaki','whakamārama','tautoko','whakawhitiwhiti whakaaro'],
-    topics:['Language vitality and revitalisation','Where and how te reo Māori is used','Your own contribution to the language','Choosing a format: spoken, written, or both','Developing an idea in te reo','Range of structures'],
-    contexts:['A language vitality context agreed with your kaiako'],
-    misconceptions:['Thinking you can read your written submission aloud to cover both — the standard explicitly says that will not meet it.',
-      'Assuming you will get feedback during this one; there is none.',
-      'Reusing evidence from AS92092, which is not permitted.'],
-    pitfalls:['Spoken and written parts that duplicate rather than complement each other.',
-      'Ideas stated but not developed.',
-      'Note: this is assessed work with no teacher feedback permitted. An AI must not write, translate or reword any part of it, and NZQA requires any use of generative AI to be acknowledged.'] },
-
-  { code:'92095', ref:'1.4', credits:5, mode:'external', verified:true,
-    title:'Te tuhi e pā ana ki tētahi horopaki e taunga ana',
-    bigIdea:'Write in te reo Māori, independently, about something familiar — and show what you can actually produce on your own.',
-    format:'Externally assessed, and sat after a significant portion of the year\u2019s teaching and learning has been delivered. This assesses your INDEPENDENT ability to communicate in written reo Māori about a familiar context. You should have had many opportunities to practise writing and receive formative feedback beforehand. Approved for Te Reo Matatini and Literacy during the transition period.',
-    evidence:'Writing that shows a genuine range of structures and vocabulary used accurately and appropriately, with ideas developed rather than listed.',
-    criteria:{achieved:'Communicate in written reo Māori relating to a familiar context.',
-      merit:'Communicate capably — a range of language used with control and ideas developed.',
-      excellence:'Communicate skilfully — a wide range used accurately and appropriately, with ideas developed convincingly.'},
-    bandShift:{aToM:'Widen the range of structures and develop each idea rather than listing several briefly.',
-      mToE:'Use ambitious language accurately AND appropriately to the context, with ideas fully developed.'},
-    verbs:['tuhi','whakamārama','whakawhitiwhiti whakaaro','tautoko'],
-    topics:['Planning under time pressure','Range of sentence structures','Connectives and cohesion','Developing an idea in writing','Accuracy: macrons, particles, tense markers','Familiar contexts and everyday topics'],
-    contexts:['A familiar context — the writing task is supplied in the assessment'],
-    misconceptions:['Playing safe with structures you are certain of, when range is explicitly rewarded.',
-      'Treating macrons as optional; they change meaning and are marked.',
-      'Believing length substitutes for development.'],
-    pitfalls:['Every sentence built the same way.',
-      'Ideas listed rather than developed.',
-      'Particles and tense markers used inconsistently under time pressure.'] }
-  ]},
-
-'Physical Education':{
-  lens:'Level 1 Physical Education is built around hauora and the four dimensions of well-being — taha tinana, taha hinengaro, taha whānau, taha wairua — and around movement: how we move, why we move, and what influences movement in Aotearoa New Zealand and the Pacific.',
-  discipline:'Physical Education is assessed on understanding movement, not only on doing it. Personal experience earns credit once it is analysed against a concept, and the marks live in the explanation rather than the description.',
-  verifyNote:'Four standards, 5 credits each, 20 credits — two internal and two external. Worth knowing: Level 1 PE HAS external examinations, whereas Levels 2 and 3 are entirely internally assessed. The exam experience does not carry upward.',
-  standards:[
-  { code:'92016', ref:'1.1', credits:5, mode:'internal', verified:true,
-    title:'Apply movement strategies in an applied setting',
-    bigIdea:'Use strategy in a real game or activity — reading the situation and changing what you do because of it.',
-    format:'Internally assessed through observed performance in an applied setting, over multiple occasions rather than a single session. Your kaiako may only give general feedback during the assessment.',
-    evidence:'Sustained performance across several observed occasions in genuine applied conditions, showing strategies chosen and adapted as the situation changes.',
-    criteria:{achieved:'Apply movement strategies in an applied setting.',
-      merit:'Apply them effectively — strategies that suit the situation and are used consistently.',
-      excellence:'Apply them skilfully — strategies adapted as conditions change, with sound decision-making under pressure.'},
-    bandShift:{aToM:'Choose strategies that actually suit the situation, and use them consistently rather than occasionally.',
-      mToE:'Adapt as the game changes — read what is happening and adjust rather than repeating the same strategy.'},
-    verbs:['apply','adapt','perform'],
-    topics:['Movement strategies in games and activities','Reading a situation','Decision-making under pressure','Attacking and defending principles','Working with others in movement','Adapting to opponents and conditions'],
-    contexts:['The physical activity agreed with your kaiako'],
-    misconceptions:['Confusing a skill with a strategy — a strategy is a decision about how and where to use skills.',
-      'Believing one strong session is enough, when consistency across occasions is what is assessed.'],
-    pitfalls:['Inconsistent attendance, which removes the evidence base entirely.',
-      'The same strategy used regardless of what the opposition does.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'92017', ref:'1.2', credits:5, mode:'internal', verified:true,
-    title:'Demonstrate understanding of the application of strategies in group movement',
-    bigIdea:'Groups move differently from individuals. Show you understand how strategies work when several people have to coordinate.',
-    format:'Internally assessed. Your kaiako may only give general feedback during the assessment. Evidence can take a range of forms — written, oral, digital or a combination.',
-    evidence:'Specific moments from real group movement, with the strategy named, what the group did, and the outcome that followed.',
-    criteria:{achieved:'Demonstrate understanding of how strategies are applied in group movement.',
-      merit:'Demonstrate in-depth understanding — explain how and why the strategies affect group movement.',
-      excellence:'Demonstrate comprehensive understanding — explain the relationships between strategies, group dynamics and outcomes.'},
-    bandShift:{aToM:'Explain WHY the strategy works for a group — communication, roles, timing — rather than describing what the group did.',
-      mToE:'Connect the strategies to how the group functions and to the outcomes it achieved or missed.'},
-    verbs:['describe','explain','discuss'],
-    topics:['Strategies in group movement','Roles within a group','Communication during movement','Timing and coordination','Group decision-making','Cooperation and competition','Evaluating group performance'],
-    contexts:['Group movement activities agreed with your kaiako'],
-    misconceptions:['Treating group movement as several individuals performing at once rather than a coordinated system.',
-      'Assuming the most skilled group always performs best, ignoring communication and roles.'],
-    pitfalls:['A narrative of what the group did with no strategy analysed.',
-      'Strategies named but never linked to the outcome.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'92018', ref:'1.3', credits:5, mode:'external', verified:true,
-    title:'Demonstrate understanding of the influence of personal movement experiences on hauora',
-    bigIdea:'What moving has actually done for you — across all four dimensions of well-being, not just the physical one.',
-    format:'End-of-year examination. You draw on your own movement experiences, so keep specific examples in mind through the year rather than trying to recall them in the exam.',
-    evidence:'Specific personal movement experiences — what, when, with whom, how it felt — connected to named dimensions of hauora.',
-    criteria:{achieved:'Demonstrate understanding of how personal movement experiences influence hauora.',
-      merit:'Demonstrate in-depth understanding — explain how the experiences affect the dimensions of hauora.',
-      excellence:'Demonstrate comprehensive understanding — explain the relationships between movement experiences and hauora as a whole.'},
-    bandShift:{aToM:'Explain HOW a specific experience affected a specific dimension of hauora, rather than stating that movement is good for you.',
-      mToE:'Show the dimensions affecting each other — how taha tinana connects to taha hinengaro and taha whānau — rather than treating them separately.'},
-    verbs:['identify','describe','explain'],
-    topics:['Hauora and the four dimensions','Taha tinana: physical well-being','Taha hinengaro: mental and emotional well-being','Taha whānau: social well-being','Taha wairua: spiritual well-being','Personal movement experiences','Barriers and enablers to movement'],
-    contexts:['Your own movement experiences across your life'],
-    misconceptions:['Reading hauora as physical health only, when it has four connected dimensions.',
-      'Treating the four dimensions as separate boxes rather than as interdependent.',
-      'Assuming only positive experiences count — a negative one analysed well is strong evidence.'],
-    pitfalls:['Generic benefits of exercise with no personal experience attached.',
-      'Only taha tinana covered.',
-      'Experiences described without explaining their effect on well-being.'] },
-
-  { code:'92019', ref:'1.4', credits:5, mode:'external', verified:true,
-    title:'Demonstrate understanding of influences on movement in Aotearoa New Zealand or the Pacific',
-    bigIdea:'Why people here move the way they do — the cultural, social and historical influences behind it.',
-    format:'End-of-year examination. The context is Aotearoa New Zealand or the wider Pacific, so generic international examples will not serve you well.',
-    evidence:'Named movement practices, activities or events from Aotearoa or the Pacific, with the influences on them identified and evidenced.',
-    criteria:{achieved:'Demonstrate understanding of influences on movement in Aotearoa New Zealand or the Pacific.',
-      merit:'Demonstrate in-depth understanding — explain how the influences shape movement.',
-      excellence:'Demonstrate comprehensive understanding — explain the relationships between influences and their effects on movement.'},
-    bandShift:{aToM:'Explain HOW each influence shapes what people do, rather than listing influences.',
-      mToE:'Show the influences interacting — culture with economics, history with access — and what that produces.'},
-    verbs:['identify','describe','explain'],
-    topics:['Cultural influences on movement','Māori movement practices and tikanga','Pasifika movement practices','Historical influences','Social and economic influences','Access, equity and participation','Media and role models'],
-    contexts:['Movement in Aotearoa New Zealand or the wider Pacific'],
-    misconceptions:['Treating culture as something only other people have.',
-      'Assuming participation is purely a personal choice, ignoring cost, access and expectation.',
-      'Presenting Māori or Pasifika movement practices as historical rather than living.'],
-    pitfalls:['Influences listed with no explanation of how they shape movement.',
-      'Generic international examples instead of Aotearoa or Pacific ones.',
-      'No named practices, activities or events.'] }
-  ]},
-
-'Health Studies':{
-  lens:'Health Studies is built around hauora and the four dimensions of well-being — taha tinana, taha hinengaro, taha whānau, taha wairua — using a model of health as a lens, and looking at what influences hauora and what strengthens it.',
-  discipline:'Health Studies argues from evidence about people. Every claim about an influence or a strategy needs support, analysis works across personal, interpersonal and societal levels, and personal opinion counts only once it is grounded in evidence.',
-  subjectRule:`WELL-BEING SAFEGUARD — THIS SUBJECT COVERS PERSONAL AND SENSITIVE TOPICS
-
-Health Studies deals with hauora, decision-making, influences on well-being and strategies to strengthen it. A student working on these may be studying the topic, or may be living it.
-
-If at any point the student describes something happening to them personally — being unsafe, being harmed, self-harm, an eating difficulty, serious distress, or an unsafe relationship — stop working on the assessment and respond to the person first. Be warm, take them seriously, and do not minimise it or turn it back into a study task. Encourage them to talk to someone they trust: their kaiako, dean, school counsellor, a whānau member, or a New Zealand helpline such as Youthline (0800 376 633 or free text 234) or 1737 (call or text). If there is immediate danger, that is 111.
-
-Do not attempt to counsel, diagnose, or advise on their personal situation. Your role is to take it seriously and point them toward real people who can help. You may return to the assessment work afterwards if they want to, and they should not be made to feel awkward for having said something.
-
-Remember these are Year 11 students, many of them fifteen. Keep the register age-appropriate and matter-of-fact. When the work is genuinely academic, treat these topics as the serious curriculum content they are: accurate, respectful, non-judgemental, and inclusive of the range of identities, families and experiences that exist in a New Zealand classroom.`,
-  verifyNote:'IMPORTANT: Health is no longer offered at Level 1. It has been replaced by Health Studies, a different subject with its own four standards — two internal and two external, 5 credits each. Level 2 and Level 3 Health are separate subjects with different standards.',
-  standards:[
-  { code:'92008', ref:'1.1', credits:5, mode:'internal', verified:true,
-    title:'Demonstrate understanding of hauora in a health-related context through the application of a model of health',
-    bigIdea:'Take a model of health, apply it to a real situation, and show what it reveals about well-being that you would otherwise miss.',
-    format:'Internally assessed. Your kaiako may only give general feedback during the assessment. Evidence can be presented in a range of forms.',
-    evidence:'The model of health named and applied dimension by dimension to a specific health-related context, with real detail rather than general statements.',
-    criteria:{achieved:'Demonstrate understanding of hauora in the context through applying a model of health.',
-      merit:'Demonstrate in-depth understanding — explain how the dimensions of the model relate to the context.',
-      excellence:'Demonstrate comprehensive understanding — explain the relationships between the dimensions and their combined effect on hauora.'},
-    bandShift:{aToM:'Apply each dimension of the model to the actual context, rather than describing the model and the context separately.',
-      mToE:'Show the dimensions affecting EACH OTHER — how taha tinana connects to taha hinengaro and taha whānau — rather than treating them as four boxes.'},
-    verbs:['describe','explain','apply'],
-    topics:['Te Whare Tapa Whā and other models of health','Taha tinana, hinengaro, whānau, wairua','Applying a model to a real situation','Interconnection between the dimensions','Hauora as more than physical health','Health-related contexts'],
-    contexts:['A health-related context agreed with your kaiako'],
-    misconceptions:['Reading hauora as physical health only, when the model has four connected dimensions.',
-      'Treating the four dimensions as separate boxes rather than as interdependent — this is the single most common thing holding responses at Achieved.',
-      'Describing the model rather than applying it.'],
-    pitfalls:['The model explained and the context described, with no application between them.',
-      'One or two dimensions covered thoroughly and the others mentioned in passing.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'92009', ref:'1.2', credits:5, mode:'internal', verified:true,
-    title:'Demonstrate understanding of decision-making in a health-related situation',
-    bigIdea:'People make health decisions for all sorts of reasons. Show what actually drives a decision and what follows from it.',
-    format:'Internally assessed. Your kaiako may only give general feedback during the assessment.',
-    evidence:'A specific health-related situation, the influences on the decision identified at each socio-ecological level, and the consequences for hauora traced.',
-    criteria:{achieved:'Demonstrate understanding of decision-making in the health-related situation.',
-      merit:'Demonstrate in-depth understanding — explain the influences on the decision and its consequences.',
-      excellence:'Demonstrate comprehensive understanding — explain the relationships between influences, decisions and consequences for hauora.'},
-    bandShift:{aToM:'Explain WHAT influences the decision and HOW, across personal, interpersonal and societal levels.',
-      mToE:'Connect influences, decision and consequences into one account, and show how they feed back on each other.'},
-    verbs:['describe','explain','discuss'],
-    topics:['Decision-making processes','Personal influences: knowledge, attitudes, values','Interpersonal influences: whānau, friends, peers','Societal influences: law, advertising, culture, cost','Short-term and long-term consequences','Consequences for hauora'],
-    contexts:['A health-related situation agreed with your kaiako'],
-    misconceptions:['Treating a health decision as purely a personal choice, ignoring what makes some choices easier than others.',
-      'Assuming people always decide rationally when they have the information.',
-      'Confusing an influence with a consequence.'],
-    pitfalls:['Only personal influences considered, which caps the grade.',
-      'Consequences listed without connecting them back to the decision.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'92010', ref:'1.3', credits:5, mode:'external', verified:true,
-    title:'Demonstrate understanding of factors that influence hauora',
-    bigIdea:'What shapes well-being — and why some people find it much harder than others.',
-    format:'End-of-year examination with a resource booklet supplied. NZQA publishes past papers, resource booklets and annotated exemplar answer scripts at all three grades for 2023, 2024 and 2025 — reading Achieved, Merit and Excellence side by side on the same paper is the fastest way to see the difference.',
-    evidence:'Factors identified at personal, interpersonal and societal levels, with evidence from the resource booklet used explicitly and the effect on hauora explained.',
-    criteria:{achieved:'Demonstrate understanding of factors that influence hauora.',
-      merit:'Demonstrate in-depth understanding — explain how the factors affect the dimensions of hauora.',
-      excellence:'Demonstrate comprehensive understanding — explain the relationships between the factors and their combined effect on hauora.'},
-    bandShift:{aToM:'Explain HOW each factor affects specific dimensions of hauora, rather than naming factors.',
-      mToE:'Show the factors interacting with each other, and their combined rather than separate effect on well-being.'},
-    verbs:['identify','describe','explain'],
-    topics:['Personal factors: knowledge, attitudes, behaviours','Interpersonal factors: whānau, friends, relationships','Societal factors: cost, access, law, culture, media','Socio-ecological perspective','Effects on the four dimensions of hauora','Equity and who is affected most'],
-    contexts:['Scenarios and stimulus material supplied in the resource booklet'],
-    misconceptions:['Treating hauora as something individuals control entirely, ignoring societal factors.',
-      'Considering only the personal level, which is the most common reason responses stall.',
-      'Assuming a factor affects everyone the same way.'],
-    pitfalls:['The resource booklet ignored in favour of memorised content.',
-      'Factors listed with no explanation of their effect.',
-      'Only one dimension of hauora considered.'] },
-
-  { code:'92011', ref:'1.4', credits:5, mode:'external', verified:true,
-    title:'Demonstrate understanding of strategies that enhance hauora',
-    bigIdea:'What actually helps — and at which level it has to happen to make a real difference.',
-    format:'End-of-year examination with a resource booklet supplied. NZQA publishes a sample assessment, past papers and annotated exemplar scripts at all three grades.',
-    evidence:'Strategies named at personal, interpersonal AND societal levels, each linked to the factor it addresses and to the dimensions of hauora it strengthens.',
-    criteria:{achieved:'Demonstrate understanding of strategies that enhance hauora.',
-      merit:'Demonstrate in-depth understanding — explain how the strategies enhance hauora.',
-      excellence:'Demonstrate comprehensive understanding — explain the relationships between strategies at different levels and their combined effect.'},
-    bandShift:{aToM:'Explain HOW each strategy enhances hauora and which dimension it strengthens, rather than listing strategies.',
-      mToE:'Show strategies at all three levels working together, and explain why action at one level alone is usually not enough.'},
-    verbs:['identify','describe','explain'],
-    topics:['Personal strategies','Interpersonal strategies: support networks, communication','Societal strategies: policy, services, environments','Health promotion','Matching a strategy to a factor','Effects on the four dimensions of hauora'],
-    contexts:['Scenarios and stimulus material supplied in the resource booklet'],
-    misconceptions:['Offering only personal strategies, which is the single most common limitation in this standard.',
-      'Assuming awareness-raising by itself enhances well-being.',
-      'Treating a strategy as good without connecting it to the factor it addresses.'],
-    pitfalls:['Strategies at one level only.',
-      'Strategies not connected to any identified factor.',
-      'The resource booklet unused.'] }
-  ]},
-
-'Commerce':{
-  lens:'Commerce is a Level 1 only subject — it replaces Business Studies, Accounting and Economics at this level, and those become separate subjects again from Level 2. It looks at organisations, money, prices and financial decisions in a New Zealand context.',
-  discipline:'Commerce reasons from a real organisation and real numbers. A concept on its own earns little; a concept applied to a specific organisation, with figures and consequences traced, is the whole game.',
-  verifyNote:'Four standards, 5 credits each, 20 credits — two internal and two external. Commerce exists at Level 1 ONLY. At Level 2 it becomes Business Studies, Accounting and Economics as separate subjects.',
-  standards:[
-  { code:'92028', ref:'1.1', credits:5, mode:'internal', verified:true,
-    title:'Demonstrate understanding of an organisation\u2019s financial decision-making',
-    bigIdea:'Follow the money. Why did an organisation decide to spend, save or invest the way it did, and what happened as a result?',
-    format:'Internally assessed. Your kaiako may only give general feedback during the assessment. NZQA publishes annotated internal exemplars for this standard.',
-    evidence:'A named organisation with actual figures — costs, revenue, the amounts involved — plus the reasoning behind the decision and its consequences.',
-    criteria:{achieved:'Demonstrate understanding of an organisation\u2019s financial decision-making.',
-      merit:'Demonstrate in-depth understanding — explain the reasons behind the decision and its effects.',
-      excellence:'Demonstrate comprehensive understanding — explain the relationships between the decision, the influences on it and its consequences.'},
-    bandShift:{aToM:'Explain WHY the organisation decided as it did, and what followed, rather than describing what it decided.',
-      mToE:'Connect the influences, the decision and the consequences into one account, including the trade-offs involved.'},
-    verbs:['describe','explain','discuss'],
-    topics:['Financial decision-making','Costs, revenue and profit','Budgeting','Sources of finance','Influences on financial decisions','Short-term and long-term consequences','Financial decisions and community impact'],
-    contexts:['An organisation agreed with your kaiako — a business, community group or social enterprise'],
-    misconceptions:['Assuming every organisation aims to maximise profit — community groups and social enterprises have different purposes.',
-      'Treating a decision as right or wrong rather than as a trade-off between options.',
-      'Confusing profit with cash.'],
-    pitfalls:['No named organisation, or no actual figures.',
-      'The decision described but never explained.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'92029', ref:'1.2', credits:5, mode:'internal', verified:true,
-    title:'Demonstrate understanding of price determination for an organisation',
-    bigIdea:'Why does something cost what it costs? Work out what actually sets the price.',
-    format:'Internally assessed. Your kaiako may only give general feedback during the assessment. NZQA publishes annotated internal exemplars for this standard.',
-    evidence:'A named organisation and product with the actual price, the costs behind it, and the market factors affecting it — supply, demand, competitors — with figures where available.',
-    criteria:{achieved:'Demonstrate understanding of price determination for the organisation.',
-      merit:'Demonstrate in-depth understanding — explain how the factors combine to set the price.',
-      excellence:'Demonstrate comprehensive understanding — explain the relationships between the factors and the consequences of the pricing decision.'},
-    bandShift:{aToM:'Explain how the factors actually combine to produce this price, rather than listing things that affect price.',
-      mToE:'Show the factors interacting, and explain what follows from pricing at that level rather than higher or lower.'},
-    verbs:['describe','explain','discuss'],
-    topics:['Supply and demand','Costs and mark-up','Competitor pricing','Pricing strategies','Elasticity in plain terms','Consequences of a pricing decision','Price and the consumer'],
-    contexts:['An organisation and product agreed with your kaiako'],
-    misconceptions:['Believing price is simply cost plus a margin, ignoring what customers will pay.',
-      'Assuming a lower price always means more sales.',
-      'Confusing price with value or with cost.'],
-    pitfalls:['Factors listed with no explanation of how they combine.',
-      'No actual price or costs given.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'92030', ref:'1.3', credits:5, mode:'external', verified:true,
-    title:'Demonstrate understanding of how entities with interdependent financial relationships are affected by an event',
-    bigIdea:'Organisations are connected. When something happens to one, it ripples out — trace the ripples.',
-    format:'End-of-year examination. NZQA publishes past papers and annotated exemplar answer scripts at all three grades for 2023, 2024 and 2025 — reading Achieved, Merit and Excellence on the same paper is the fastest way to see the difference.',
-    evidence:'Each entity named with its role, the financial relationships between them made explicit, and the flow-on effects traced with figures or direction of change.',
-    criteria:{achieved:'Demonstrate understanding of how interdependent entities are affected by the event.',
-      merit:'Demonstrate in-depth understanding — explain how the effects flow between the entities.',
-      excellence:'Demonstrate comprehensive understanding — explain the relationships between the entities and the combined effects of the event.'},
-    bandShift:{aToM:'Trace the effect FROM one entity TO another, showing the financial relationship that carries it.',
-      mToE:'Follow the chain further and show effects feeding back, rather than stopping at the first flow-on.'},
-    verbs:['identify','describe','explain'],
-    topics:['Interdependence between entities','Producers, suppliers, retailers and consumers','Financial relationships and flows','Flow-on effects of an event','Community and government as entities','Short-term and long-term effects'],
-    contexts:['An event and set of entities supplied in the examination'],
-    misconceptions:['Treating each entity separately rather than as part of a connected system.',
-      'Assuming an event affects every entity in the same direction — a cost to one is often revenue to another.',
-      'Stopping at the first flow-on effect.'],
-    pitfalls:['Effects described for each entity separately with no relationship shown between them.',
-      'The direction of the financial flow not stated.',
-      'Only immediate effects covered.'] },
-
-  { code:'92031', ref:'1.4', credits:5, mode:'external', verified:true,
-    title:'Demonstrate understanding of the financial viability of an organisation',
-    bigIdea:'Can this organisation actually survive? Read the numbers and say so, with reasons.',
-    format:'End-of-year examination with a resource booklet supplied. NZQA publishes a sample assessment, past papers and annotated exemplar scripts at all three grades.',
-    evidence:'Figures taken directly from the supplied financial information, calculations shown, and the judgement about viability justified from those numbers.',
-    criteria:{achieved:'Demonstrate understanding of the financial viability of the organisation.',
-      merit:'Demonstrate in-depth understanding — explain what the financial information shows about viability.',
-      excellence:'Demonstrate comprehensive understanding — explain the relationships between the financial indicators and justify a conclusion about viability.'},
-    bandShift:{aToM:'Explain what the figures MEAN for the organisation, rather than reading them out.',
-      mToE:'Bring several indicators together into one justified judgement, including what the numbers cannot tell you.'},
-    verbs:['identify','calculate','describe','explain'],
-    topics:['Profit and loss','Cash flow','Assets and liabilities','Break-even','Financial indicators and what they show','Non-financial factors in viability','Reaching a justified conclusion'],
-    contexts:['Financial information supplied in the resource booklet'],
-    misconceptions:['Believing a profitable organisation is automatically viable — cash flow can sink a profitable business.',
-      'Judging viability on one indicator alone.',
-      'Ignoring non-financial factors such as reputation, staff or purpose.'],
-    pitfalls:['Figures quoted with no interpretation of what they mean.',
-      'Calculations without working shown.',
-      'A conclusion about viability that is asserted rather than justified from the numbers.'] }
-  ]},
-
-'Digital Technologies':{
-  lens:'Level 1 Digital Technologies embodies whanaungatanga — outcomes are made by people, for people, within cultural, social and environmental contexts — and auahatanga, outcomes that solve problems. Only the two written externals are loaded here; the build standards are excluded.',
-  discipline:'These standards are assessed on reasoning about digital outcomes rather than on producing them: judging how usable an interface is, and justifying design decisions against the people who will use them. Precision and real examples do the work.',
-  verifyNote:'Two of the four Level 1 standards are loaded — the written externals AS92006 and AS92007. The two build standards (AS92004 Create a computer program and AS92005 Develop a digital technologies outcome) are excluded as practical work an AI cannot honestly support.',
-  standards:[
-  { code:'92006', ref:'1.3', credits:5, mode:'external', verified:true,
-    title:'Demonstrate understanding of usability in human-computer interfaces',
-    bigIdea:'Why some apps and websites feel obvious and others make you want to throw your phone. Usability is a set of principles, not an opinion.',
-    format:'End-of-year examination with an answer booklet. NZQA publishes a sample assessment plus annotated exemplar answer scripts at all three grades for 2023, 2024 and 2025 — reading Achieved, Merit and Excellence on the same paper is the quickest way to see the difference.',
-    evidence:'Specific features of an interface described precisely — what the user sees, what they must do — with the usability principle named and the effect on the user explained.',
-    criteria:{achieved:'Demonstrate understanding of usability in human-computer interfaces, describing usability features.',
-      merit:'Demonstrate in-depth understanding — explain how the features affect the user experience.',
-      excellence:'Demonstrate comprehensive understanding — evaluate usability and justify improvements for the intended users.'},
-    bandShift:{aToM:'Explain the EFFECT a feature has on the user, rather than describing what the interface looks like.',
-      mToE:'Evaluate the interface against usability principles and justify specific improvements for the actual intended users.'},
-    verbs:['identify','describe','explain','evaluate'],
-    topics:['Usability principles and heuristics','Learnability and memorability','Efficiency and error prevention','Accessibility','Navigation and information layout','Feedback to the user','Consistency','Designing for particular users'],
-    contexts:['Interfaces supplied in the examination, plus interfaces you have studied'],
-    misconceptions:['Treating usability as whether YOU like the design, rather than how well it works for the intended user.',
-      'Confusing usability with how attractive something looks.',
-      'Assuming more features make an interface better.',
-      'Forgetting accessibility, which is part of usability rather than an extra.'],
-    pitfalls:['Interfaces described without naming any usability principle.',
-      'Suggestions for improvement that are not tied to the intended users.',
-      'General praise or criticism instead of specific features and their effects.'] },
-
-  { code:'92007', ref:'1.4', credits:5, mode:'external', verified:true,
-    title:'Design a digital technologies outcome',
-    bigIdea:'Design something before building it — and be able to say why every decision is the right one for the people using it.',
-    format:'End-of-year examination. This is a DESIGN standard, not a build standard: you are assessed on the design and your reasoning, not on producing a working outcome. NZQA publishes sample assessments for 2024 and 2026 plus annotated exemplar scripts at all three grades for 2024 and 2025.',
-    evidence:'Design decisions shown clearly — layout, structure, flow, features — each linked to the purpose and to the end users, with reasoning given rather than assumed.',
-    criteria:{achieved:'Design a digital technologies outcome that meets the purpose and requirements.',
-      merit:'Design it effectively — decisions that clearly suit the purpose and the end users.',
-      excellence:'Design it comprehensively — justify the design decisions against the purpose, the users and relevant conventions.'},
-    bandShift:{aToM:'Show each design decision suiting the stated purpose and the actual end users, rather than presenting a design and stopping.',
-      mToE:'Justify the decisions — why this choice rather than the alternative, and what it does for the user.'},
-    verbs:['design','explain','justify','evaluate'],
-    topics:['Design purpose and requirements','End users and their needs','Layout and structure','Navigation and user flow','Design conventions','Accessibility in design','Justifying design decisions','Wireframes and mock-ups'],
-    contexts:['A design brief supplied in the examination'],
-    misconceptions:['Thinking this standard assesses a working product; it assesses the design and the reasoning.',
-      'Designing for yourself rather than for the stated end users.',
-      'Believing a design is justified by saying it looks good.'],
-    pitfalls:['Design decisions shown but never explained.',
-      'The end users identified at the start and then ignored.',
-      'Conventions not followed, without any reason given for departing from them.'] }
-  ]},
-
-'Drama':{
-  lens:'Level 1 Drama covers making drama, performing it, and responding to it. Only the two written standards are loaded here — the making and performing standards are excluded as practical work.',
-  discipline:'Drama studies argues from what happens on stage. Every claim is anchored to a specific moment — a piece of blocking, a lighting state, a delivery choice — and connected to its effect on an audience.',
-  verifyNote:'Two of the four Level 1 standards are loaded. AS91941 (participate in creative strategies to create a drama) and AS91942 (use drama techniques to perform a scripted role) are excluded as practical work — note that AS91942 is an EXTERNAL performance standard, which is unusual. All four are 5 credits.',
-  standards:[
-  { code:'91940', ref:'1.1', credits:5, mode:'internal', verified:true,
-    title:'Explore the function of theatre Aotearoa',
-    bigIdea:'What theatre actually does in Aotearoa — who tells stories, for whom, and why it matters here.',
-    format:'Internally assessed. Your kaiako may only give general feedback during the assessment. Evidence may take a range of forms, including written, oral, digital or presentation.',
-    evidence:'Named New Zealand theatre works, companies or practitioners, with specific detail about what they do and who they reach.',
-    criteria:{achieved:'Explore the function of theatre in Aotearoa, describing what it does and for whom.',
-      merit:'Explore in depth — explain how theatre performs those functions in an Aotearoa context.',
-      excellence:'Explore perceptively — evaluate the significance of theatre\u2019s functions in Aotearoa.'},
-    bandShift:{aToM:'Explain HOW theatre performs a function — entertaining, challenging, preserving, connecting — with named New Zealand examples.',
-      mToE:'Evaluate why those functions matter in Aotearoa specifically, and to whom.'},
-    verbs:['describe','explore','explain','evaluate'],
-    topics:['Functions of theatre: entertain, educate, challenge, preserve, connect','Theatre in Aotearoa New Zealand','Māori theatre and storytelling traditions','Pasifika theatre','Community and professional theatre','Audiences and who theatre is for','Theatre and identity'],
-    contexts:['Theatre in Aotearoa agreed with your kaiako — often including local or regional companies'],
-    misconceptions:['Assuming theatre means only professional productions in big cities.',
-      'Treating Māori performance traditions as historical rather than living theatre.',
-      'Describing what a play is about rather than what theatre DOES.'],
-    pitfalls:['General statements about theatre with no named New Zealand examples.',
-      'Functions listed with no explanation of how theatre achieves them.',
-      'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
-
-  { code:'91943', ref:'1.4', credits:5, mode:'external', verified:true,
-    title:'Respond to a drama performance',
-    bigIdea:'Write about a live performance you actually saw — what the makers chose, and what it did to you and the audience around you.',
-    format:'End-of-year examination about a drama performance you have seen. You cannot revise the questions, only the production, so detailed notes taken soon after seeing it are essential. NZQA publishes assessment specifications covering AS91942 and AS91943 together.',
-    evidence:'Specific remembered moments described precisely — a piece of blocking, a lighting state, a sound cue, a delivery choice — with the effect on the audience explained.',
-    criteria:{achieved:'Respond to a drama performance, describing elements and techniques used.',
-      merit:'Respond in depth — explain how the performance created meaning and effect.',
-      excellence:'Respond perceptively — evaluate the effectiveness of the performance choices.'},
-    bandShift:{aToM:'Explain how a specific choice created its effect, rather than reporting that the performance was good.',
-      mToE:'Evaluate the choices — what worked, what did not, and why — against what the production appeared to be trying to do.'},
-    verbs:['identify','describe','explain','evaluate'],
-    topics:['Drama elements: role, focus, tension, contrast, space, time','Techniques: voice, body, movement, space','Technologies: lighting, sound, set, costume, props','Directorial choices','Audience response and atmosphere','Taking useful performance notes'],
-    contexts:['A drama performance you attended during the year'],
-    misconceptions:['Using elements, techniques and technologies interchangeably — they mean different things and the questions rely on the distinction.',
-      'Believing a summary of the story counts as a response to the performance.',
-      'Assuming general impressions will do when the marks are in specific remembered detail.'],
-    pitfalls:['Vague recollection — "the lighting was good" — with no specific moment.',
-      'Plot summary rather than analysis of the staging.',
-      'Notes not taken at the time, so the detail has gone by the exam.'] }
-  ]},
-
-'Music':{
-  lens:'Level 1 Music Big Ideas: music is an expression of and a way of connecting with culture, identity, place and time; music is a sensory language that organises sound and can be represented with signs and symbols; music is a craft that can be continually developed; and music expresses emotions and communicates ideas and intent.',
-  discipline:'Music Studies argues from the sound and the score. Every claim is tied to a specific moment in a specific piece, named with the correct terminology, and connected to what the listener actually experiences.',
-  verifyNote:'Only ONE standard is loaded — AS91950, the written contexts standard. The performance and composition standards are excluded as practical work, and the remaining written standard needs its title and assessment mode confirmed against NZQA before it goes in. The assessment mode for AS91950 should also be confirmed with your kaiako.',
-  standards:[
-  { code:'91950', ref:'1.3', credits:5, mode:'external', verified:true,
-    title:'Demonstrate understanding of music in relation to contexts',
-    bigIdea:'Where music comes from shapes what it sounds like. Show how a context produced the music it produced.',
-    format:'You must work with music grounded in a TE AO MĀORI context AND music from an additional context — which could be a different te ao Māori context, a Pacific context, jazz, Western or Eastern art music, rock, or electronic. Check the assessment mode for this standard with your kaiako.',
-    evidence:'Named pieces with the significant music concepts identified — melody, rhythm, harmony, tonality, feel, performance practices, composition tools, expressive devices — plus the factors and circumstances of the context that shaped them.',
-    criteria:{achieved:'Demonstrate understanding of music in relation to contexts, identifying and describing significant music concepts and contextual factors.',
-      merit:'Demonstrate in-depth understanding — explain how the context shaped the music concepts used.',
-      excellence:'Demonstrate comprehensive understanding — explain the relationships between context, concepts and the character of the music.'},
-    bandShift:{aToM:'Explain HOW the context shaped the music — why these concepts appear in this music from this place and time.',
-      mToE:'Connect context, concepts and the character of the music into one account, and compare across your two contexts.'},
-    verbs:['identify','describe','explain'],
-    topics:['Music concepts: melody, rhythm, harmony, tonality','The feel of the music','Performance practices and techniques','Composition tools and expressive devices','Music in te ao Māori contexts','Waiata and taonga puoro','Pacific, jazz, art music, rock and electronic contexts','Significant and influential factors within a context'],
-    contexts:['Music grounded in a te ao Māori context, plus music from one additional context'],
-    misconceptions:['Describing the history around the music rather than the music itself.',
-      'Treating a music concept as a label to attach rather than something to hear and locate in the piece.',
-      'Assuming te ao Māori music means only historical waiata rather than a living tradition including contemporary work.'],
-    pitfalls:['Only one context covered when two are required.',
-      'Concepts named with no reference to a specific moment in a specific piece.',
-      'Context described at length with the music barely analysed.',
-      'Where the work touches waiata or taonga puoro, the tikanga around them belongs to the people they come from — ask your kaiako or the community, not an AI.'] }
-  ]}
-
+const S = {
+  level: '3',
+  faculty: null,
+  subjects: [],
+  standards: {},
+  exams: {},
+  /* How much study is possible changes across the year, so availability
+     is stored as PERIODS rather than one weekly pattern. Defaults follow
+     the Waiheke calendar: holidays 26 Sep to 11 Oct, last day of school
+     5 Nov, study leave from the 6th. */
+  periods: [
+    { name:'Term-time',      start:'2026-08-11', end:'2026-09-25', hours:[1,1,1,1,1,2,0] },
+    { name:'Holidays',       start:'2026-09-26', end:'2026-10-11', hours:[3,3,3,0,3,3,0] },
+    { name:'Back at school', start:'2026-10-12', end:'2026-11-05', hours:[2,2,2,2,1,3,0] },
+    { name:'Study leave',    start:'2026-11-06', end:'2026-12-04', hours:[5,5,5,5,5,3,0] }
+  ],
+  blackouts: [],
+  plan: null,
+  view: 'week',
+  fullMode: 'subject',      // 'subject' matrix or 'calendar' months
+  withTopics: true,         // allocate specific topics inside each standard
+  howMode: 'ai',            // 'ai' | 'mix' | 'offline' | 'none'
+  armed: null,              // subject picked from the tab bar, ready to place
+  examsConfirmed: false,    // student has checked the dates against NZQA
+  pickerOpen: false,        // the days-off calendar
+  pickerMonth: null,
+  cursor: null
 };
 
-window.NCEA_DATA = window.NCEA_DATA || {};
-window.NCEA_DATA['1'] = {
-  meta: { qualification:'NCEA', stage:'Level 1', year:2026 },
-  faculties: FACULTIES,
-  subjects: SUBJECTS
+/* ---------- saving between visits ----------
+   Everything lives on the student's own device. No account, nothing sent
+   anywhere. The plan is stored in a compact form and rebuilt on load. */
+const STORE = 'whs_tt_v1';
+function save(){
+  try {
+    localStorage.setItem(STORE, JSON.stringify({
+      level:S.level, faculty:S.faculty, subjects:S.subjects,
+      standards: Object.fromEntries(Object.entries(S.standards).map(([k,v]) => [k, [...v]])),
+      exams:S.exams, periods:S.periods, blackouts:S.blackouts,
+      withTopics:S.withTopics, howMode:S.howMode, examsConfirmed:S.examsConfirmed,
+      view:S.view, fullMode:S.fullMode, cursor:S.cursor,
+      plan: S.plan ? S.plan.open.map(x => x.item
+        ? { d:x.date, i:x.index, e:x.extra?1:0, s:x.item.subject, c:x.item.st.code, m:x.item.mode, t:x.item.topic||'' }
+        : { d:x.date, i:x.index, e:x.extra?1:0 }) : null
+    }));
+  } catch(e){ /* private browsing, quota — not worth interrupting the student */ }
+}
+function load(){
+  let raw; try { raw = localStorage.getItem(STORE); } catch(e){ return false; }
+  if(!raw) return false;
+  try {
+    const o = JSON.parse(raw);
+    Object.assign(S, {
+      level:o.level||'3', faculty:o.faculty, subjects:o.subjects||[],
+      exams:o.exams||{}, periods:o.periods||S.periods, blackouts:o.blackouts||[],
+      withTopics: o.withTopics !== false, howMode:o.howMode||'ai',
+      examsConfirmed: !!o.examsConfirmed, view:o.view||'week',
+      fullMode:o.fullMode||'subject', cursor:o.cursor||todayISO()
+    });
+    S.standards = {};
+    Object.entries(o.standards||{}).forEach(([k,v]) => S.standards[k] = new Set(v));
+    S.savedPlan = o.plan || null;
+
+    /* Timetables saved before subjects were keyed by level hold plain names
+       like "Geography". Migrate them to "3::Geography" using the level they
+       were saved at, otherwise nothing resolves and the plan cannot build. */
+    if(S.subjects.some(x => x.indexOf('::') === -1)){
+      const lvl = S.level || '3';
+      const fix = n => n.indexOf('::') === -1 ? lvl + '::' + n : n;
+      S.subjects = S.subjects.map(fix);
+      const std = {}, ex = {};
+      Object.entries(S.standards).forEach(([k,v]) => std[fix(k)] = v);
+      Object.entries(S.exams).forEach(([k,v]) => ex[fix(k)] = v);
+      S.standards = std; S.exams = ex;
+      if(S.savedPlan) S.savedPlan.forEach(b => { if(b.s) b.s = fix(b.s); });
+      if(S.armed) S.armed = fix(S.armed);
+    }
+    return true;
+  } catch(e){ return false; }
+}
+function rehydrate(){
+  if(!S.savedPlan || !window.NCEA_DATA) return;
+  // every level referenced by the plan has to be loaded before it can be rebuilt
+  const levels = [...new Set(S.subjects.map(kLvl))];
+  if(levels.some(l => !window.NCEA_DATA[l])) return;
+  const open = S.savedPlan.map(x => {
+    const slot = { date:x.d, index:x.i, item:null, extra: !!x.e };
+    if(x.s && kData(x.s) && kData(x.s).subjects[kName(x.s)]){
+      const st = kData(x.s).subjects[kName(x.s)].standards.find(y => y.code === x.c);
+      if(st) slot.item = { subject:x.s, st, mode:x.m, topic:x.t||'' };
+    }
+    return slot;
+  });
+  S.plan = { open, items: chosenStandards(), used: open.filter(o=>o.item).length };
+  S.savedPlan = null;
+}
+function wipe(){
+  try { localStorage.removeItem(STORE); } catch(e){}
+  S.faculty=null; S.subjects=[]; S.standards={}; S.exams={}; S.blackouts=[];
+  S.plan=null; S.savedPlan=null; S.armed=null; S.cursor=todayISO();
+}
+
+/* ---------- dates ----------
+   All date maths runs in UTC. Parsing 'YYYY-MM-DD' as local time and then
+   calling toISOString() shifts the result back a day everywhere east of
+   Greenwich — in New Zealand that made addDays() return the same date and
+   the whole plan collapsed onto day one. ---------------------------------*/
+const iso = d => d.toISOString().slice(0,10);
+function parse(s){ const [y,m,d] = s.split('-').map(Number); return new Date(Date.UTC(y, m-1, d)); }
+function todayISO(){
+  const n = new Date();                       // local calendar day, not UTC's
+  return [n.getFullYear(), String(n.getMonth()+1).padStart(2,'0'),
+          String(n.getDate()).padStart(2,'0')].join('-');
+}
+function addDays(s,n){ const d = parse(s); d.setUTCDate(d.getUTCDate()+n); return iso(d); }
+function addMonths(s,n){ const d = parse(s); d.setUTCMonth(d.getUTCMonth()+n); return iso(d); }
+function wdIndex(s){ return (parse(s).getUTCDay()+6)%7; }
+function pretty(s,opt){
+  return parse(s).toLocaleDateString('en-NZ',
+    Object.assign({ timeZone:'UTC' }, opt || { weekday:'short', day:'numeric', month:'short' }));
+}
+function monthStart(s){ const d = parse(s); d.setUTCDate(1); return iso(d); }
+function monthOf(s){ return parse(s).getUTCMonth(); }
+function weekStart(s){ return addDays(s, -wdIndex(s)); }
+function daysBetween(a,b){ return Math.round((parse(b)-parse(a))/86400000); }
+
+function periodFor(date){ return S.periods.find(p => date >= p.start && date <= p.end) || null; }
+function isExamDay(date){
+  // Portfolio submission days are not exam days — you can still work that day.
+  return S.subjects.some(sub => S.exams[sub] && !S.exams[sub].portfolio && S.exams[sub].date === date);
+}
+function hoursOn(date){
+  if(S.blackouts.includes(date)) return 0;
+  // Exam days are for sitting exams. Nothing gets scheduled on them.
+  if(isExamDay(date)) return 0;
+  const p = periodFor(date);
+  return p ? (p.hours[wdIndex(date)] || 0) : 0;
+}
+function planStart(){ return S.periods.length ? S.periods.map(p=>p.start).sort()[0] : todayISO(); }
+function hueFor(sub){ return HUES[S.subjects.indexOf(sub) % HUES.length]; }
+
+/* ---------- selections ---------- */
+function externalSubjects(){
+  if(!D()) return [];
+  return Object.entries(D().subjects)
+    .filter(([,s]) => s.standards.some(x => x.mode === 'external'))
+    .map(([n]) => n).sort();
+}
+function externalStandards(k){
+  const d = kData(k); if(!d) return [];
+  const sub = d.subjects[kName(k)]; if(!sub) return [];
+  return sub.standards.filter(x => x.mode === 'external')
+    .sort((a,b) => a.ref.localeCompare(b.ref, undefined, {numeric:true}));
+}
+// What to show on screen: "Biology" at one level, "Biology (Scholarship)" when mixed.
+function label(k){
+  const mixed = new Set(S.subjects.map(kLvl)).size > 1;
+  return mixed ? kName(k) + ' (' + (kLvl(k)==='S' ? 'Schol' : 'L'+kLvl(k)) + ')' : kName(k);
+}
+function chosenStandards(){
+  const out = [];
+  S.subjects.forEach(k => externalStandards(k).forEach(st => {
+    if(S.standards[k] && S.standards[k].has(st.code))
+      out.push({ subject: k, st, exam: S.exams[k] });
+  }));
+  return out;
+}
+function lastExamDate(){
+  const d = S.subjects.map(s => S.exams[s] && S.exams[s].date).filter(Boolean).sort();
+  return d.length ? d[d.length-1] : null;
+}
+/* ============================================================
+   THE ALLOCATOR
+   ============================================================ */
+
+// Every study block the student has time for, in order.
+function buildSlots(){
+  const end = lastExamDate();
+  if(!end) return [];
+  const slots = [];
+  let day = planStart();
+  let guard = 0;
+  while(day <= end && guard++ < 500){
+    const before = day;
+    // hoursOn() already returns 0 for a blackout or a day outside every period,
+    // so an unavailable day simply produces no slots at all.
+    const hrs = hoursOn(day);
+    for(let h = 0; h < hrs; h++) slots.push({ date: day, index: h, item: null });
+    day = addDays(day, 1);
+    if(day === before) break;      // date maths failed; stop rather than loop
+  }
+  return slots;
+}
+
+// A slot is usable for a standard only if it falls before that exam.
+// Morning exams rule out the whole day; afternoon exams leave the morning.
+function slotBeforeExam(slot, exam){
+  if(!exam || !exam.date) return true;
+  if(slot.date < exam.date) return true;
+  if(slot.date > exam.date) return false;
+  return exam.session === 'PM' && slot.index === 0;
+}
+
+function generate(){
+  const items = chosenStandards();
+  const open = buildSlots();
+  if(!items.length || !open.length) return null;
+
+  items.forEach(i => { i.deadline = open.filter(s => slotBeforeExam(s, i.exam)).length; });
+
+  // Blocks are weighted by credits AND by how much of the plan each standard
+  // can actually use. Weighting on credits alone leaves a subject examined
+  // late with nothing to do in its final week, because its allocation is
+  // spread thin across a much longer window.
+  // Scholarship standards carry no credits, so fall back to an equal weight.
+  const wt = i => (i.st.credits || 5) * (i.deadline / open.length);
+  const totalWeight = items.reduce((a,i) => a + wt(i), 0) || 1;
+  items.forEach(i => {
+    const share = wt(i) / totalWeight;
+    i.blocks = Math.max(3, Math.round(open.length * share));
+  });
+
+  // Trim proportionally if we have asked for more than the student has time for.
+  let asked = items.reduce((a,i) => a + i.blocks, 0);
+  if(asked > open.length){
+    const scale = open.length / asked;
+    items.forEach(i => { i.blocks = Math.max(2, Math.floor(i.blocks * scale)); });
+  }
+
+  // Spread each standard's blocks evenly across the time available to it,
+  // rather than bunching them — this is the spacing effect doing the work.
+  const wanted = [];
+  items.forEach(i => {
+    const room = Math.max(1, i.deadline - 1);
+    // Work through the standard's own topic list in order, then loop.
+    const topics = (S.withTopics && i.st.topics && i.st.topics.length) ? i.st.topics : [];
+    for(let n = 0; n < i.blocks; n++){
+      const pos = Math.round(((n + 0.5) / i.blocks) * room);
+      const phase = n / i.blocks;
+      wanted.push({
+        item: i,
+        target: Math.min(pos, i.deadline - 1),
+        mode: phase < 0.34 ? 'explainer' : phase < 0.72 ? 'exam' : 'recall',
+        topic: topics.length ? topics[n % topics.length] : ''
+      });
+    }
+  });
+
+  // Place each wanted block at the nearest free slot that is still before its
+  // exam, preferring not to repeat the same subject back to back.
+  wanted.sort((a,b) =>
+    a.item.deadline - b.item.deadline ||   // tightest deadline first
+    b.target - a.target);                  // then latest blocks first
+  const filled = new Array(open.length).fill(null);
+  wanted.forEach(w => {
+    let best = -1, bestScore = Infinity;
+    for(let d = 0; d < open.length; d++){
+      for(const p of [w.target - d, w.target + d]){
+        if(p < 0 || p >= open.length || p >= w.item.deadline) continue;
+        if(filled[p]) continue;
+        const clash = (filled[p-1] && filled[p-1].subject === w.item.subject) ||
+                      (filled[p+1] && filled[p+1].subject === w.item.subject);
+        const sameDay = (filled[p-1] && open[p-1].date === open[p].date &&
+                         filled[p-1].subject === w.item.subject);
+        const score = d + (clash ? 6 : 0) + (sameDay ? 6 : 0);
+        if(score < bestScore){ bestScore = score; best = p; }
+      }
+      // keep looking a little past the first hit, but do not scan the whole plan
+      if(best >= 0 && d > bestScore + 8) break;
+    }
+    if(best >= 0) filled[best] = { subject: w.item.subject, st: w.item.st, mode: w.mode, topic: w.topic };
+  });
+
+  // The day before an exam belongs to that subject: relabel anything there.
+  items.forEach(i => {
+    if(!i.exam || !i.exam.date) return;
+    // the last day that actually has study slots before this exam
+    let eve = addDays(i.exam.date, -1);
+    let back = 0;
+    while(back++ < 10 && !open.some(o => o.date === eve)) eve = addDays(eve, -1);
+    open.forEach((slot, n) => {
+      if(slot.date === eve && filled[n] && filled[n].subject !== i.subject && !filled[n].locked){
+        // only take the slot if that subject has time left elsewhere
+        filled[n] = { subject: i.subject, st: i.st, mode: 'recall', eve: true, locked: true };
+      }
+    });
+  });
+
+  open.forEach((slot, n) => { slot.item = filled[n]; });
+  S.cursor = S.cursor || todayISO();
+  return { open, items, used: filled.filter(Boolean).length };
+}
+/* ============================================================
+   NON-AI STUDY METHODS
+   Every block can be done without a screen. Methods are chosen by
+   what the block is for (learn / practise / drill) and by how the
+   subject actually works, so a Calculus block gets worked problems
+   and a History block gets an essay plan.
+   ============================================================ */
+const SUBJECT_TYPE = {
+  'Calculus':'quant', 'Statistics':'quant', 'Mathematics and Statistics':'quant',
+  'Physics':'quant', 'Chemistry':'quant', 'Physics, Earth and Space Science':'quant',
+  'Biology':'science', 'Earth & Space Science':'science', 'Science':'science',
+  'Chemistry and Biology':'science', 'Psychology':'science',
+  'English':'essay', 'History':'essay', 'Classical Studies':'essay',
+  'Art History':'essay', 'Media Studies':'essay', 'Drama':'essay', 'Music':'essay',
+  'Geography':'evidence', 'Business Studies':'evidence', 'Commerce':'evidence',
+  'Health':'evidence', 'Health Studies':'evidence', 'Physical Education':'evidence',
+  'Te Reo Māori':'language', 'Te Ao Haka':'language',
+  'Digital Technologies':'science'
 };
+const typeOf = sub => SUBJECT_TYPE[sub] || 'evidence';
+
+const METHODS = {
+  explainer: {
+    quant: [
+      'Work through the examples in your textbook or workbook with the answers covered, then check.',
+      'Write the method out as numbered steps in your own words, then do one question following only your steps.',
+      'Take a worked example from class and redo it with different numbers you make up.',
+      'Make a one-page formula sheet from memory, then fill the gaps from your notes in a different colour.'
+    ],
+    science: [
+      'Draw the process as a labelled diagram from memory, then correct it against your notes in another colour.',
+      'Turn your class notes into Cornell notes — cues down the left, summary at the bottom.',
+      'Write a one-page summary of this topic without looking, then highlight what you had to leave out.',
+      'Explain the mechanism out loud to someone at home, or to an empty room. Where you stumble is what to reread.'
+    ],
+    essay: [
+      'Reread the key section of the text and write ten quotations with a line on what each shows.',
+      'Build a mind map of the ideas, with evidence hanging off each branch.',
+      'Write a one-page summary of this aspect in your own words, no notes open.',
+      'Teach this idea to someone for five minutes. What you cannot explain simply, you do not have yet.'
+    ],
+    evidence: [
+      'Make a case-study fact sheet: names, figures, dates, places. One page, no sentences.',
+      'Draw the process or issue as a flow diagram showing cause and effect.',
+      'Write a one-page summary from memory, then add what you missed in a different colour.',
+      'Explain this to a family member and get them to ask you why after every sentence.'
+    ],
+    language: [
+      'Kōrero: say the new structures aloud twenty times until they stop feeling foreign.',
+      'Write out the sentence patterns by hand, then build five of your own from each.',
+      'Read a short passage aloud, then retell it in your own words without looking.',
+      'Make vocabulary cards with the word on one side and a full sentence on the other.'
+    ]
+  },
+  exam: {
+    quant: [
+      'Do a past paper question under time, then mark it against the assessment schedule.',
+      'Redo three questions you got wrong last time, from scratch, without looking at the working.',
+      'Set yourself six questions of increasing difficulty and do them in one sitting.',
+      'Do a full past paper section under exam conditions — no notes, timer on, phone in another room.'
+    ],
+    science: [
+      'Do a past paper question, then mark it against the assessment schedule and write what you missed.',
+      'Practise annotated diagrams under time — the marks are in the labels, not the drawing.',
+      'Answer one Excellence-level question and check whether you actually justified rather than described.',
+      'Work through a resource-based question using only the resource, not your memory.'
+    ],
+    essay: [
+      'Write an essay plan for a past exam question in fifteen minutes — thesis, three points, evidence for each.',
+      'Write one full paragraph under time, then check it has a claim, evidence and an explanation of effect.',
+      'Take a past question and write three different opening paragraphs, then pick the strongest.',
+      'Write a full essay under exam conditions, then mark it against the assessment schedule.'
+    ],
+    evidence: [
+      'Answer a past paper question, then check every claim you made has a name, figure or date attached.',
+      'Write a full explanation under time, then underline where you explained rather than described.',
+      'Practise the resource-based skills: read the figures off the graph, state the units, interpret in context.',
+      'Take a past question and write the Excellence sentence only — the one that evaluates or justifies.'
+    ],
+    language: [
+      'Write a response to a past exam prompt under time, then check macrons and tense markers.',
+      'Practise a five-minute conversation with someone, unscripted, on this topic.',
+      'Read an unfamiliar passage and answer questions on it without a dictionary.',
+      'Write the same idea three ways, using a different structure each time.'
+    ]
+  },
+  recall: {
+    quant: [
+      'Blurting: write down every formula and method for this topic from memory, then check and fill gaps.',
+      'Flashcards for formulae and conditions — which method suits which situation.',
+      'Cover the worked example, do it, uncover, compare. Repeat until it is automatic.',
+      'Quick-fire: twenty short questions, no working, just the method you would use.'
+    ],
+    science: [
+      'Blurting: write everything you know about this topic on a blank page, then check what you missed.',
+      'Flashcards for terminology and processes. Test yourself both ways round.',
+      'Recite the process aloud from memory, in order, without prompts.',
+      'Redraw the key diagram from memory and label it fully.'
+    ],
+    essay: [
+      'Blurting: write down every quotation and technique you can remember, then check the text.',
+      'Flashcards with the quotation on one side and its effect on the other.',
+      'Recite your essay plan from memory — thesis, points, evidence.',
+      'Test a classmate on their text and let them test you on yours.'
+    ],
+    evidence: [
+      'Blurting: write every fact, figure and date for this case study from memory, then check.',
+      'Flashcards for case-study specifics. Vague answers do not count — push for the number.',
+      'Recite the case study aloud to someone and have them check your figures against your notes.',
+      'Cover your fact sheet and rebuild it on a blank page.'
+    ],
+    language: [
+      'Vocabulary drill — cover and recall, both directions.',
+      'Say the structures aloud from memory, then check against your notes.',
+      'Write out five sentences from memory using this week\u2019s patterns.',
+      'Listen to a waiata or recording and write down what you understand, then check.'
+    ]
+  }
+};
+
+function methodFor(item, slotIndex){
+  const pool = (METHODS[item.mode] || METHODS.explainer)[typeOf(item.subject)] ||
+               METHODS[item.mode].evidence;
+  // stable choice, so the same block does not change method on every re-render
+  const pick = (item.st.code.charCodeAt(3) + slotIndex) % pool.length;
+  return pool[pick];
+}
+
+/* ---------- realism ---------- */
+function realism(){
+  const end = lastExamDate();
+  if(!end) return { notes:[], total:0, weeks:0, n:0 };
+  const notes = [];
+  S.periods.forEach(p => {
+    const w = p.hours.reduce((a,b)=>a+b,0);
+    if(w > 35) notes.push({ tone:'warn',
+      text:`${p.name} is set to ${w} hours a week. Even on study leave that is very hard to hold — 25 to 30 with rest built in is a pace people actually keep.` });
+    if(p.hours.every(h => h > 0)) notes.push({ tone:'warn',
+      text:`${p.name} has no day off. Build in at least one — rest is part of the plan, not a failure of it.` });
+    if(p.start > p.end) notes.push({ tone:'bad', text:`${p.name} ends before it starts.` });
+  });
+  const total = buildSlots().length;
+  const n = chosenStandards().length;
+  if(n && total < n * 3) notes.push({ tone:'bad',
+    text:`${n} standards need more time than you have set. Add hours, or drop a standard you are less worried about.` });
+  return { notes, total, n, weeks: Math.max(1, Math.round(daysBetween(planStart(), end)/7)) };
+}
+
+/* Choosing sensibly when a student drops a subject onto a day: take the
+   standard that currently has the least time, and set the mode by how close
+   the exam is. */
+function pickStandardFor(subject, slot){
+  const mine = chosenStandards().filter(x => x.subject === subject);
+  if(!mine.length) return null;
+  const count = {};
+  S.plan.open.forEach(x => { if(x.item && x.item.subject === subject)
+    count[x.item.st.code] = (count[x.item.st.code]||0)+1; });
+  return mine.sort((a,b) => (count[a.st.code]||0) - (count[b.st.code]||0))[0].st;
+}
+/* Add an hour to a day that is already full. This deliberately goes beyond
+   the hours set for that period — a student who wants one more session on a
+   Tuesday should be able to have it, and the day shows it is over plan. */
+function addHourTo(date){
+  if(!S.plan) return;
+  if(isExamDay(date)){
+    alert('You sit an exam that day — the plan keeps exam days clear.');
+    return;
+  }
+  let last = -1, maxIdx = -1;
+  S.plan.open.forEach((x,n) => { if(x.date === date){ last = n; maxIdx = Math.max(maxIdx, x.index); } });
+  const slot = { date, index: maxIdx + 1, item: null, extra: true };
+  if(last === -1){
+    // the day had no slots at all — drop it in date order
+    let at = S.plan.open.findIndex(x => x.date > date);
+    if(at === -1) at = S.plan.open.length;
+    S.plan.open.splice(at, 0, slot);
+    last = at - 1;
+  } else {
+    S.plan.open.splice(last + 1, 0, slot);
+  }
+  if(S.armed) placeInto(last + 1);
+  else { save(); render(); }
+}
+
+function placeInto(n){
+  if(!S.armed || !S.plan) return;
+  const slot = S.plan.open[n];
+  const st = pickStandardFor(S.armed, slot);
+  if(!st) return;
+  const topics = (S.withTopics && st.topics && st.topics.length) ? st.topics : [];
+  slot.item = { subject:S.armed, st, mode: modeForDate(slot.date, S.armed),
+                topic: topics.length ? topics[n % topics.length] : '' };
+  S.plan.used = S.plan.open.filter(x=>x.item).length;
+  save(); render();
+}
+
+function modeForDate(date, subject){
+  const ex = S.exams[subject];
+  if(!ex || !ex.date) return 'explainer';
+  const left = daysBetween(date, ex.date);
+  return left <= 7 ? 'recall' : left <= 21 ? 'exam' : 'explainer';
+}
+
+function dayCapacity(date){
+  if(!S.plan) return '';
+  const on = S.plan.open.filter(x => x.date === date);
+  const planned = hoursOn(date);
+  const extra = on.filter(x => x.extra).length;
+  if(isExamDay(date)) return `<p class="tt-cap tt-over">Exam day — nothing scheduled.</p>`;
+  if(!on.length && !planned) return '';
+  return `<p class="tt-cap${extra?' tt-over':''}">${on.length} hour${on.length===1?'':'s'} on this day` +
+    (extra ? ` — ${extra} more than you planned for` : planned ? '' : ' — a day you had set aside') + `</p>`;
+}
+
+/* The exam itself, drawn in the subject colour so it reads as the deadline
+   every block before it is working toward. */
+function examBanner(date, size){
+  const sitting = S.subjects.filter(s => S.exams[s] && S.exams[s].date === date);
+  const isPf = sub => S.exams[sub] && S.exams[sub].portfolio;
+  const eve     = S.subjects.filter(s => S.exams[s] && addDays(S.exams[s].date,-1) === date);
+  if(!sitting.length && !eve.length) return '';
+
+  const time = sub => (E().sessions.find(x => x.id === S.exams[sub].session) || {}).start || '';
+  const out = [];
+
+  sitting.forEach(sub => {
+    const word = isPf(sub) ? 'DUE' : 'EXAM';
+    const when = isPf(sub) ? 'Portfolio submission'
+      : ((E().sessions.find(x=>x.id===S.exams[sub].session)||{}).label||'') + ' · ' + time(sub);
+    if(size === 'xs') out.push(
+      `<span class="tt-exam-xs" title="${label(sub)} — ${when}">${label(sub)}</span>`);
+    else if(size === 'sm') out.push(
+      `<div class="tt-exambar tt-exam-sm"><strong>${label(sub)}</strong><span>${word}${isPf(sub)?'':' '+S.exams[sub].session+' '+time(sub)}</span></div>`);
+    else out.push(
+      `<div class="tt-exambar"><span class="tt-exampill">${word}</span><strong>${label(sub)}</strong>
+        <span class="tt-examwhen">${when}</span></div>`);
+  });
+
+  // The night before is its own kind of day — same gold, quieter treatment,
+  // and it names the subject so the student knows what to be revising.
+  eve.filter(sub => !sitting.includes(sub)).forEach(sub => {
+    if(size === 'xs') out.push(`<span class="tt-eve-xs" title="${label(sub)} exam tomorrow">${label(sub)} eve</span>`);
+    else if(size === 'sm') out.push(`<div class="tt-evebar tt-exam-sm"><strong>${label(sub)}</strong><span>EXAM TOMORROW</span></div>`);
+    else out.push(`<div class="tt-evebar"><span class="tt-exampill">TOMORROW</span><strong>${label(sub)}</strong>
+      <span class="tt-examwhen">Last chance to revise</span></div>`);
+  });
+
+  return out.join('');
+}
+
+const modeLabel = m => ({ explainer:'Learn it', exam:'Practise it', recall:'Drill it' })[m] || m;
+const blocksOn = d => S.plan ? S.plan.open.filter(s => s.date === d && s.item) : [];
+const examsOn  = d => S.subjects.filter(s => S.exams[s] && S.exams[s].date === d);
+
+/* ============================================================
+   VIEWS — long views show colour only, short views show detail
+   ============================================================ */
+function viewBar(){
+  const views = [['day','Day'],['week','Week'],['month','Month'],['full','Full plan']];
+  // NB: not called `label` — that would shadow the label() helper used below.
+  const heading = S.view==='day'   ? pretty(S.cursor,{weekday:'long',day:'numeric',month:'long'})
+              : S.view==='week'  ? 'Week of ' + pretty(weekStart(S.cursor))
+              : S.view==='month' ? pretty(S.cursor,{month:'long',year:'numeric'})
+              : 'Whole plan';
+  return `<div class="tt-viewbar">
+    <div class="flex gap-1">${views.map(([v,l])=>
+      `<button class="tt-view" data-v="${v}" aria-pressed="${S.view===v}">${l}</button>`).join('')}</div>
+    ${S.view!=='full' ? `<div class="tt-nav">
+      <button class="tt-arrow" data-step="-1">&lsaquo;</button>
+      <span class="tt-navlabel">${heading}</span>
+      <button class="tt-arrow" data-step="1">&rsaquo;</button>
+      <button class="tt-today">Today</button></div>`
+      : `<span class="tt-navlabel">${heading}</span>`}
+    <div class="tt-legend">${S.subjects.map(s=>
+      `<span class="tt-key"><i style="background:${hueFor(s)}"></i>${label(s)}</span>`).join('')}</div>
+  </div>`;
+}
+
+function blockHTML(slot, n){
+  const it = slot.item;
+  const q = `?level=${kLvl(it.subject)}&subject=${encodeURIComponent(kName(it.subject))}&std=${it.st.code}&mode=${it.mode}` +
+            (it.topic ? `&topic=${encodeURIComponent(it.topic)}` : '');
+  /* In Mix, alternate deterministically so the same block always shows the
+     same thing — about half AI, half off-screen, for variety rather than a
+     diet of one or the other. */
+  const aiTurn = S.howMode === 'ai' ||
+    (S.howMode === 'mix' && (n + it.st.code.charCodeAt(4)) % 2 === 0);
+  const showsMethod = S.howMode === 'offline' || (S.howMode === 'mix' && !aiTurn);
+
+  const actions = S.howMode === 'none' ? ''
+    : aiTurn
+      ? `<div class="tt-acts">
+           <a class="tt-open" href="${q}" title="Open this in the prompt builder">Open &#8599;</a>
+           <button class="tt-gem" data-sub="${encodeURIComponent(it.subject)}" data-code="${it.st.code}"
+             data-mode="${it.mode}" data-topic="${encodeURIComponent(it.topic||'')}"
+             title="Copy the prompt and open Gemini">Gemini &#8599;</button>
+         </div>`
+      : `<div class="tt-how">${methodFor(it, n)}</div>`;
+
+  return `<div class="tt-block${showsMethod?' tt-offline':''}${slot.extra?' tt-extra':''}" style="--hue:${hueFor(it.subject)}">
+    <button class="tt-del" data-slot="${n}" title="Clear this block">&times;</button>
+    <div class="tt-bmeta"><strong>${label(it.subject)}</strong> · ${it.st.credits?'AS':''}${it.st.code}
+      <span class="tt-mode">${modeLabel(it.mode)}</span></div>
+    <div class="tt-btitle">${it.topic ? it.topic : it.st.title}</div>
+    ${actions}</div>`;
+}
+
+/* An unused slot is a place the student can drop a subject into. */
+function emptyHTML(n){
+  return `<button class="tt-slot" data-empty="${n}" title="${S.armed ? 'Place ' + label(S.armed) + ' here' : 'Pick a subject above first'}">+</button>`;
+}
+
+function dayView(){
+  const d = S.cursor;
+  const b = S.plan ? S.plan.open.map((s,n)=>({s,n})).filter(x => x.s.date === d) : [];
+  return `<div class="tt-dayview">
+    ${examBanner(d)}
+    ${b.length ? b.map(x => x.s.item ? blockHTML(x.s, x.n) : emptyHTML(x.n)).join('')
+      : `<p class="text-sm soft mb-2">Nothing planned for this day.</p>`}
+    ${dayCapacity(d)}
+    <button class="tt-addhr" data-date="${d}">${S.armed ? '+ Add ' + label(S.armed) + ' here' : '+ Add another hour'}</button>
+  </div>`;
+}
+
+function weekView(){
+  const start = weekStart(S.cursor);
+  return `<div class="tt-week">${WEEKDAYS.map((w,i)=>{
+    const d = addDays(start,i), ex = examsOn(d);
+    const b = S.plan ? S.plan.open.map((s,n)=>({s,n})).filter(x => x.s.date === d) : [];
+    return `<div class="tt-wday${d===todayISO()?' tt-today-col':''}">
+      <div class="tt-wdh">${w}<span>${pretty(d,{day:'numeric',month:'short'})}</span></div>
+      ${examBanner(d,'sm')}
+      ${b.length ? b.map(x => x.s.item ? blockHTML(x.s, x.n) : emptyHTML(x.n)).join('') : `<p class="tt-empty">&mdash;</p>`}
+      <button class="tt-addhr tt-addsm" data-date="${d}" title="${S.armed ? 'Add '+label(S.armed)+' to this day' : 'Add another hour to this day'}">+</button>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function monthView(anchor){
+  const first = monthStart(anchor || S.cursor), lead = wdIndex(first);
+  const m = monthOf(first);
+  const cells = new Array(lead).fill(null);
+  let d = first;
+  while(monthOf(d) === m){ cells.push(d); d = addDays(d,1); }
+  return `<div class="tt-monthwrap">
+    <p class="tt-mtitle">${pretty(first,{month:'long', year:'numeric'})}</p>
+    <div class="tt-month">
+    ${WEEKDAYS.map(w=>`<div class="tt-mh">${w}</div>`).join('')}
+    ${cells.map(c=>{
+      if(!c) return `<div class="tt-mcell tt-mout"></div>`;
+      const ex = examsOn(c);
+      const rows = S.plan ? S.plan.open.map((x,n)=>({x,n})).filter(o => o.x.date === c) : [];
+      const chips = rows.map(o => o.x.item
+        ? `<span class="tt-mname" style="--hue:${hueFor(o.x.item.subject)}" title="${label(o.x.item.subject)} — ${o.x.item.st.code}">
+             ${label(o.x.item.subject)}<button class="tt-del tt-mdel" data-slot="${o.n}" title="Clear">&times;</button></span>`
+        : `<button class="tt-mslot" data-empty="${o.n}" title="${S.armed?'Place '+label(S.armed)+' here':'Pick a subject above first'}">+</button>`
+      ).join('');
+      return `<div class="tt-mcell${c===todayISO()?' tt-today-cell':''}${ex.length?' tt-mexamday':''}">
+        <span class="tt-mnum" data-goto="${c}" title="Open this day">${+c.slice(8)}</span>
+        ${examBanner(c,'xs')}
+        <div class="tt-mnames">${chips}</div>
+        <button class="tt-addhr tt-maddhr" data-date="${c}" title="${S.armed ? 'Add '+label(S.armed) : 'Add another hour'}">+</button>
+      </div>`;
+    }).join('')}
+    </div></div>`;
+}
+
+function subjectMatrix(){
+  const weeks = {};
+  S.plan.open.forEach(s => { const w = weekStart(s.date); (weeks[w]=weeks[w]||[]).push(s); });
+  const list = Object.keys(weeks).sort();
+  let t = `<div class="tt-scroll"><table class="tt-table"><thead><tr><th class="tt-sub">Subject</th>` +
+    list.map((w,i)=>`<th>W${i+1}<span class="tt-wk">${pretty(w,{day:'numeric',month:'short'})}</span></th>`).join('') +
+    `<th>Exam</th></tr></thead><tbody>`;
+  S.subjects.forEach(sub=>{
+    t += `<tr><td class="tt-sub"><i class="tt-dot" style="background:${hueFor(sub)}"></i>${label(sub)}</td>`;
+    const exDate = S.exams[sub] && S.exams[sub].date;
+    list.forEach(w=>{
+      const n = weeks[w].filter(s => s.item && s.item.subject === sub).length;
+      const isExamWeek = exDate && exDate >= w && exDate <= addDays(w,6);
+      if(isExamWeek){
+        t += `<td class="tt-examcell" style="--hue:${hueFor(sub)}" title="${sub} exam this week">
+                ${n?n+'h ':''}<span class="tt-examtag">EXAM</span></td>`;
+      } else {
+        t += `<td class="${n?'tt-has':'tt-none'}"${n?` style="background:color-mix(in srgb,${hueFor(sub)} ${Math.min(55,n*9)}%,transparent)"`:''}>${n?n+'h':'·'}</td>`;
+      }
+    });
+    const e = S.exams[sub];
+    t += `<td class="tt-exam">${e&&e.date?pretty(e.date,{day:'numeric',month:'short'})+' '+e.session:'—'}</td></tr>`;
+  });
+  return t + `</tbody></table></div>
+    <p class="text-xs soft mt-2">Hours per week. A pale or empty row means that subject is being neglected.</p>`;
+}
+
+function fullCalendar(){
+  const dates = S.plan.open.map(s => s.date).sort();
+  if(!dates.length) return '';
+  let m = monthStart(dates[0]);
+  const last = monthStart(dates[dates.length-1]);
+  const out = [];
+  let guard = 0;
+  while(m <= last && guard++ < 18){ out.push(monthView(m)); m = addMonths(m, 1); }
+  return `<div class="tt-months">${out.join('')}</div>`;
+}
+
+function fullView(){
+  return `<div class="tt-fullswitch">
+      <button class="tt-fm" data-m="subject" aria-pressed="${S.fullMode==='subject'}">By subject</button>
+      <button class="tt-fm" data-m="calendar" aria-pressed="${S.fullMode==='calendar'}">Calendar</button>
+    </div>
+    ${S.fullMode==='calendar' ? fullCalendar() : subjectMatrix()}`;
+}
+
+function renderPlan(){
+  const p = S.plan; if(!p) return '';
+  const body = S.view==='day' ? dayView() : S.view==='week' ? weekView()
+             : S.view==='month' ? monthView() : fullView();
+  return `<div class="panel p-4 md:p-5 tt-plan">
+    <div class="tt-planhead mb-3">
+      <div class="tt-ph-side">
+        <h3 class="sec-h">Your plan</h3><span class="text-xs soft">${p.used} study blocks</span>
+      </div>
+      <div class="tt-how-switch" role="group" aria-label="How to study each block">
+        ${[['ai','With AI'],['mix','Mix'],['offline','Without AI'],['none','None']].map(([k,l])=>
+          `<button class="tt-hm" data-h="${k}" aria-pressed="${S.howMode===k}">${l}</button>`).join('')}
+      </div>
+      <div class="tt-ph-side tt-ph-right">
+        <button id="tt-ics" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Add to calendar</button>
+        <button id="tt-print" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Print this view</button>
+        <button id="tt-regen" class="btn-go px-3 py-1.5 text-[11px]">Regenerate</button>
+      </div>
+    </div>
+    ${viewBar()}
+    ${`<div class="tt-armbar">
+      <span class="tt-armlabel">${S.armed ? 'Click a + to place ' + label(S.armed) : 'Add a block:'}</span>
+      ${S.subjects.map(sub=>`<button class="tt-arm" data-s="${sub}" aria-pressed="${S.armed===sub}"
+        style="--hue:${hueFor(sub)}">${label(sub)}</button>`).join('')}
+      ${S.armed?`<button class="tt-arm tt-armoff">Cancel</button>`:''}
+    </div>`}
+    ${body}
+  </div>`;
+}
+
+/* ---------- calendar file ---------- */
+function toICS(){
+  const p = S.plan; if(!p) return '';
+  const pad = n => String(n).padStart(2,'0');
+  const at = (d,h) => d.replace(/-/g,'') + 'T' + pad(h) + '0000';
+  const out = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//WHS//NCEA Master Tutor//EN','CALSCALE:GREGORIAN'];
+  p.open.forEach((s,n)=>{
+    if(!s.item) return;
+    const it = s.item, h = Math.min(21, 16 + s.index);
+    const url = location.origin + location.pathname +
+      `?level=${kLvl(it.subject)}&subject=${encodeURIComponent(kName(it.subject))}&std=${it.st.code}&mode=${it.mode}`;
+    out.push('BEGIN:VEVENT', `UID:whs-${s.date}-${n}@ncea`,
+      `DTSTART:${at(s.date,h)}`, `DTEND:${at(s.date,h+1)}`,
+      `SUMMARY:${label(it.subject)} — ${it.st.code} (${modeLabel(it.mode)})`,
+      `DESCRIPTION:${it.st.title}\\n\\nOpen your prompt: ${url}`, `URL:${url}`, 'END:VEVENT');
+  });
+  return out.concat('END:VCALENDAR').join('\r\n');
+}
+/* Print just the plan. Opening a clean window avoids fighting the page's
+   own layout and lets the student Save as PDF from the same dialog. */
+function printPlan(){
+  const node = R().querySelector('.tt-plan');
+  if(!node) return;
+  const css = [...document.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  const w = window.open('', '_blank', 'width=1100,height=800');
+  if(!w) return;
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>NCEA study plan</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <style>${css}
+      body{ background:#fff; padding:18px; font-family:Manrope,sans-serif; }
+      .tt-acts,.tt-del,.tt-slot,.tt-armbar,.tt-viewbar,.tt-fullswitch{ display:none!important; }
+      .panel{ box-shadow:none!important; border:0!important; }
+      @page{ margin:12mm; }
+    </style></head><body>
+    <h1 style="font-size:17px;font-weight:800;margin-bottom:2px">NCEA study plan</h1>
+    <p style="font-size:11px;color:#555;margin-bottom:12px">${S.subjects.map(label).join(' · ')}</p>
+    ${node.innerHTML}
+    </body></html>`);
+  w.document.close();
+  setTimeout(()=>{ w.focus(); w.print(); }, 400);
+}
+
+function download(name,text,type){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text],{type})); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+load();
+S.cursor = S.cursor || todayISO();
+
+window.Timetable = { open: render, state: S, generate, realism, toICS, reset: wipe };
+
+/* ============================================================
+   UI
+   ============================================================ */
+let ttLoading = null;      // level id currently being fetched
+
+function render(){
+  const root = R();
+  if(!root) return;
+
+  if(!window.NCEA_DATA || !window.NCEA_DATA[S.level]){
+    root.innerHTML = `<div class="panel p-5"><p class="text-sm">Loading Level ${S.level}…</p></div>`;
+    if(ttLoading === S.level) return;          // already on its way
+    ttLoading = S.level;
+
+    const src = S.level === 'S' ? 'ncea-scholarship.js' : 'ncea-l' + S.level + '.js';
+    // The engine may already have injected this file. Adding it a second time
+    // does nothing useful — the data file guards itself — so reuse the
+    // existing tag and wait for it rather than loading a duplicate.
+    const existing = [...document.querySelectorAll('script')]
+      .find(x => x.src && x.src.indexOf(src) !== -1);
+
+    const done = () => {
+      ttLoading = null;
+      if(window.NCEA_DATA && window.NCEA_DATA[S.level]) render();
+      else fail();
+    };
+    const fail = () => {
+      ttLoading = null;
+      root.innerHTML = `<div class="panel p-5">
+        <p class="text-sm"><strong>Could not load ${src}.</strong></p>
+        <p class="text-xs soft mt-2">It needs to sit in the same folder as this page.
+        If you have just uploaded new files, refresh with Ctrl+Shift+R (Cmd+Shift+R on a Mac).</p></div>`;
+    };
+
+    if(existing){
+      // it may already have finished, in which case the data is there now
+      if(window.NCEA_DATA && window.NCEA_DATA[S.level]){ ttLoading = null; render(); return; }
+      existing.addEventListener('load', done);
+      existing.addEventListener('error', fail);
+      // a tag that loaded before we started listening would never fire again
+      setTimeout(() => { if(ttLoading === S.level) done(); }, 1500);
+      return;
+    }
+
+    const t = document.createElement('script');
+    t.src = src + '?v=14';
+    t.onload = done;
+    t.onerror = fail;
+    document.head.appendChild(t);
+    return;
+  }
+
+  if(S.savedPlan) rehydrate();
+  root.innerHTML = stepLevel() + stepSubjects() + stepStandards() + stepExams() +
+                   stepPeriods() + stepGo() + (S.plan ? renderPlan() : '') +
+                   `<p class="tt-build">${TT_BUILD}</p>`;
+  wire();
+  save();
+}
+
+function stepLevel(){
+  return `<div class="panel p-4 md:p-5">
+    <h3 class="sec-h mb-2">NCEA level</h3>
+    <div class="flex flex-wrap gap-2">${[['1','Level 1'],['2','Level 2'],['3','Level 3'],['S','Scholarship']].map(([l,lab])=>
+      `<button class="fac-pill lvl-pill tt-lvl" data-l="${l}" aria-pressed="${S.level===l}">${lab}</button>`).join('')}</div>
+    <p class="text-xs soft mt-2">Sitting Scholarship as well as Level 3? Build one plan for each — they are different exams on different days.</p>
+  </div>`;
+}
+
+function stepSubjects(){
+  const all = externalSubjects();
+  const facs = D().faculties.filter(f => f.subjects.some(n => all.includes(n)));
+  return `<div class="panel p-4 md:p-5">
+    <h3 class="sec-h mb-1">Which subjects are you sitting?</h3>
+    <p class="text-xs soft mb-3">Only subjects with external exams appear. Choose up to ${MAX_SUBJECTS}.</p>
+    <div class="flex flex-wrap gap-2 mb-3">${facs.map((f,i)=>
+      `<button class="fac-pill tt-fac" data-i="${i}" aria-pressed="${S.faculty===i}"
+        style="--fac-dark:${f.dark};--fac-light:${f.light}">${f.name}</button>`).join('')}</div>
+    ${S.faculty!=null ? `<div class="flex flex-wrap gap-2 mb-3">${
+      facs[S.faculty].subjects.filter(n=>all.includes(n)).map(n=>
+      `<button class="subj-pill tt-pick" data-n="${n}" aria-pressed="${S.subjects.includes(key(S.level,n))}"
+        style="--fac-dark:${facs[S.faculty].dark};--fac-light:${facs[S.faculty].light}">${n}</button>`).join('')}</div>` : ''}
+    <div class="tt-basket">${S.subjects.length
+      ? S.subjects.map(n=>`<span class="tt-chip" style="background:${hueFor(n)}">${label(n)}<button class="tt-x" data-n="${n}">&times;</button></span>`).join('')
+        + `<span class="text-xs soft ml-2">${S.subjects.length} of ${MAX_SUBJECTS}</span>`
+      : `<span class="text-xs soft">Nothing chosen yet.</span>`}</div>
+  </div>`;
+}
+
+function stepStandards(){
+  if(!S.subjects.length) return '';
+  return `<div class="panel p-4 md:p-5">
+    <h3 class="sec-h mb-1">Which standards are you sitting?</h3>
+    <p class="text-xs soft mb-3">All ticked to start with. Untick anything you are not doing.</p>
+    ${S.subjects.map(sub=>`<div class="tt-stdgroup">
+      <p class="tt-stdsub" style="color:${hueFor(sub)}">${label(sub)}</p>
+      ${externalStandards(sub).map(st=>`<label class="tt-check">
+        <input type="checkbox" data-sub="${sub}" data-code="${st.code}"
+          ${S.standards[sub]&&S.standards[sub].has(st.code)?'checked':''}>
+        <span><strong>AS${st.code}</strong> · ${st.credits} cr — ${st.title}</span></label>`).join('')}
+    </div>`).join('')}
+  </div>`;
+}
+
+function stepExams(){
+  if(!S.subjects.length) return '';
+  return `<div class="panel p-4 md:p-5">
+    <h3 class="sec-h mb-1">Exam dates</h3>
+    <p class="text-xs soft mb-3">Pre-filled from the ${E().year} timetable. Check yours on
+      <a href="${E().timetableUrl}" target="_blank" rel="noopener" class="underline">NZQA</a>.</p>
+    ${S.subjects.map(sub=>{
+      const ex = S.exams[sub]||{};
+      // A portfolio subject has no sat examination — the school sets a
+      // submission date, so any weekday is valid and there is no session.
+      if(ex.portfolio) return `<div class="tt-examrow">
+        <span class="tt-examsub"><i class="tt-dot" style="background:${hueFor(sub)}"></i>${label(sub)}</span>
+        <input type="date" class="field tt-date" data-sub="${sub}" value="${ex.date||''}">
+        <span class="tt-pfolio">Portfolio — enter your submission date</span>
+        <span class="tt-warn">${ex.date?'':'No date yet.'}</span></div>`;
+      const prob = ex.date ? E().checkDate(ex.date) : 'No date yet.';
+      return `<div class="tt-examrow">
+        <span class="tt-examsub"><i class="tt-dot" style="background:${hueFor(sub)}"></i>${label(sub)}</span>
+        <input type="date" class="field tt-date" data-sub="${sub}" value="${ex.date||''}"
+          min="${E().window.start}" max="${E().window.end}">
+        <select class="field tt-sess" data-sub="${sub}">${E().sessions.map(s=>
+          `<option value="${s.id}" ${ex.session===s.id?'selected':''}>${s.label} ${s.start}</option>`).join('')}</select>
+        <span class="tt-warn">${prob||''}</span></div>`;
+    }).join('')}
+    ${examConfirmBox()}
+  </div>`;
+}
+
+/* Wrong exam dates would quietly wreck the whole plan, so the student has to
+   look at them once and say they are right before anything gets built. */
+function examConfirmBox(){
+  const ok = sub => {
+    const e = S.exams[sub];
+    if(!e || !e.date) return false;
+    return e.portfolio ? true : !E().checkDate(e.date);   // portfolios are not sat, so any date works
+  };
+  const bad = S.subjects.filter(s => !ok(s));
+  if(bad.length) return `<div class="tt-confirm tt-confirm-bad">
+    Still to sort: ${bad.map(label).join(', ')}. Every subject needs a date inside the exam period.</div>`;
+  if(S.examsConfirmed) return `<div class="tt-confirm tt-confirm-ok">
+    <span>Dates confirmed.</span>
+    <button id="tt-unconfirm" class="tt-linkbtn">Change them</button></div>`;
+  return `<div class="tt-confirm">
+    <p class="tt-confirm-q">Check these against your own NZQA timetable before you go on — the whole plan is built backwards from these dates and times.</p>
+    <ul class="tt-confirm-list">${S.subjects.map(sub=>{
+      const ex = S.exams[sub];
+      const sess = E().sessions.find(x => x.id === ex.session) || {};
+      return `<li><i class="tt-dot" style="background:${hueFor(sub)}"></i>
+        <strong>${label(sub)}</strong> — ${pretty(ex.date,{weekday:'long', day:'numeric', month:'long'})}${
+        ex.portfolio ? ' — portfolio submission' : ', ' + (sess.label||'') + ' ' + (sess.start||'')}</li>`;
+    }).join('')}</ul>
+    <button id="tt-confirm" class="btn-go">These dates and times are right</button>
+  </div>`;
+}
+
+function stepPeriods(){
+  if(!S.subjects.length) return '';
+  const r = realism();
+  return `<div class="panel p-4 md:p-5">
+    <h3 class="sec-h mb-1">When can you study?</h3>
+    <p class="text-xs soft mb-3">How much you can do changes across the year, so set it per period.
+      Term-time is squeezed; holidays and study leave are not. Edit the dates to match your school.</p>
+    ${S.periods.map((p,i)=>`<div class="tt-period">
+      <div class="tt-pmeta">
+        <input class="field tt-pname" data-i="${i}" value="${p.name}">
+        <input type="date" class="field tt-pd" data-i="${i}" data-k="start" value="${p.start}">
+        <span class="soft text-xs">to</span>
+        <input type="date" class="field tt-pd" data-i="${i}" data-k="end" value="${p.end}">
+        <span class="text-xs soft ml-auto">${p.hours.reduce((a,b)=>a+b,0)} h/week</span>
+        <button class="tt-prem" data-i="${i}" title="Remove this period">&times;</button>
+      </div>
+      <div class="tt-hours">${WEEKDAYS.map((w,d)=>`<label class="tt-hour"><span>${w}</span>
+        <input type="number" min="0" max="10" class="field tt-ph" data-i="${i}" data-d="${d}" value="${p.hours[d]}"></label>`).join('')}</div>
+    </div>`).join('')}
+    <button id="tt-addp" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold mt-2">+ Add a period</button>
+    <div class="mt-3">
+      <span class="text-[10px] font-black uppercase tracking-widest soft">Individual days off</span>
+      <div class="tt-offrow">
+        <input type="date" id="tt-offdate" class="field" min="${planStart()}">
+        <button id="tt-offadd" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Add this day</button>
+        <button id="tt-offcal" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">
+          ${S.pickerOpen ? 'Close calendar' : 'Pick from a calendar'}</button>
+      </div>
+      ${S.pickerOpen ? offPicker() : ''}
+      <div class="tt-offlist">
+        ${S.blackouts.length
+          ? S.blackouts.slice().sort().map(d =>
+              `<span class="tt-offchip">${pretty(d)}<button class="tt-offx" data-d="${d}" title="Remove">&times;</button></span>`).join('')
+          : `<span class="text-xs soft">No days off set. Weekends already follow the hours you set above.</span>`}
+      </div>
+    </div>
+    <p class="text-xs soft mt-2">${r.total} study blocks available before your last exam.</p>
+    ${r.notes.map(n=>`<div class="tt-note ${n.tone}">${n.text}</div>`).join('')}
+  </div>`;
+}
+
+/* A month grid for marking days off. Clicking a day toggles it, so a long
+   weekend away is three clicks rather than typing three dates. */
+function offPicker(){
+  const m = monthStart(S.pickerMonth || planStart());
+  const lead = wdIndex(m), mi = monthOf(m);
+  const cells = new Array(lead).fill(null);
+  let d = m;
+  while(monthOf(d) === mi){ cells.push(d); d = addDays(d,1); }
+  const end = lastExamDate();
+  return `<div class="tt-offcal">
+    <div class="tt-offhead">
+      <button class="tt-offnav" data-step="-1">&lsaquo;</button>
+      <span>${pretty(m,{month:'long', year:'numeric'})}</span>
+      <button class="tt-offnav" data-step="1">&rsaquo;</button>
+    </div>
+    <div class="tt-offgrid">
+      ${WEEKDAYS.map(w=>`<div class="tt-offdow">${w[0]}</div>`).join('')}
+      ${cells.map(c=>{
+        if(!c) return `<span></span>`;
+        const off = S.blackouts.includes(c);
+        const outside = !periodFor(c) || (end && c > end);
+        const exam = isExamDay(c);
+        const none = hoursOn(c) === 0 && !off && !exam;
+        return `<button class="tt-offday${off?' is-off':''}${outside?' is-out':''}${none?' is-none':''}${exam?' is-exam':''}"
+          data-d="${c}" title="${exam ? 'You sit an exam that day'
+            : off ? 'A day off — click to undo'
+            : outside ? 'Outside your study period'
+            : none ? 'Already zero hours that weekday' : 'Click to take this day off'}">${+c.slice(8)}</button>`;
+      }).join('')}
+    </div>
+    <p class="tt-offhint">Click a date to take it off. Grey days already have no study hours.</p>
+  </div>`;
+}
+
+function stepGo(){
+  if(!S.subjects.length) return '';
+  const n = chosenStandards().length;
+  const dated = S.subjects.every(s => S.exams[s] && S.exams[s].date &&
+    (S.exams[s].portfolio || !E().checkDate(S.exams[s].date)));
+  const ready = n>0 && dated && S.examsConfirmed;
+  return `<div class="panel p-4 md:p-5 flex flex-wrap items-center gap-3">
+    <button id="tt-go" class="btn-go"${ready?'':' disabled style="opacity:.5;cursor:not-allowed"'}>
+      ${S.plan?'Rebuild my timetable':'Create my study timetable'}</button>
+    <label class="tt-toggle"><input type="checkbox" id="tt-topics" ${S.withTopics?'checked':''}>
+      <span>Give each block a specific topic</span></label>
+    <span class="text-xs soft">${n} standard${n===1?'':'s'} selected${
+      ready ? '' : n===0 ? ' — tick at least one standard above'
+             : !dated ? ' — needs a valid exam date: ' + S.subjects.filter(x=>!(S.exams[x]&&S.exams[x].date&&(S.exams[x].portfolio||!E().checkDate(S.exams[x].date)))).map(label).join(', ')
+             : ' — confirm your exam dates above first'}</span>
+    <button id="tt-reset" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold ml-auto">Start again</button>
+  </div>`;
+}
+
+function wire(){
+  const q = (s,fn) => R().querySelectorAll(s).forEach(fn);
+  const one = s => R().querySelector(s);
+
+  // Switching level only changes what you are BROWSING — chosen subjects stay,
+  // so a Level 3 student can add a Scholarship subject to the same plan.
+  q('.tt-lvl', b => b.onclick = () => { S.level = b.dataset.l; S.faculty = null; render(); });
+  q('.tt-fac', b => b.onclick = () => { S.faculty = +b.dataset.i; render(); });
+  q('.tt-pick', b => b.onclick = () => {
+    const k = key(S.level, b.dataset.n);
+    if(S.subjects.includes(k)) S.subjects = S.subjects.filter(x=>x!==k);
+    else if(S.subjects.length < MAX_SUBJECTS){
+      S.subjects.push(k);
+      S.standards[k] = new Set(externalStandards(k).map(x=>x.code));
+      const d = E().dateFor(S.level, b.dataset.n);
+      S.exams[k] = d ? { date:d.date||'', session:d.session||'AM', portfolio:!!d.portfolio }
+                     : { date:'', session:'AM' };
+    }
+    S.examsConfirmed = false; S.plan = null; render();
+  });
+  q('.tt-x', b => b.onclick = () => {
+    S.subjects = S.subjects.filter(x=>x!==b.dataset.n);
+    S.examsConfirmed=false; S.plan=null; render();
+  });
+  q('.tt-check input', el => el.onchange = () => {
+    const s = S.standards[el.dataset.sub];
+    el.checked ? s.add(el.dataset.code) : s.delete(el.dataset.code);
+    S.plan = null;
+  });
+  q('.tt-date', el => el.onchange = () => { S.exams[el.dataset.sub].date = el.value; S.examsConfirmed=false; S.plan=null; render(); });
+  q('.tt-sess', el => el.onchange = () => { S.exams[el.dataset.sub].session = el.value; S.examsConfirmed=false; S.plan=null; render(); });
+
+  q('.tt-pname', el => el.onchange = () => { S.periods[+el.dataset.i].name = el.value; });
+  q('.tt-pd', el => el.onchange = () => { S.periods[+el.dataset.i][el.dataset.k] = el.value; S.plan=null; render(); });
+  q('.tt-ph', el => el.onchange = () => {
+    S.periods[+el.dataset.i].hours[+el.dataset.d] = Math.max(0, Math.min(10, +el.value||0));
+    S.plan=null; render();
+  });
+  q('.tt-prem', b => b.onclick = () => { S.periods.splice(+b.dataset.i,1); S.plan=null; render(); });
+  const addp = one('#tt-addp');
+  if(addp) addp.onclick = () => {
+    const last = S.periods[S.periods.length-1];
+    S.periods.push({ name:'New period',
+      start: last ? addDays(last.end,1) : todayISO(),
+      end:   last ? addDays(last.end,14) : addDays(todayISO(),14),
+      hours:[2,2,2,2,2,2,0] });
+    render();
+  };
+  const addOff = d => {
+    if(!d || S.blackouts.includes(d)) return;
+    S.blackouts.push(d); S.plan = null; render();
+  };
+  const oa = one('#tt-offadd');
+  if(oa) oa.onclick = () => { const el = one('#tt-offdate'); addOff(el && el.value); };
+  const oc = one('#tt-offcal');
+  if(oc) oc.onclick = () => {
+    S.pickerOpen = !S.pickerOpen;
+    S.pickerMonth = S.pickerMonth || planStart();
+    render();
+  };
+  q('.tt-offx', b => b.onclick = () => {
+    S.blackouts = S.blackouts.filter(x => x !== b.dataset.d); S.plan = null; render();
+  });
+  q('.tt-offnav', b => b.onclick = () => {
+    S.pickerMonth = addMonths(monthStart(S.pickerMonth || planStart()), +b.dataset.step); render();
+  });
+  q('.tt-offday', b => b.onclick = () => {
+    const d = b.dataset.d;
+    if(S.blackouts.includes(d)) S.blackouts = S.blackouts.filter(x => x !== d);
+    else S.blackouts.push(d);
+    S.plan = null; render();
+  });
+
+  const go = one('#tt-go');
+  if(go) go.onclick = () => {
+    try {
+      S.plan = generate();
+      if(!S.plan){ alert('Nothing to schedule yet. Check you have ticked some standards and set your study hours.'); return; }
+      S.view = 'week'; S.cursor = todayISO(); render();
+    } catch(err){
+      console.error(err);
+      alert('Something went wrong building the timetable. If this keeps happening, use Start again to clear your saved plan.');
+    }
+  };
+  const rg = one('#tt-regen');
+  if(rg) rg.onclick = () => {
+    const edited = S.plan && S.plan.open.some(x => x.extra);
+    const msg = edited
+      ? 'Regenerating builds the plan again from scratch. Any blocks you added, moved or cleared by hand will be lost. Carry on?'
+      : 'Regenerating builds the plan again from scratch, so any changes you have made by hand will be lost. Carry on?';
+    if(confirm(msg)){ S.plan = generate(); save(); render(); }
+  };
+
+  q('.tt-view', b => b.onclick = () => { S.view = b.dataset.v; render(); });
+  q('.tt-arrow', b => b.onclick = () => {
+    const n = +b.dataset.step;
+    if(S.view==='day') S.cursor = addDays(S.cursor,n);
+    else if(S.view==='week') S.cursor = addDays(S.cursor,7*n);
+    else S.cursor = addMonths(S.cursor, n);
+    render();
+  });
+  const td = one('.tt-today'); if(td) td.onclick = () => { S.cursor = todayISO(); render(); };
+
+  q('.tt-copy', b => b.onclick = async () => {
+    const text = window.composePrompt({ level:S.level, subject:decodeURIComponent(b.dataset.sub),
+      code:b.dataset.code, mode:b.dataset.mode });
+    try { await navigator.clipboard.writeText(text); } catch { return; }
+    const o = b.textContent; b.textContent='Copied ✓'; setTimeout(()=>b.textContent=o,1500);
+  });
+  const ics = one('#tt-ics'); if(ics) ics.onclick = () => download('ncea-study-plan.ics', toICS(), 'text/calendar');
+  const pr  = one('#tt-print'); if(pr) pr.onclick = printPlan;
+
+  const tp = one('#tt-topics');
+  if(tp) tp.onchange = () => { S.withTopics = tp.checked; S.plan = null; render(); };
+
+  const rs = one('#tt-reset');
+  if(rs) rs.onclick = () => {
+    if(confirm('Clear your saved timetable and start again?')){ wipe(); render(); }
+  };
+
+  const cf = one('#tt-confirm');
+  if(cf) cf.onclick = () => { S.examsConfirmed = true; render(); };
+  const uc = one('#tt-unconfirm');
+  if(uc) uc.onclick = () => { S.examsConfirmed = false; render(); };
+
+  q('.tt-fm', b => b.onclick = () => { S.fullMode = b.dataset.m; render(); });
+  q('.tt-hm', b => b.onclick = () => { S.howMode = b.dataset.h; render(); });
+  q('.tt-mnum[data-goto]', c => c.onclick = () => { S.cursor = c.dataset.goto; S.view='day'; render(); });
+  q('.tt-mslot', b => b.onclick = () => placeInto(+b.dataset.empty));
+  q('.tt-addhr', b => b.onclick = () => addHourTo(b.dataset.date));
+
+  // arm a subject, then click a + to place it
+  q('.tt-arm', b => b.onclick = () => {
+    S.armed = b.classList.contains('tt-armoff') ? null
+            : (S.armed === b.dataset.s ? null : b.dataset.s);
+    render();
+  });
+  q('.tt-del', b => b.onclick = () => {
+    S.plan.open[+b.dataset.slot].item = null;
+    S.plan.used = S.plan.open.filter(x=>x.item).length;
+    save(); render();
+  });
+  q('.tt-slot', b => b.onclick = () => placeInto(+b.dataset.empty));
+
+  q('.tt-gem', b => b.onclick = async () => {
+    const k = decodeURIComponent(b.dataset.sub);
+    const text = window.composePrompt({ level:kLvl(k), subject:kName(k),
+      code:b.dataset.code, mode:b.dataset.mode, topic:decodeURIComponent(b.dataset.topic||'') });
+    let ok = true;
+    try { await navigator.clipboard.writeText(text); }
+    catch(e){ ok = false; }
+    if(!ok){ alert('Your browser blocked the copy. Use Open ↗ instead, then copy from there.'); return; }
+    const o = b.textContent; b.textContent = 'Copied ✓';
+    setTimeout(()=>{ b.textContent = o; window.open('https://gemini.google.com/app','_blank','noopener'); }, 500);
+  });
+}
 
 })();
