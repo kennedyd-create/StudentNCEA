@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=8"></script>
+<script src="ncea-exams-2026.js?v=11"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -188,288 +188,30 @@ body.dark-mode .sec-h{ color:var(--fac-dark); }
 }
 body.dark-mode #actionbar{ background:color-mix(in srgb,var(--fac-dark) 18%,var(--surface)); }
 
-/* ---- Top-level view tabs ---- */
+/* ---- Top-level view tabs ----
+   The study guide is the main event, so it is bigger and ringed in red;
+   the timetable sits beside it as a smaller secondary tab. ---- */
 .mode-tab{
-  font-weight:800; font-size:.8125rem; padding:.55rem 1.1rem; cursor:pointer;
+  font-weight:800; cursor:pointer; transition:all .15s ease;
   border-radius:.6rem .6rem 0 0; border:1px solid var(--line); border-bottom:0;
   background:color-mix(in srgb,var(--fac-dark) 8%,var(--surface)); color:var(--ink-soft);
-  transition:all .15s ease;
 }
 .mode-tab:hover{ color:var(--fac-dark); }
-.mode-tab[aria-pressed="true"]{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
 
-/* Level pills keep the school navy whatever faculty is open, so the
-   selected level is always obvious in both views. */
-.lvl-pill{ --fac-dark:#002066; }
-.lvl-pill[aria-pressed="true"]{
-  background:#002066!important; border-color:#002066!important; color:#fff!important;
-  box-shadow:0 0 0 3px rgba(0,32,102,.22);
+.mode-tab-main{
+  font-size:.9375rem; padding:.7rem 1.5rem; letter-spacing:-.01em;
+  border:2px solid #DB2026; border-bottom:0;
+  box-shadow:0 -2px 12px -6px rgba(219,32,38,.6);
 }
-body.dark-mode .lvl-pill{ --fac-dark:#4d7fd6; }
-body.dark-mode .lvl-pill[aria-pressed="true"]{
-  background:#2f5fae!important; border-color:#5f8ede!important; color:#fff!important;
-  box-shadow:0 0 0 3px rgba(93,141,222,.3);
+.mode-tab-main[aria-pressed="true"]{
+  background:#DB2026; border-color:#DB2026; color:#fff;
 }
+.mode-tab-main[aria-pressed="false"]{ color:#DB2026; }
+body.dark-mode .mode-tab-main[aria-pressed="false"]{ color:#ff6b6f; border-color:#ff6b6f; }
 
-/* ---- Study timetable ---- */
-.tt-basket{ border:2px dashed var(--line); border-radius:.6rem; padding:.6rem .75rem;
-  display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; min-height:2.6rem; }
-.tt-chip{ display:inline-flex; align-items:center; gap:.35rem; font-size:.75rem; font-weight:800;
-  color:#fff; border-radius:9999px; padding:.25rem .6rem; }
-.tt-x, .tt-prem{ font-weight:900; opacity:.7; cursor:pointer; }
-.tt-x:hover, .tt-prem:hover{ opacity:1; }
-.tt-dot{ display:inline-block; width:.6rem; height:.6rem; border-radius:9999px; margin-right:.4rem; vertical-align:middle; }
-
-.tt-stdgroup{ border-top:1px solid var(--line); padding:.6rem 0; }
-.tt-stdsub{ font-size:.75rem; font-weight:900; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.35rem; }
-.tt-check{ display:flex; gap:.5rem; align-items:flex-start; font-size:.8125rem; padding:.15rem 0; cursor:pointer; }
-.tt-check input{ margin-top:.25rem; }
-
-.tt-examrow{ display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; padding:.3rem 0; }
-.tt-examsub{ font-size:.8125rem; font-weight:800; min-width:12rem; }
-.tt-date,.tt-sess{ padding:.3rem .5rem; font-size:.8125rem; }
-.tt-warn{ font-size:.6875rem; color:#b45309; font-weight:700; }
-body.dark-mode .tt-warn{ color:#fcd34d; }
-
-.tt-period{ border:1px solid var(--line); border-left:4px solid var(--fac-dark);
-  border-radius:.5rem; padding:.6rem .7rem; margin-bottom:.5rem; background:var(--surface); }
-.tt-pmeta{ display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; margin-bottom:.45rem; }
-.tt-pname{ font-weight:800; font-size:.8125rem; padding:.3rem .5rem; max-width:11rem; }
-.tt-pd{ padding:.3rem .4rem; font-size:.75rem; }
-.tt-hours{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.3rem; }
-.tt-hour{ text-align:center; font-size:.625rem; font-weight:800; color:var(--ink-soft); }
-.tt-hour input{ width:100%; text-align:center; padding:.25rem; margin-top:.1rem; font-size:.8125rem; }
-.tt-note{ font-size:.75rem; border-radius:.5rem; padding:.5rem .7rem; margin-top:.4rem; }
-.tt-note.warn{ background:var(--int-bg); color:var(--int-ink); }
-.tt-note.bad{ background:rgba(185,28,28,.12); color:#b91c1c; font-weight:700; }
-body.dark-mode .tt-note.bad{ color:#fca5a5; }
-
-/* view switcher */
-.tt-viewbar{ display:flex; flex-wrap:wrap; gap:.6rem; align-items:center; margin-bottom:.8rem;
-  padding-bottom:.6rem; border-bottom:1px solid var(--line); }
-.tt-view{ font-size:.75rem; font-weight:800; padding:.3rem .7rem; border-radius:.4rem;
-  border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); cursor:pointer; }
-.tt-view[aria-pressed="true"]{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
-.tt-nav{ display:flex; align-items:center; gap:.35rem; }
-.tt-arrow,.tt-today{ font-size:.75rem; font-weight:800; padding:.25rem .55rem; border-radius:.4rem;
-  border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; }
-.tt-arrow:hover,.tt-today:hover{ background:var(--fac-dark); color:#fff; border-color:var(--fac-dark); }
-.tt-navlabel{ font-size:.8125rem; font-weight:800; min-width:9rem; text-align:center; }
-.tt-legend{ display:flex; flex-wrap:wrap; gap:.5rem; margin-left:auto; }
-.tt-key{ font-size:.625rem; font-weight:700; color:var(--ink-soft); display:inline-flex; align-items:center; gap:.25rem; }
-.tt-key i{ width:.7rem; height:.7rem; border-radius:.2rem; display:inline-block; }
-
-/* day + week */
-.tt-block{ border:1px solid var(--line); border-left:4px solid var(--hue); border-radius:.45rem;
-  padding:.4rem .55rem; margin-bottom:.3rem; background:var(--surface);
-  display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; }
-.tt-bmeta{ font-size:.75rem; }
-.tt-mode{ font-size:.625rem; font-weight:900; text-transform:uppercase; letter-spacing:.06em;
-  background:var(--hue); color:#fff; border-radius:9999px; padding:.05rem .4rem; margin-left:.3rem; }
-.tt-btitle{ font-size:.6875rem; color:var(--ink-soft); flex:1 1 12rem; }
-.tt-acts{ margin-left:auto; display:flex; gap:.3rem; }
-.tt-copy,.tt-gem,.tt-open{ font-size:.625rem; font-weight:800; border:1px solid var(--line-strong);
-  border-radius:.35rem; padding:.2rem .45rem; cursor:pointer; color:var(--ink-soft); white-space:nowrap; }
-.tt-copy:hover,.tt-gem:hover,.tt-open:hover{ background:var(--hue,var(--fac-dark)); color:#fff; border-color:transparent; }
-.tt-week{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.4rem; }
-@media (max-width:900px){ .tt-week{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
-.tt-wday{ border:1px solid var(--line); border-radius:.5rem; padding:.4rem; background:var(--surface-2); min-height:5rem; }
-.tt-wday.tt-today-col{ border-color:var(--fac-dark); box-shadow:0 0 0 2px color-mix(in srgb,var(--fac-dark) 25%,transparent); }
-.tt-wdh{ font-size:.6875rem; font-weight:900; text-transform:uppercase; letter-spacing:.05em;
-  color:var(--fac-dark); margin-bottom:.3rem; }
-.tt-wdh span{ display:block; font-size:.625rem; font-weight:600; color:var(--ink-faint); }
-.tt-empty{ font-size:.75rem; color:var(--ink-faint); text-align:center; }
-.tt-flag{ font-size:.5625rem; font-weight:900; background:var(--gold); color:#3b2a06;
-  padding:.1rem .4rem; border-radius:9999px; display:inline-block; margin-bottom:.25rem; }
-.tt-flag.tt-eve{ background:var(--gold); color:#3b2a06; }
-.tt-flagbig{ background:#b91c1c; color:#fff; font-weight:900; font-size:.8125rem;
-  padding:.5rem .8rem; border-radius:.5rem; margin-bottom:.6rem; }
-.tt-flagbig.tt-evebig{ background:var(--gold); color:#3b2a06; }
-
-/* month */
-.tt-month{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.25rem; }
-.tt-mh{ font-size:.625rem; font-weight:900; text-transform:uppercase; text-align:center;
-  color:var(--ink-faint); padding-bottom:.2rem; }
-.tt-mcell{ border:1px solid var(--line); border-radius:.4rem; min-height:3.6rem; padding:.25rem;
-  background:var(--surface); cursor:pointer; position:relative; }
-.tt-mcell:hover{ border-color:var(--fac-dark); }
-.tt-mout{ background:transparent; border:0; cursor:default; }
-.tt-mcell.tt-today-cell{ box-shadow:0 0 0 2px var(--fac-dark); }
-.tt-mnum{ font-size:.6875rem; font-weight:800; color:var(--ink-soft); }
-.tt-mexam{ font-size:.5rem; font-weight:900; background:#b91c1c; color:#fff;
-  padding:.05rem .25rem; border-radius:9999px; float:right; }
-.tt-mbars{ display:flex; gap:2px; margin-top:.3rem; height:.5rem; }
-.tt-mbars i{ border-radius:1px; }
-
-/* placement bar, block controls, empty slots */
-.tt-armbar{ display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; margin-bottom:.7rem;
-  padding:.45rem .6rem; border:1px dashed var(--line); border-radius:.5rem; background:var(--surface-2); }
-.tt-armlabel{ font-size:.6875rem; font-weight:800; color:var(--ink-soft); margin-right:.3rem; }
-.tt-arm{ font-size:.6875rem; font-weight:800; padding:.22rem .55rem; border-radius:9999px; cursor:pointer;
-  border:1px solid var(--hue,var(--line)); color:var(--hue,var(--ink-soft)); background:transparent; }
-.tt-arm[aria-pressed="true"]{ background:var(--hue); color:#fff; }
-.tt-armoff{ border-color:var(--line-strong); color:var(--ink-soft); }
-.tt-block{ position:relative; }
-.tt-del{ position:absolute; top:2px; right:3px; font-size:.75rem; font-weight:900; line-height:1;
-  color:var(--ink-faint); cursor:pointer; opacity:0; transition:opacity .12s; }
-.tt-block:hover .tt-del{ opacity:1; }
-.tt-del:hover{ color:#b91c1c; }
-.tt-slot{ display:block; width:100%; border:1px dashed var(--line-strong); border-radius:.45rem;
-  padding:.3rem; margin-bottom:.3rem; font-size:.75rem; font-weight:800; color:var(--ink-faint);
-  background:transparent; cursor:pointer; }
-.tt-slot:hover{ border-color:var(--fac-dark); color:var(--fac-dark); background:var(--surface-2); }
-.tt-toggle{ display:inline-flex; align-items:center; gap:.4rem; font-size:.75rem; font-weight:700; cursor:pointer; }
-
-/* month cells carry subject names as well as colour */
-.tt-monthwrap{ margin-bottom:1.1rem; }
-.tt-mtitle{ font-size:.8125rem; font-weight:900; color:var(--fac-dark); margin-bottom:.35rem; }
-.tt-mnames{ display:flex; flex-direction:column; gap:1px; margin-top:.2rem; }
-.tt-mname{ font-size:.5rem; font-weight:800; color:#fff; background:var(--hue);
-  border-radius:.2rem; padding:.05rem .25rem; display:flex; justify-content:space-between; gap:.2rem;
-  overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-.tt-mname b{ opacity:.85; }
-.tt-mcell{ min-height:4.6rem; }
-.tt-months{ display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:1rem; }
-.tt-fullswitch{ display:flex; gap:.35rem; margin-bottom:.7rem; }
-.tt-fm{ font-size:.6875rem; font-weight:800; padding:.25rem .6rem; border-radius:.4rem;
-  border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); cursor:pointer; }
-.tt-fm[aria-pressed="true"]{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
-
-/* How-to-study switch: centred in the header and deliberately in the school
-   gold rather than the faculty colour, so it reads as a setting rather than
-   as part of the subject colour scheme. */
-.tt-planhead{ display:flex; flex-wrap:wrap; align-items:center; gap:.6rem; }
-.tt-ph-side{ display:flex; align-items:center; gap:.5rem; flex:1 1 12rem; }
-.tt-ph-right{ justify-content:flex-end; }
-.tt-how-switch{ display:flex; gap:.15rem; padding:.2rem; border-radius:.55rem;
-  background:color-mix(in srgb, var(--gold) 22%, transparent);
-  border:1px solid color-mix(in srgb, var(--gold) 55%, transparent);
-  margin:0 auto; order:0; }
-@media (max-width:720px){ .tt-how-switch{ order:3; flex:1 1 100%; justify-content:center; } }
-.tt-hm{ font-size:.6875rem; font-weight:800; padding:.28rem .7rem; border-radius:.4rem;
-  border:0; background:transparent; color:var(--ink-soft); cursor:pointer; white-space:nowrap; }
-.tt-hm:hover{ color:var(--ink); }
-.tt-hm[aria-pressed="true"]{ background:var(--gold); color:#3b2a06; box-shadow:0 1px 3px rgba(0,0,0,.25); }
-body.dark-mode .tt-hm[aria-pressed="true"]{ color:#241a04; }
-
-.tt-how{ flex:1 1 100%; font-size:.6875rem; line-height:1.5; color:var(--ink);
-  background:color-mix(in srgb,var(--hue) 12%,transparent);
-  border-left:3px solid var(--hue); border-radius:.3rem; padding:.35rem .5rem; margin-top:.15rem; }
-.tt-block.tt-offline{ align-items:flex-start; }
-
-/* Exams and the night before are both GOLD — one colour meaning "this is a
-   deadline", with the subject named on every marker. Subject colours stay
-   for study blocks, so the two never compete. */
-.tt-exambar{ display:flex; flex-wrap:wrap; align-items:center; gap:.5rem;
-  background:var(--gold); color:#3b2a06; border-radius:.5rem; padding:.55rem .8rem;
-  margin-bottom:.5rem; font-size:.875rem; font-weight:900;
-  box-shadow:0 2px 10px -4px rgba(0,0,0,.45); }
-.tt-evebar{ display:flex; flex-wrap:wrap; align-items:center; gap:.5rem;
-  background:color-mix(in srgb,var(--gold) 30%,transparent); color:var(--ink);
-  border:1px solid var(--gold); border-radius:.5rem; padding:.45rem .8rem;
-  margin-bottom:.5rem; font-size:.8125rem; font-weight:800; }
-.tt-exampill{ font-size:.5625rem; font-weight:900; letter-spacing:.1em;
-  background:rgba(59,42,6,.2); border-radius:9999px; padding:.15rem .5rem; }
-.tt-evebar .tt-exampill{ background:var(--gold); color:#3b2a06; }
-.tt-examwhen{ margin-left:auto; font-size:.75rem; font-weight:700; opacity:.85; }
-.tt-exam-sm{ padding:.32rem .45rem; font-size:.6875rem; gap:.1rem; margin-bottom:.35rem;
-  flex-direction:column; align-items:flex-start; line-height:1.25; }
-.tt-exam-sm span{ font-size:.5625rem; font-weight:900; opacity:.85; }
-.tt-exam-xs{ display:block; font-size:.5rem; font-weight:900; color:#3b2a06; background:var(--gold);
-  border-radius:.2rem; padding:.1rem .25rem; margin-bottom:.15rem;
-  overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-.tt-eve-xs{ display:block; font-size:.5rem; font-weight:800; color:var(--ink);
-  background:color-mix(in srgb,var(--gold) 30%,transparent); border:1px solid var(--gold);
-  border-radius:.2rem; padding:.05rem .25rem; margin-bottom:.15rem;
-  overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-.tt-mcell.tt-mexamday{ border-color:var(--gold); }
-.tt-examcell{ background:var(--gold); color:#3b2a06; font-weight:900; font-size:.6875rem; }
-.tt-examtag{ font-size:.5rem; letter-spacing:.08em; background:rgba(59,42,6,.2);
-  border-radius:9999px; padding:.05rem .35rem; }
-
-/* Confirming the exam dates before anything is generated */
-.tt-confirm{ margin-top:.7rem; border:2px solid var(--gold); border-radius:.6rem;
-  padding:.7rem .85rem; background:color-mix(in srgb,var(--gold) 12%,transparent); }
-.tt-confirm-q{ font-size:.8125rem; font-weight:700; margin-bottom:.5rem; }
-.tt-confirm-list{ font-size:.8125rem; line-height:1.7; margin-bottom:.6rem; }
-.tt-confirm-list li{ display:flex; align-items:center; gap:.1rem; }
-.tt-confirm-ok{ display:flex; align-items:center; gap:.6rem; font-size:.8125rem; font-weight:800;
-  border-style:solid; }
-.tt-confirm-ok span::before{ content:'✓ '; }
-.tt-confirm-bad{ border-color:#b91c1c; background:rgba(185,28,28,.1);
-  color:#b91c1c; font-size:.8125rem; font-weight:700; }
-body.dark-mode .tt-confirm-bad{ color:#fca5a5; }
-.tt-linkbtn{ font-size:.75rem; font-weight:800; text-decoration:underline; cursor:pointer;
-  color:var(--ink-soft); }
-.tt-linkbtn:hover{ color:var(--ink); }
-
-/* Days off: a date field plus a click-to-toggle month calendar */
-.tt-offrow{ display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; margin-top:.3rem; }
-.tt-offrow .field{ padding:.35rem .5rem; font-size:.8125rem; }
-.tt-offlist{ display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; margin-top:.5rem; }
-.tt-offchip{ display:inline-flex; align-items:center; gap:.3rem; font-size:.6875rem; font-weight:800;
-  background:color-mix(in srgb,var(--gold) 30%,transparent); color:var(--ink);
-  border:1px solid color-mix(in srgb,var(--gold) 60%,transparent);
-  border-radius:9999px; padding:.2rem .55rem; }
-.tt-offx{ font-weight:900; opacity:.7; cursor:pointer; }
-.tt-offx:hover{ opacity:1; color:#b91c1c; }
-
-.tt-offcal{ margin-top:.6rem; border:1px solid var(--line); border-radius:.55rem;
-  padding:.6rem; background:var(--surface-2); max-width:23rem; }
-.tt-offhead{ display:flex; align-items:center; justify-content:space-between;
-  font-size:.8125rem; font-weight:800; margin-bottom:.4rem; }
-.tt-offnav{ font-weight:900; padding:.1rem .5rem; border:1px solid var(--line);
-  border-radius:.35rem; cursor:pointer; background:var(--surface); }
-.tt-offnav:hover{ background:var(--fac-dark); color:#fff; border-color:var(--fac-dark); }
-.tt-offgrid{ display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
-.tt-offdow{ font-size:.5625rem; font-weight:900; text-align:center; color:var(--ink-faint); }
-.tt-offday{ font-size:.6875rem; font-weight:700; padding:.3rem 0; border-radius:.3rem;
-  border:1px solid transparent; background:var(--surface); color:var(--ink); cursor:pointer; }
-.tt-offday:hover{ border-color:var(--gold); }
-.tt-offday.is-off{ background:var(--gold); color:#3b2a06; font-weight:900; }
-.tt-offday.is-none{ color:var(--ink-faint); background:transparent; }
-.tt-offday.is-out{ opacity:.3; cursor:default; }
-.tt-offday.is-exam{ background:var(--gold); color:#3b2a06; font-weight:900; opacity:.75; cursor:default; }
-.tt-offhint{ font-size:.625rem; color:var(--ink-faint); margin-top:.4rem; }
-
-/* Adding an hour to a day that is already full. Restored — an earlier edit
-   to the how-to-study switch overwrote this block. */
-.tt-addhr{ display:block; width:100%; margin-top:.3rem; font-size:.625rem; font-weight:800;
-  color:var(--ink-faint); border:1px dashed var(--line-strong); border-radius:.35rem;
-  padding:.3rem; background:transparent; cursor:pointer; }
-.tt-addhr:hover{ border-color:var(--gold); color:var(--gold); background:var(--surface-2); }
-.tt-addsm{ padding:.18rem; font-size:.6875rem; }
-.tt-maddhr{ margin-top:.15rem; padding:0; font-size:.55rem; line-height:1.4; }
-.tt-cap{ font-size:.625rem; font-weight:700; color:var(--ink-faint); margin-top:.45rem; }
-.tt-cap.tt-over{ color:var(--gold); }
-.tt-block.tt-extra{ border-style:dashed; }
-
-.tt-build{ font-size:.625rem; color:var(--ink-faint); text-align:center; padding:.6rem 0 0; }
-
-/* month cells become editable */
-.tt-mnum{ cursor:pointer; }
-.tt-mnum:hover{ text-decoration:underline; }
-.tt-mname{ position:relative; padding-right:.9rem; }
-.tt-mdel{ position:absolute; top:0; right:.15rem; font-size:.6rem; color:#fff; opacity:.6; }
-.tt-mname:hover .tt-mdel{ opacity:1; }
-.tt-mslot{ font-size:.55rem; font-weight:900; color:var(--ink-faint); border:1px dashed var(--line-strong);
-  border-radius:.2rem; padding:0 .2rem; cursor:pointer; line-height:1.3; }
-.tt-mslot:hover{ border-color:var(--fac-dark); color:var(--fac-dark); }
-
-/* full plan matrix */
-.tt-scroll{ overflow-x:auto; }
-.tt-table{ width:100%; border-collapse:collapse; font-size:.75rem; }
-.tt-table th,.tt-table td{ border:1px solid var(--line); padding:.3rem .45rem; text-align:center; }
-.tt-table thead th{ background:var(--fac-dark); color:#fff; font-weight:800; }
-.tt-wk{ display:block; font-size:.5625rem; font-weight:600; opacity:.85; }
-.tt-sub{ text-align:left!important; font-weight:800; white-space:nowrap; background:var(--surface-2); }
-.tt-has{ font-weight:800; }
-.tt-none{ color:var(--ink-faint); }
-.tt-exam{ font-weight:800; background:var(--surface-2); white-space:nowrap; }
-
-@media print{
-  header,#modetabs,#actionbar,main,.tt-acts,.tt-viewbar,#tt-ics,#tt-print,#tt-regen{ display:none!important; }
-  .panel{ box-shadow:none; border:1px solid #999; }
+.mode-tab-alt{ font-size:.75rem; padding:.45rem .95rem; }
+.mode-tab-alt[aria-pressed="true"]{
+  background:var(--fac-dark); border-color:var(--fac-dark); color:#fff;
 }
 
 /* ---- Search results ---- */
@@ -583,6 +325,23 @@ Teach at the level the standard actually demands:
 - Specific evidence, always. Vague reference to a general case is an Achieved-level habit. Every claim wants a name, a figure, a date, or a source, as set out in the evidence line of the standard block.
 
 Length in service of clarity is right; waffle is not. One learning objective, thoroughly, beats three sketched.`,
+
+'S': `SCHOLARSHIP DEPTH CONTRACT
+This is New Zealand Scholarship. It is NOT harder Level 3, and teaching it as more content is the single most common way to waste a candidate's time.
+
+NZQA assesses one thing: high-level integration, synthesis, and application of highly developed knowledge, skills and understanding to complex situations. The curriculum is the same as Level 3. What changes is what is done with it.
+
+Teach at the level the award actually demands:
+- INTEGRATION over coverage. A Level 3 Excellence answer explains one thing comprehensively. A Scholarship answer brings several strands together and shows what emerges from the combination. Keep asking "what else in this subject bears on that?"
+- UNFAMILIARITY is the point. Scholarship questions are deliberately not the ones practised in class. Spend the time on transferring method to new situations rather than on rehearsing known material.
+- A DEFENDED POSITION. Scholarship answers argue something an intelligent reader could dispute, and then defend it. Push the student off neutral summary and onto a claim, then make them justify it against the obvious objection.
+- LIMITS AND ASSUMPTIONS. Naming what your argument assumes, and where it would break, reads as strength at this level rather than hedging.
+- PRECISION OF EXPRESSION. Communication is explicitly assessed. Vague phrasing is a content problem here, not a style problem.
+- ECONOMY. The best Scholarship answers are dense rather than long. Cut anything that is merely correct.
+
+Do not simplify. This student is already performing at Excellence across Level 3 in this subject — say the hard thing and expect them to keep up. Where they are wrong, say so plainly; a candidate at this level is poorly served by encouragement in place of correction.
+
+There is no Achieved, Merit or Excellence here. Grades are Scholarship and Outstanding Scholarship, awarded to roughly the top 3% of Level 3 candidates in the subject. When the student asks how they are doing, talk about what would make the argument stronger, not about a band.`,
 
 '2': `LEVEL 2 DEPTH CONTRACT
 This is Level 2, the year that decides whether a student can cope with Level 3. The characteristic Level 2 move is EXPLAINING — not just knowing a thing, and not yet fully evaluating it.
@@ -909,9 +668,9 @@ This guard outranks every other instruction in this prompt, including the answer
 </header>
 
 <div class="max-w-6xl mx-auto px-5 pt-4">
-  <div id="modetabs" class="flex gap-2">
-    <button class="mode-tab" data-view="builder" aria-pressed="true">Prompt builder</button>
-    <button class="mode-tab" data-view="timetable" aria-pressed="false">Study timetable</button>
+  <div id="modetabs" class="flex gap-2 items-end">
+    <button class="mode-tab mode-tab-main" data-view="builder" aria-pressed="true">Ultimate Study Guide</button>
+    <button class="mode-tab mode-tab-alt" data-view="timetable" aria-pressed="false">Study Timetable</button>
   </div>
 </div>
 
@@ -983,7 +742,7 @@ This guard outranks every other instruction in this prompt, including the answer
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 8 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 11 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -1017,9 +776,10 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=8' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=8' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=8' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=11' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=11' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=11' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=11' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -1221,7 +981,7 @@ function renderStandards(){
         <span class="font-mono text-[11px] font-bold hd">AS${s.code}</span>
         <span class="font-mono text-[10px] faint">${s.ref}</span>
         <span class="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full ${s.mode==='internal'?'badge-int':'badge-ext'}">${s.mode.slice(0,3)}</span>
-        <span class="ml-auto text-[10px] font-bold soft whitespace-nowrap">${s.credits} cr${s.creditsUnverified?' <span title="Credit value not yet confirmed against NZQA" style="color:var(--gold)">\u2022</span>':''}</span>
+        <span class="ml-auto text-[10px] font-bold soft whitespace-nowrap">${s.credits ? s.credits + ' cr' : 'no credits'}${s.creditsUnverified?' <span title="Credit value not yet confirmed against NZQA" style="color:var(--gold)">\u2022</span>':''}</span>
       </div>
       <p class="text-[13px] font-semibold leading-snug mt-1">${s.title}</p>
       <span class="spine" style="width:${s.credits/max*100}%"></span>
@@ -1467,7 +1227,7 @@ function composePrompt({ level, subject, code, mode, topic, context }){
   const block =
 `<standard>
 Qualification: ${d.meta.qualification} ${d.meta.stage} ${subject} (${d.meta.year})
-Standard: AS${s.code} (${s.ref}) — ${s.credits} credits${s.creditsUnverified?' (credit value not yet confirmed against NZQA)':''} — ${s.mode}ly assessed
+Standard: ${s.credits ? 'AS' : ''}${s.code} (${s.ref})${s.credits ? ' — ' + s.credits + ' credits' + (s.creditsUnverified?' (credit value not yet confirmed against NZQA)':'') : ' — a Scholarship performance standard, no credits'} — ${s.mode}ly assessed
 Title: ${s.title}
 What it asks for: ${s.bigIdea}
 Assessment format: ${s.format}
@@ -1552,6 +1312,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=8"></script>
+<script src="timetable.js?v=11"></script>
 </body>
 </html>
