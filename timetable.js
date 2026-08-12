@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 12 — Scholarship + Level 3 in one plan';
+const TT_BUILD = 'build 13 — saved-plan migration fix';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -89,11 +89,29 @@ function load(){
     S.standards = {};
     Object.entries(o.standards||{}).forEach(([k,v]) => S.standards[k] = new Set(v));
     S.savedPlan = o.plan || null;
+
+    /* Timetables saved before subjects were keyed by level hold plain names
+       like "Geography". Migrate them to "3::Geography" using the level they
+       were saved at, otherwise nothing resolves and the plan cannot build. */
+    if(S.subjects.some(x => x.indexOf('::') === -1)){
+      const lvl = S.level || '3';
+      const fix = n => n.indexOf('::') === -1 ? lvl + '::' + n : n;
+      S.subjects = S.subjects.map(fix);
+      const std = {}, ex = {};
+      Object.entries(S.standards).forEach(([k,v]) => std[fix(k)] = v);
+      Object.entries(S.exams).forEach(([k,v]) => ex[fix(k)] = v);
+      S.standards = std; S.exams = ex;
+      if(S.savedPlan) S.savedPlan.forEach(b => { if(b.s) b.s = fix(b.s); });
+      if(S.armed) S.armed = fix(S.armed);
+    }
     return true;
   } catch(e){ return false; }
 }
 function rehydrate(){
-  if(!S.savedPlan || !window.NCEA_DATA || !window.NCEA_DATA[S.level]) return;
+  if(!S.savedPlan || !window.NCEA_DATA) return;
+  // every level referenced by the plan has to be loaded before it can be rebuilt
+  const levels = [...new Set(S.subjects.map(kLvl))];
+  if(levels.some(l => !window.NCEA_DATA[l])) return;
   const open = S.savedPlan.map(x => {
     const slot = { date:x.d, index:x.i, item:null, extra: !!x.e };
     if(x.s && kData(x.s) && kData(x.s).subjects[kName(x.s)]){
@@ -842,7 +860,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=12';
+    t.src = src + '?v=13';
     t.onload = done;
     t.onerror = fail;
     document.head.appendChild(t);
@@ -1043,7 +1061,8 @@ function stepGo(){
     <label class="tt-toggle"><input type="checkbox" id="tt-topics" ${S.withTopics?'checked':''}>
       <span>Give each block a specific topic</span></label>
     <span class="text-xs soft">${n} standard${n===1?'':'s'} selected${
-      ready ? '' : !dated ? ' — every subject needs a valid exam date'
+      ready ? '' : n===0 ? ' — tick at least one standard above'
+             : !dated ? ' — needs a valid exam date: ' + S.subjects.filter(x=>!(S.exams[x]&&S.exams[x].date&&(S.exams[x].portfolio||!E().checkDate(S.exams[x].date)))).map(label).join(', ')
              : ' — confirm your exam dates above first'}</span>
     <button id="tt-reset" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold ml-auto">Start again</button>
   </div>`;
@@ -1123,7 +1142,16 @@ function wire(){
   });
 
   const go = one('#tt-go');
-  if(go) go.onclick = () => { S.plan = generate(); S.view='week'; S.cursor=todayISO(); render(); };
+  if(go) go.onclick = () => {
+    try {
+      S.plan = generate();
+      if(!S.plan){ alert('Nothing to schedule yet. Check you have ticked some standards and set your study hours.'); return; }
+      S.view = 'week'; S.cursor = todayISO(); render();
+    } catch(err){
+      console.error(err);
+      alert('Something went wrong building the timetable. If this keeps happening, use Start again to clear your saved plan.');
+    }
+  };
   const rg = one('#tt-regen');
   if(rg) rg.onclick = () => {
     const edited = S.plan && S.plan.open.some(x => x.extra);
