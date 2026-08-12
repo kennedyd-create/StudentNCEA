@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=11"></script>
+<script src="ncea-exams-2026.js?v=12"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -245,6 +245,260 @@ body.dark-mode .filter-pill[aria-pressed="true"]{ color:#fff; }
 /* Signature: credit spine — bar width is the standard's credit weight */
 .credit-spine{height:4px;border-radius:2px;background:var(--line);overflow:hidden;}
 .credit-spine>span{display:block;height:100%;background:var(--gold);}
+
+/* ============================================================
+   STUDY TIMETABLE
+   Restored in full — an earlier edit to the prompt layer
+   accidentally removed this whole block.
+   ============================================================ */
+
+/* --- subject basket --- */
+.tt-basket{ border:2px dashed var(--line); border-radius:.6rem; padding:.6rem .75rem;
+  display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; min-height:2.6rem; }
+.tt-chip{ display:inline-flex; align-items:center; gap:.35rem; font-size:.75rem; font-weight:800;
+  color:#fff; border-radius:9999px; padding:.25rem .6rem; }
+.tt-x, .tt-prem, .tt-offx{ font-weight:900; opacity:.7; cursor:pointer; }
+.tt-x:hover, .tt-prem:hover, .tt-offx:hover{ opacity:1; }
+.tt-dot{ display:inline-block; width:.6rem; height:.6rem; border-radius:9999px;
+  margin-right:.4rem; vertical-align:middle; flex:none; }
+
+/* --- standards list: one per line --- */
+.tt-stdgroup{ border-top:1px solid var(--line); padding:.6rem 0; }
+.tt-stdsub{ font-size:.75rem; font-weight:900; text-transform:uppercase;
+  letter-spacing:.08em; margin-bottom:.4rem; }
+.tt-check{ display:flex; width:100%; gap:.55rem; align-items:flex-start;
+  font-size:.8125rem; line-height:1.45; padding:.28rem .35rem; cursor:pointer;
+  border-radius:.35rem; }
+.tt-check:hover{ background:var(--surface-2); }
+.tt-check input{ margin-top:.2rem; flex:none; width:1rem; height:1rem; cursor:pointer; }
+.tt-check span{ flex:1 1 auto; }
+
+/* --- exam dates --- */
+.tt-examrow{ display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; padding:.3rem 0; }
+.tt-examsub{ display:flex; align-items:center; font-size:.8125rem; font-weight:800; min-width:12rem; }
+.tt-date, .tt-sess{ padding:.3rem .5rem; font-size:.8125rem; }
+.tt-warn{ font-size:.6875rem; color:#b45309; font-weight:700; }
+body.dark-mode .tt-warn{ color:#fcd34d; }
+.tt-pfolio{ font-size:.6875rem; font-weight:700; color:var(--ink-soft);
+  background:var(--surface-3); border-radius:.35rem; padding:.25rem .5rem; }
+
+/* --- confirming dates --- */
+.tt-confirm{ margin-top:.7rem; border:2px solid var(--gold); border-radius:.6rem;
+  padding:.7rem .85rem; background:color-mix(in srgb,var(--gold) 12%,transparent); }
+.tt-confirm-q{ font-size:.8125rem; font-weight:700; margin-bottom:.5rem; }
+.tt-confirm-list{ font-size:.8125rem; line-height:1.7; margin-bottom:.6rem; }
+.tt-confirm-list li{ display:flex; align-items:center; }
+.tt-confirm-ok{ display:flex; align-items:center; gap:.6rem; font-size:.8125rem; font-weight:800; }
+.tt-confirm-ok span::before{ content:'\2713  '; }
+.tt-confirm-bad{ border-color:#b91c1c; background:rgba(185,28,28,.1);
+  color:#b91c1c; font-size:.8125rem; font-weight:700; }
+body.dark-mode .tt-confirm-bad{ color:#fca5a5; }
+.tt-linkbtn{ font-size:.75rem; font-weight:800; text-decoration:underline;
+  cursor:pointer; color:var(--ink-soft); }
+.tt-linkbtn:hover{ color:var(--ink); }
+
+/* --- availability periods --- */
+.tt-period{ border:1px solid var(--line); border-left:4px solid var(--fac-dark);
+  border-radius:.5rem; padding:.6rem .7rem; margin-bottom:.5rem; background:var(--surface); }
+.tt-pmeta{ display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; margin-bottom:.45rem; }
+.tt-pname{ font-weight:800; font-size:.8125rem; padding:.3rem .5rem; max-width:11rem; }
+.tt-pd{ padding:.3rem .4rem; font-size:.75rem; }
+.tt-hours{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.3rem; }
+.tt-hour{ text-align:center; font-size:.625rem; font-weight:800; color:var(--ink-soft); }
+.tt-hour input{ width:100%; text-align:center; padding:.25rem; margin-top:.1rem; font-size:.8125rem; }
+.tt-note{ font-size:.75rem; border-radius:.5rem; padding:.5rem .7rem; margin-top:.4rem; }
+.tt-note.warn{ background:var(--int-bg); color:var(--int-ink); }
+.tt-note.bad{ background:rgba(185,28,28,.12); color:#b91c1c; font-weight:700; }
+body.dark-mode .tt-note.bad{ color:#fca5a5; }
+.tt-toggle{ display:inline-flex; align-items:center; gap:.4rem; font-size:.75rem;
+  font-weight:700; cursor:pointer; }
+
+/* --- days off --- */
+.tt-offrow{ display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; margin-top:.3rem; }
+.tt-offrow .field{ padding:.35rem .5rem; font-size:.8125rem; }
+.tt-offlist{ display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; margin-top:.5rem; }
+.tt-offchip{ display:inline-flex; align-items:center; gap:.3rem; font-size:.6875rem; font-weight:800;
+  background:color-mix(in srgb,var(--gold) 30%,transparent); color:var(--ink);
+  border:1px solid color-mix(in srgb,var(--gold) 60%,transparent);
+  border-radius:9999px; padding:.2rem .55rem; }
+.tt-offcal{ margin-top:.6rem; border:1px solid var(--line); border-radius:.55rem;
+  padding:.6rem; background:var(--surface-2); max-width:23rem; }
+.tt-offhead{ display:flex; align-items:center; justify-content:space-between;
+  font-size:.8125rem; font-weight:800; margin-bottom:.4rem; }
+.tt-offnav{ font-weight:900; padding:.1rem .5rem; border:1px solid var(--line);
+  border-radius:.35rem; cursor:pointer; background:var(--surface); }
+.tt-offnav:hover{ background:var(--fac-dark); color:#fff; border-color:var(--fac-dark); }
+.tt-offgrid{ display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.tt-offdow{ font-size:.5625rem; font-weight:900; text-align:center; color:var(--ink-faint); }
+.tt-offday{ font-size:.6875rem; font-weight:700; padding:.3rem 0; border-radius:.3rem;
+  border:1px solid transparent; background:var(--surface); color:var(--ink); cursor:pointer; }
+.tt-offday:hover{ border-color:var(--gold); }
+.tt-offday.is-off{ background:var(--gold); color:#3b2a06; font-weight:900; }
+.tt-offday.is-none{ color:var(--ink-faint); background:transparent; }
+.tt-offday.is-out{ opacity:.3; cursor:default; }
+.tt-offday.is-exam{ background:var(--gold); color:#3b2a06; font-weight:900; opacity:.75; cursor:default; }
+.tt-offhint{ font-size:.625rem; color:var(--ink-faint); margin-top:.4rem; }
+
+/* --- plan header and the how-to-study switch --- */
+.tt-planhead{ display:flex; flex-wrap:wrap; align-items:center; gap:.6rem; }
+.tt-ph-side{ display:flex; align-items:center; gap:.5rem; flex:1 1 12rem; }
+.tt-ph-right{ justify-content:flex-end; }
+.tt-how-switch{ display:flex; gap:.15rem; padding:.2rem; border-radius:.55rem;
+  background:color-mix(in srgb, var(--gold) 22%, transparent);
+  border:1px solid color-mix(in srgb, var(--gold) 55%, transparent); margin:0 auto; }
+@media (max-width:720px){ .tt-how-switch{ order:3; flex:1 1 100%; justify-content:center; } }
+.tt-hm{ font-size:.6875rem; font-weight:800; padding:.28rem .7rem; border-radius:.4rem;
+  border:0; background:transparent; color:var(--ink-soft); cursor:pointer; white-space:nowrap; }
+.tt-hm[aria-pressed="true"]{ background:var(--gold); color:#3b2a06; box-shadow:0 1px 3px rgba(0,0,0,.25); }
+
+/* --- view switcher --- */
+.tt-viewbar{ display:flex; flex-wrap:wrap; gap:.6rem; align-items:center; margin-bottom:.8rem;
+  padding-bottom:.6rem; border-bottom:1px solid var(--line); }
+.tt-view{ font-size:.75rem; font-weight:800; padding:.3rem .7rem; border-radius:.4rem;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); cursor:pointer; }
+.tt-view[aria-pressed="true"]{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
+.tt-nav{ display:flex; align-items:center; gap:.35rem; }
+.tt-arrow, .tt-today{ font-size:.75rem; font-weight:800; padding:.25rem .55rem; border-radius:.4rem;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; }
+.tt-arrow:hover, .tt-today:hover{ background:var(--fac-dark); color:#fff; border-color:var(--fac-dark); }
+.tt-navlabel{ font-size:.8125rem; font-weight:800; min-width:9rem; text-align:center; }
+.tt-legend{ display:flex; flex-wrap:wrap; gap:.5rem; margin-left:auto; }
+.tt-key{ font-size:.625rem; font-weight:700; color:var(--ink-soft);
+  display:inline-flex; align-items:center; gap:.25rem; }
+.tt-key i{ width:.7rem; height:.7rem; border-radius:.2rem; display:inline-block; }
+.tt-fullswitch{ display:flex; gap:.35rem; margin-bottom:.7rem; }
+.tt-fm{ font-size:.6875rem; font-weight:800; padding:.25rem .6rem; border-radius:.4rem;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); cursor:pointer; }
+.tt-fm[aria-pressed="true"]{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
+
+/* --- placing blocks by hand --- */
+.tt-armbar{ display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; margin-bottom:.7rem;
+  padding:.45rem .6rem; border:1px dashed var(--line); border-radius:.5rem; background:var(--surface-2); }
+.tt-armlabel{ font-size:.6875rem; font-weight:800; color:var(--ink-soft); margin-right:.3rem; }
+.tt-arm{ font-size:.6875rem; font-weight:800; padding:.22rem .55rem; border-radius:9999px; cursor:pointer;
+  border:1px solid var(--hue,var(--line)); color:var(--hue,var(--ink-soft)); background:transparent; }
+.tt-arm[aria-pressed="true"]{ background:var(--hue); color:#fff; }
+.tt-armoff{ border-color:var(--line-strong); color:var(--ink-soft); }
+
+/* --- study blocks --- */
+.tt-block{ position:relative; display:flex; flex-wrap:wrap; align-items:center; gap:.4rem;
+  border:1px solid var(--line); border-left:4px solid var(--hue); border-radius:.45rem;
+  padding:.4rem .55rem; margin-bottom:.3rem; background:var(--surface); }
+.tt-block.tt-offline{ align-items:flex-start; }
+.tt-block.tt-extra{ border-style:dashed; }
+.tt-bmeta{ font-size:.75rem; }
+.tt-mode{ font-size:.625rem; font-weight:900; text-transform:uppercase; letter-spacing:.06em;
+  background:var(--hue); color:#fff; border-radius:9999px; padding:.05rem .4rem; margin-left:.3rem; }
+.tt-btitle{ font-size:.6875rem; color:var(--ink-soft); flex:1 1 12rem; }
+.tt-acts{ margin-left:auto; display:flex; gap:.3rem; }
+.tt-copy, .tt-gem, .tt-open{ font-size:.625rem; font-weight:800; border:1px solid var(--line-strong);
+  border-radius:.35rem; padding:.2rem .45rem; cursor:pointer; color:var(--ink-soft); white-space:nowrap; }
+.tt-copy:hover, .tt-gem:hover, .tt-open:hover{ background:var(--hue,var(--fac-dark));
+  color:#fff; border-color:transparent; }
+.tt-how{ flex:1 1 100%; font-size:.6875rem; line-height:1.5; color:var(--ink);
+  background:color-mix(in srgb,var(--hue) 12%,transparent);
+  border-left:3px solid var(--hue); border-radius:.3rem; padding:.35rem .5rem; margin-top:.15rem; }
+.tt-del{ position:absolute; top:2px; right:3px; font-size:.75rem; font-weight:900; line-height:1;
+  color:var(--ink-faint); cursor:pointer; opacity:0; transition:opacity .12s; }
+.tt-block:hover .tt-del{ opacity:1; }
+.tt-del:hover{ color:#b91c1c; }
+.tt-slot{ display:block; width:100%; border:1px dashed var(--line-strong); border-radius:.45rem;
+  padding:.3rem; margin-bottom:.3rem; font-size:.75rem; font-weight:800; color:var(--ink-faint);
+  background:transparent; cursor:pointer; }
+.tt-slot:hover{ border-color:var(--fac-dark); color:var(--fac-dark); background:var(--surface-2); }
+.tt-addhr{ display:block; width:100%; margin-top:.3rem; font-size:.625rem; font-weight:800;
+  color:var(--ink-faint); border:1px dashed var(--line-strong); border-radius:.35rem;
+  padding:.3rem; background:transparent; cursor:pointer; }
+.tt-addhr:hover{ border-color:var(--gold); color:var(--gold); background:var(--surface-2); }
+.tt-addsm{ padding:.18rem; font-size:.6875rem; }
+.tt-maddhr{ margin-top:.15rem; padding:0; font-size:.55rem; line-height:1.4; }
+.tt-cap{ font-size:.625rem; font-weight:700; color:var(--ink-faint); margin-top:.45rem; }
+.tt-cap.tt-over{ color:var(--gold); }
+
+/* --- week grid --- */
+.tt-week{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.4rem; }
+@media (max-width:900px){ .tt-week{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+.tt-wday{ border:1px solid var(--line); border-radius:.5rem; padding:.4rem;
+  background:var(--surface-2); min-height:5rem; }
+.tt-wday.tt-today-col{ border-color:var(--fac-dark);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--fac-dark) 25%,transparent); }
+.tt-wdh{ font-size:.6875rem; font-weight:900; text-transform:uppercase; letter-spacing:.05em;
+  color:var(--fac-dark); margin-bottom:.3rem; }
+.tt-wdh span{ display:block; font-size:.625rem; font-weight:600; color:var(--ink-faint); }
+.tt-empty{ font-size:.75rem; color:var(--ink-faint); text-align:center; }
+
+/* --- exams and deadlines, always gold --- */
+.tt-exambar{ display:flex; flex-wrap:wrap; align-items:center; gap:.5rem;
+  background:var(--gold); color:#3b2a06; border-radius:.5rem; padding:.55rem .8rem;
+  margin-bottom:.5rem; font-size:.875rem; font-weight:900;
+  box-shadow:0 2px 10px -4px rgba(0,0,0,.45); }
+.tt-evebar{ display:flex; flex-wrap:wrap; align-items:center; gap:.5rem;
+  background:color-mix(in srgb,var(--gold) 30%,transparent); color:var(--ink);
+  border:1px solid var(--gold); border-radius:.5rem; padding:.45rem .8rem;
+  margin-bottom:.5rem; font-size:.8125rem; font-weight:800; }
+.tt-exampill{ font-size:.5625rem; font-weight:900; letter-spacing:.1em;
+  background:rgba(59,42,6,.2); border-radius:9999px; padding:.15rem .5rem; }
+.tt-evebar .tt-exampill{ background:var(--gold); color:#3b2a06; }
+.tt-examwhen{ margin-left:auto; font-size:.75rem; font-weight:700; opacity:.85; }
+.tt-exam-sm{ padding:.32rem .45rem; font-size:.6875rem; gap:.1rem; margin-bottom:.35rem;
+  flex-direction:column; align-items:flex-start; line-height:1.25; }
+.tt-exam-sm span{ font-size:.5625rem; font-weight:900; opacity:.85; }
+.tt-exam-xs{ display:block; font-size:.5rem; font-weight:900; color:#3b2a06; background:var(--gold);
+  border-radius:.2rem; padding:.1rem .25rem; margin-bottom:.15rem;
+  overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.tt-eve-xs{ display:block; font-size:.5rem; font-weight:800; color:var(--ink);
+  background:color-mix(in srgb,var(--gold) 30%,transparent); border:1px solid var(--gold);
+  border-radius:.2rem; padding:.05rem .25rem; margin-bottom:.15rem;
+  overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+
+/* --- month grid --- */
+.tt-monthwrap{ margin-bottom:1.1rem; }
+.tt-mtitle{ font-size:.8125rem; font-weight:900; color:var(--fac-dark); margin-bottom:.35rem; }
+.tt-months{ display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:1rem; }
+.tt-month{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.25rem; }
+.tt-mh{ font-size:.625rem; font-weight:900; text-transform:uppercase; text-align:center;
+  color:var(--ink-faint); padding-bottom:.2rem; }
+.tt-mcell{ border:1px solid var(--line); border-radius:.4rem; min-height:4.6rem; padding:.25rem;
+  background:var(--surface); position:relative; }
+.tt-mcell.tt-mexamday{ border-color:var(--gold); }
+.tt-mout{ background:transparent; border:0; }
+.tt-mcell.tt-today-cell{ box-shadow:0 0 0 2px var(--fac-dark); }
+.tt-mnum{ font-size:.6875rem; font-weight:800; color:var(--ink-soft); cursor:pointer; }
+.tt-mnum:hover{ text-decoration:underline; }
+.tt-mexam{ font-size:.5rem; font-weight:900; background:var(--gold); color:#3b2a06;
+  padding:.05rem .25rem; border-radius:9999px; float:right; }
+.tt-mnames{ display:flex; flex-direction:column; gap:1px; margin-top:.2rem; }
+.tt-mname{ position:relative; font-size:.5rem; font-weight:800; color:#fff; background:var(--hue);
+  border-radius:.2rem; padding:.05rem .9rem .05rem .25rem;
+  overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.tt-mdel{ position:absolute; top:0; right:.15rem; font-size:.6rem; color:#fff; opacity:.6; }
+.tt-mname:hover .tt-mdel{ opacity:1; }
+.tt-mslot{ font-size:.55rem; font-weight:900; color:var(--ink-faint);
+  border:1px dashed var(--line-strong); border-radius:.2rem; padding:0 .2rem;
+  cursor:pointer; line-height:1.3; }
+.tt-mslot:hover{ border-color:var(--fac-dark); color:var(--fac-dark); }
+
+/* --- full plan matrix --- */
+.tt-scroll{ overflow-x:auto; }
+.tt-table{ width:100%; border-collapse:collapse; font-size:.75rem; }
+.tt-table th, .tt-table td{ border:1px solid var(--line); padding:.3rem .45rem; text-align:center; }
+.tt-table thead th{ background:var(--fac-dark); color:#fff; font-weight:800; }
+.tt-wk{ display:block; font-size:.5625rem; font-weight:600; opacity:.85; }
+.tt-sub{ text-align:left!important; font-weight:800; white-space:nowrap; background:var(--surface-2); }
+.tt-has{ font-weight:800; }
+.tt-none{ color:var(--ink-faint); }
+.tt-exam{ font-weight:800; background:var(--surface-2); white-space:nowrap; }
+.tt-examcell{ background:var(--gold); color:#3b2a06; font-weight:900; font-size:.6875rem; }
+.tt-examtag{ font-size:.5rem; letter-spacing:.08em; background:rgba(59,42,6,.2);
+  border-radius:9999px; padding:.05rem .35rem; }
+
+.tt-build{ font-size:.625rem; color:var(--ink-faint); text-align:center; padding:.6rem 0 0; }
+
+@media print{
+  header, #modetabs, #actionbar, main, .tt-acts, .tt-armbar, .tt-viewbar,
+  .tt-fullswitch, .tt-del, .tt-slot, .tt-addhr, #tt-ics, #tt-print, #tt-regen{ display:none!important; }
+  .panel{ box-shadow:none; border:1px solid #999; }
+}
 
 /* ---- 3. Copy + launch buttons (matches the Study Hub) ---- */
 .btn-copy-prompt{background:#4f46e5;color:#fff;border:1px solid #4338ca;font-weight:800;
@@ -742,7 +996,7 @@ This guard outranks every other instruction in this prompt, including the answer
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 11 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 12 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -776,10 +1030,10 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=11' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=11' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=11' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=11' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=12' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=12' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=12' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=12' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -1312,6 +1566,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=11"></script>
+<script src="timetable.js?v=12"></script>
 </body>
 </html>
