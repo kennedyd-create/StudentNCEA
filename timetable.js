@@ -11,11 +11,17 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 11 — Scholarship added';
+const TT_BUILD = 'build 12 — Scholarship + Level 3 in one plan';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
 const D = () => window.NCEA_DATA[S.level];
+/* A chosen subject is stored as "level::Subject", so a student can mix
+   Level 3 standards and a Scholarship subject in the same timetable. */
+const key   = (lvl, name) => lvl + '::' + name;
+const kLvl  = k => k.split('::')[0];
+const kName = k => k.split('::')[1];
+const kData = k => window.NCEA_DATA[kLvl(k)];
 
 const MAX_SUBJECTS = 6;
 const WEEKDAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -90,8 +96,8 @@ function rehydrate(){
   if(!S.savedPlan || !window.NCEA_DATA || !window.NCEA_DATA[S.level]) return;
   const open = S.savedPlan.map(x => {
     const slot = { date:x.d, index:x.i, item:null, extra: !!x.e };
-    if(x.s && D().subjects[x.s]){
-      const st = D().subjects[x.s].standards.find(y => y.code === x.c);
+    if(x.s && kData(x.s) && kData(x.s).subjects[kName(x.s)]){
+      const st = kData(x.s).subjects[kName(x.s)].standards.find(y => y.code === x.c);
       if(st) slot.item = { subject:x.s, st, mode:x.m, topic:x.t||'' };
     }
     return slot;
@@ -146,19 +152,27 @@ function hueFor(sub){ return HUES[S.subjects.indexOf(sub) % HUES.length]; }
 
 /* ---------- selections ---------- */
 function externalSubjects(){
+  if(!D()) return [];
   return Object.entries(D().subjects)
     .filter(([,s]) => s.standards.some(x => x.mode === 'external'))
     .map(([n]) => n).sort();
 }
-function externalStandards(sub){
-  return D().subjects[sub].standards.filter(x => x.mode === 'external')
+function externalStandards(k){
+  const d = kData(k); if(!d) return [];
+  const sub = d.subjects[kName(k)]; if(!sub) return [];
+  return sub.standards.filter(x => x.mode === 'external')
     .sort((a,b) => a.ref.localeCompare(b.ref, undefined, {numeric:true}));
+}
+// What to show on screen: "Biology" at one level, "Biology (Scholarship)" when mixed.
+function label(k){
+  const mixed = new Set(S.subjects.map(kLvl)).size > 1;
+  return mixed ? kName(k) + ' (' + (kLvl(k)==='S' ? 'Schol' : 'L'+kLvl(k)) + ')' : kName(k);
 }
 function chosenStandards(){
   const out = [];
-  S.subjects.forEach(sub => externalStandards(sub).forEach(st => {
-    if(S.standards[sub] && S.standards[sub].has(st.code))
-      out.push({ subject: sub, st, exam: S.exams[sub] });
+  S.subjects.forEach(k => externalStandards(k).forEach(st => {
+    if(S.standards[k] && S.standards[k].has(st.code))
+      out.push({ subject: k, st, exam: S.exams[k] });
   }));
   return out;
 }
@@ -517,20 +531,20 @@ function examBanner(date, size){
     const when = isPf(sub) ? 'Portfolio submission'
       : ((E().sessions.find(x=>x.id===S.exams[sub].session)||{}).label||'') + ' · ' + time(sub);
     if(size === 'xs') out.push(
-      `<span class="tt-exam-xs" title="${sub} — ${when}">${sub}</span>`);
+      `<span class="tt-exam-xs" title="${label(sub)} — ${when}">${label(sub)}</span>`);
     else if(size === 'sm') out.push(
-      `<div class="tt-exambar tt-exam-sm"><strong>${sub}</strong><span>${word}${isPf(sub)?'':' '+S.exams[sub].session+' '+time(sub)}</span></div>`);
+      `<div class="tt-exambar tt-exam-sm"><strong>${label(sub)}</strong><span>${word}${isPf(sub)?'':' '+S.exams[sub].session+' '+time(sub)}</span></div>`);
     else out.push(
-      `<div class="tt-exambar"><span class="tt-exampill">${word}</span><strong>${sub}</strong>
+      `<div class="tt-exambar"><span class="tt-exampill">${word}</span><strong>${label(sub)}</strong>
         <span class="tt-examwhen">${when}</span></div>`);
   });
 
   // The night before is its own kind of day — same gold, quieter treatment,
   // and it names the subject so the student knows what to be revising.
   eve.filter(sub => !sitting.includes(sub)).forEach(sub => {
-    if(size === 'xs') out.push(`<span class="tt-eve-xs" title="${sub} exam tomorrow">${sub} eve</span>`);
-    else if(size === 'sm') out.push(`<div class="tt-evebar tt-exam-sm"><strong>${sub}</strong><span>EXAM TOMORROW</span></div>`);
-    else out.push(`<div class="tt-evebar"><span class="tt-exampill">TOMORROW</span><strong>${sub}</strong>
+    if(size === 'xs') out.push(`<span class="tt-eve-xs" title="${label(sub)} exam tomorrow">${label(sub)} eve</span>`);
+    else if(size === 'sm') out.push(`<div class="tt-evebar tt-exam-sm"><strong>${label(sub)}</strong><span>EXAM TOMORROW</span></div>`);
+    else out.push(`<div class="tt-evebar"><span class="tt-exampill">TOMORROW</span><strong>${label(sub)}</strong>
       <span class="tt-examwhen">Last chance to revise</span></div>`);
   });
 
@@ -560,13 +574,13 @@ function viewBar(){
       <button class="tt-today">Today</button></div>`
       : `<span class="tt-navlabel">${label}</span>`}
     <div class="tt-legend">${S.subjects.map(s=>
-      `<span class="tt-key"><i style="background:${hueFor(s)}"></i>${s}</span>`).join('')}</div>
+      `<span class="tt-key"><i style="background:${hueFor(s)}"></i>${label(s)}</span>`).join('')}</div>
   </div>`;
 }
 
 function blockHTML(slot, n){
   const it = slot.item;
-  const q = `?level=${S.level}&subject=${encodeURIComponent(it.subject)}&std=${it.st.code}&mode=${it.mode}` +
+  const q = `?level=${kLvl(it.subject)}&subject=${encodeURIComponent(kName(it.subject))}&std=${it.st.code}&mode=${it.mode}` +
             (it.topic ? `&topic=${encodeURIComponent(it.topic)}` : '');
   /* In Mix, alternate deterministically so the same block always shows the
      same thing — about half AI, half off-screen, for variety rather than a
@@ -587,7 +601,7 @@ function blockHTML(slot, n){
 
   return `<div class="tt-block${showsMethod?' tt-offline':''}${slot.extra?' tt-extra':''}" style="--hue:${hueFor(it.subject)}">
     <button class="tt-del" data-slot="${n}" title="Clear this block">&times;</button>
-    <div class="tt-bmeta"><strong>${it.subject}</strong> · AS${it.st.code}
+    <div class="tt-bmeta"><strong>${label(it.subject)}</strong> · ${it.st.credits?'AS':''}${it.st.code}
       <span class="tt-mode">${modeLabel(it.mode)}</span></div>
     <div class="tt-btitle">${it.topic ? it.topic : it.st.title}</div>
     ${actions}</div>`;
@@ -595,7 +609,7 @@ function blockHTML(slot, n){
 
 /* An unused slot is a place the student can drop a subject into. */
 function emptyHTML(n){
-  return `<button class="tt-slot" data-empty="${n}" title="${S.armed ? 'Place ' + S.armed + ' here' : 'Pick a subject above first'}">+</button>`;
+  return `<button class="tt-slot" data-empty="${n}" title="${S.armed ? 'Place ' + label(S.armed) + ' here' : 'Pick a subject above first'}">+</button>`;
 }
 
 function dayView(){
@@ -606,7 +620,7 @@ function dayView(){
     ${b.length ? b.map(x => x.s.item ? blockHTML(x.s, x.n) : emptyHTML(x.n)).join('')
       : `<p class="text-sm soft mb-2">Nothing planned for this day.</p>`}
     ${dayCapacity(d)}
-    <button class="tt-addhr" data-date="${d}">${S.armed ? '+ Add ' + S.armed + ' here' : '+ Add another hour'}</button>
+    <button class="tt-addhr" data-date="${d}">${S.armed ? '+ Add ' + label(S.armed) + ' here' : '+ Add another hour'}</button>
   </div>`;
 }
 
@@ -619,7 +633,7 @@ function weekView(){
       <div class="tt-wdh">${w}<span>${pretty(d,{day:'numeric',month:'short'})}</span></div>
       ${examBanner(d,'sm')}
       ${b.length ? b.map(x => x.s.item ? blockHTML(x.s, x.n) : emptyHTML(x.n)).join('') : `<p class="tt-empty">&mdash;</p>`}
-      <button class="tt-addhr tt-addsm" data-date="${d}" title="${S.armed ? 'Add '+S.armed+' to this day' : 'Add another hour to this day'}">+</button>
+      <button class="tt-addhr tt-addsm" data-date="${d}" title="${S.armed ? 'Add '+label(S.armed)+' to this day' : 'Add another hour to this day'}">+</button>
     </div>`;
   }).join('')}</div>`;
 }
@@ -639,15 +653,15 @@ function monthView(anchor){
       const ex = examsOn(c);
       const rows = S.plan ? S.plan.open.map((x,n)=>({x,n})).filter(o => o.x.date === c) : [];
       const chips = rows.map(o => o.x.item
-        ? `<span class="tt-mname" style="--hue:${hueFor(o.x.item.subject)}" title="${o.x.item.subject} — AS${o.x.item.st.code}">
-             ${o.x.item.subject}<button class="tt-del tt-mdel" data-slot="${o.n}" title="Clear">&times;</button></span>`
-        : `<button class="tt-mslot" data-empty="${o.n}" title="${S.armed?'Place '+S.armed+' here':'Pick a subject above first'}">+</button>`
+        ? `<span class="tt-mname" style="--hue:${hueFor(o.x.item.subject)}" title="${label(o.x.item.subject)} — ${o.x.item.st.code}">
+             ${label(o.x.item.subject)}<button class="tt-del tt-mdel" data-slot="${o.n}" title="Clear">&times;</button></span>`
+        : `<button class="tt-mslot" data-empty="${o.n}" title="${S.armed?'Place '+label(S.armed)+' here':'Pick a subject above first'}">+</button>`
       ).join('');
       return `<div class="tt-mcell${c===todayISO()?' tt-today-cell':''}${ex.length?' tt-mexamday':''}">
         <span class="tt-mnum" data-goto="${c}" title="Open this day">${+c.slice(8)}</span>
         ${examBanner(c,'xs')}
         <div class="tt-mnames">${chips}</div>
-        <button class="tt-addhr tt-maddhr" data-date="${c}" title="${S.armed ? 'Add '+S.armed : 'Add another hour'}">+</button>
+        <button class="tt-addhr tt-maddhr" data-date="${c}" title="${S.armed ? 'Add '+label(S.armed) : 'Add another hour'}">+</button>
       </div>`;
     }).join('')}
     </div></div>`;
@@ -661,7 +675,7 @@ function subjectMatrix(){
     list.map((w,i)=>`<th>W${i+1}<span class="tt-wk">${pretty(w,{day:'numeric',month:'short'})}</span></th>`).join('') +
     `<th>Exam</th></tr></thead><tbody>`;
   S.subjects.forEach(sub=>{
-    t += `<tr><td class="tt-sub"><i class="tt-dot" style="background:${hueFor(sub)}"></i>${sub}</td>`;
+    t += `<tr><td class="tt-sub"><i class="tt-dot" style="background:${hueFor(sub)}"></i>${label(sub)}</td>`;
     const exDate = S.exams[sub] && S.exams[sub].date;
     list.forEach(w=>{
       const n = weeks[w].filter(s => s.item && s.item.subject === sub).length;
@@ -720,9 +734,9 @@ function renderPlan(){
     </div>
     ${viewBar()}
     ${`<div class="tt-armbar">
-      <span class="tt-armlabel">${S.armed ? 'Click a + to place ' + S.armed : 'Add a block:'}</span>
+      <span class="tt-armlabel">${S.armed ? 'Click a + to place ' + label(S.armed) : 'Add a block:'}</span>
       ${S.subjects.map(sub=>`<button class="tt-arm" data-s="${sub}" aria-pressed="${S.armed===sub}"
-        style="--hue:${hueFor(sub)}">${sub}</button>`).join('')}
+        style="--hue:${hueFor(sub)}">${label(sub)}</button>`).join('')}
       ${S.armed?`<button class="tt-arm tt-armoff">Cancel</button>`:''}
     </div>`}
     ${body}
@@ -739,10 +753,10 @@ function toICS(){
     if(!s.item) return;
     const it = s.item, h = Math.min(21, 16 + s.index);
     const url = location.origin + location.pathname +
-      `?level=${S.level}&subject=${encodeURIComponent(it.subject)}&std=${it.st.code}&mode=${it.mode}`;
+      `?level=${kLvl(it.subject)}&subject=${encodeURIComponent(kName(it.subject))}&std=${it.st.code}&mode=${it.mode}`;
     out.push('BEGIN:VEVENT', `UID:whs-${s.date}-${n}@ncea`,
       `DTSTART:${at(s.date,h)}`, `DTEND:${at(s.date,h+1)}`,
-      `SUMMARY:${it.subject} — AS${it.st.code} (${modeLabel(it.mode)})`,
+      `SUMMARY:${label(it.subject)} — ${it.st.code} (${modeLabel(it.mode)})`,
       `DESCRIPTION:${it.st.title}\\n\\nOpen your prompt: ${url}`, `URL:${url}`, 'END:VEVENT');
   });
   return out.concat('END:VCALENDAR').join('\r\n');
@@ -765,7 +779,7 @@ function printPlan(){
       @page{ margin:12mm; }
     </style></head><body>
     <h1 style="font-size:17px;font-weight:800;margin-bottom:2px">NCEA study plan</h1>
-    <p style="font-size:11px;color:#555;margin-bottom:12px">${S.subjects.join(' · ')}</p>
+    <p style="font-size:11px;color:#555;margin-bottom:12px">${S.subjects.map(label).join(' · ')}</p>
     ${node.innerHTML}
     </body></html>`);
   w.document.close();
@@ -828,7 +842,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=11';
+    t.src = src + '?v=12';
     t.onload = done;
     t.onerror = fail;
     document.head.appendChild(t);
@@ -863,10 +877,10 @@ function stepSubjects(){
         style="--fac-dark:${f.dark};--fac-light:${f.light}">${f.name}</button>`).join('')}</div>
     ${S.faculty!=null ? `<div class="flex flex-wrap gap-2 mb-3">${
       facs[S.faculty].subjects.filter(n=>all.includes(n)).map(n=>
-      `<button class="subj-pill tt-pick" data-n="${n}" aria-pressed="${S.subjects.includes(n)}"
+      `<button class="subj-pill tt-pick" data-n="${n}" aria-pressed="${S.subjects.includes(key(S.level,n))}"
         style="--fac-dark:${facs[S.faculty].dark};--fac-light:${facs[S.faculty].light}">${n}</button>`).join('')}</div>` : ''}
     <div class="tt-basket">${S.subjects.length
-      ? S.subjects.map(n=>`<span class="tt-chip" style="background:${hueFor(n)}">${n}<button class="tt-x" data-n="${n}">&times;</button></span>`).join('')
+      ? S.subjects.map(n=>`<span class="tt-chip" style="background:${hueFor(n)}">${label(n)}<button class="tt-x" data-n="${n}">&times;</button></span>`).join('')
         + `<span class="text-xs soft ml-2">${S.subjects.length} of ${MAX_SUBJECTS}</span>`
       : `<span class="text-xs soft">Nothing chosen yet.</span>`}</div>
   </div>`;
@@ -878,7 +892,7 @@ function stepStandards(){
     <h3 class="sec-h mb-1">Which standards are you sitting?</h3>
     <p class="text-xs soft mb-3">All ticked to start with. Untick anything you are not doing.</p>
     ${S.subjects.map(sub=>`<div class="tt-stdgroup">
-      <p class="tt-stdsub" style="color:${hueFor(sub)}">${sub}</p>
+      <p class="tt-stdsub" style="color:${hueFor(sub)}">${label(sub)}</p>
       ${externalStandards(sub).map(st=>`<label class="tt-check">
         <input type="checkbox" data-sub="${sub}" data-code="${st.code}"
           ${S.standards[sub]&&S.standards[sub].has(st.code)?'checked':''}>
@@ -898,13 +912,13 @@ function stepExams(){
       // A portfolio subject has no sat examination — the school sets a
       // submission date, so any weekday is valid and there is no session.
       if(ex.portfolio) return `<div class="tt-examrow">
-        <span class="tt-examsub"><i class="tt-dot" style="background:${hueFor(sub)}"></i>${sub}</span>
+        <span class="tt-examsub"><i class="tt-dot" style="background:${hueFor(sub)}"></i>${label(sub)}</span>
         <input type="date" class="field tt-date" data-sub="${sub}" value="${ex.date||''}">
         <span class="tt-pfolio">Portfolio — enter your submission date</span>
         <span class="tt-warn">${ex.date?'':'No date yet.'}</span></div>`;
       const prob = ex.date ? E().checkDate(ex.date) : 'No date yet.';
       return `<div class="tt-examrow">
-        <span class="tt-examsub"><i class="tt-dot" style="background:${hueFor(sub)}"></i>${sub}</span>
+        <span class="tt-examsub"><i class="tt-dot" style="background:${hueFor(sub)}"></i>${label(sub)}</span>
         <input type="date" class="field tt-date" data-sub="${sub}" value="${ex.date||''}"
           min="${E().window.start}" max="${E().window.end}">
         <select class="field tt-sess" data-sub="${sub}">${E().sessions.map(s=>
@@ -925,7 +939,7 @@ function examConfirmBox(){
   };
   const bad = S.subjects.filter(s => !ok(s));
   if(bad.length) return `<div class="tt-confirm tt-confirm-bad">
-    Still to sort: ${bad.join(', ')}. Every subject needs a date inside the exam period.</div>`;
+    Still to sort: ${bad.map(label).join(', ')}. Every subject needs a date inside the exam period.</div>`;
   if(S.examsConfirmed) return `<div class="tt-confirm tt-confirm-ok">
     <span>Dates confirmed.</span>
     <button id="tt-unconfirm" class="tt-linkbtn">Change them</button></div>`;
@@ -935,7 +949,7 @@ function examConfirmBox(){
       const ex = S.exams[sub];
       const sess = E().sessions.find(x => x.id === ex.session) || {};
       return `<li><i class="tt-dot" style="background:${hueFor(sub)}"></i>
-        <strong>${sub}</strong> — ${pretty(ex.date,{weekday:'long', day:'numeric', month:'long'})}${
+        <strong>${label(sub)}</strong> — ${pretty(ex.date,{weekday:'long', day:'numeric', month:'long'})}${
         ex.portfolio ? ' — portfolio submission' : ', ' + (sess.label||'') + ' ' + (sess.start||'')}</li>`;
     }).join('')}</ul>
     <button id="tt-confirm" class="btn-go">These dates and times are right</button>
@@ -1039,23 +1053,26 @@ function wire(){
   const q = (s,fn) => R().querySelectorAll(s).forEach(fn);
   const one = s => R().querySelector(s);
 
-  q('.tt-lvl', b => b.onclick = () => {
-    S.level = b.dataset.l; S.faculty=null; S.subjects=[]; S.standards={}; S.exams={}; S.plan=null; render();
-  });
+  // Switching level only changes what you are BROWSING — chosen subjects stay,
+  // so a Level 3 student can add a Scholarship subject to the same plan.
+  q('.tt-lvl', b => b.onclick = () => { S.level = b.dataset.l; S.faculty = null; render(); });
   q('.tt-fac', b => b.onclick = () => { S.faculty = +b.dataset.i; render(); });
   q('.tt-pick', b => b.onclick = () => {
-    const n = b.dataset.n;
-    if(S.subjects.includes(n)) S.subjects = S.subjects.filter(x=>x!==n);
+    const k = key(S.level, b.dataset.n);
+    if(S.subjects.includes(k)) S.subjects = S.subjects.filter(x=>x!==k);
     else if(S.subjects.length < MAX_SUBJECTS){
-      S.subjects.push(n);
-      S.standards[n] = new Set(externalStandards(n).map(x=>x.code));
-      const d = E().dateFor(S.level, n);
-      S.exams[n] = d ? { date:d.date||'', session:d.session||'AM', portfolio:!!d.portfolio }
+      S.subjects.push(k);
+      S.standards[k] = new Set(externalStandards(k).map(x=>x.code));
+      const d = E().dateFor(S.level, b.dataset.n);
+      S.exams[k] = d ? { date:d.date||'', session:d.session||'AM', portfolio:!!d.portfolio }
                      : { date:'', session:'AM' };
     }
     S.examsConfirmed = false; S.plan = null; render();
   });
-  q('.tt-x', b => b.onclick = () => { S.subjects = S.subjects.filter(x=>x!==b.dataset.n); S.examsConfirmed=false; S.plan=null; render(); });
+  q('.tt-x', b => b.onclick = () => {
+    S.subjects = S.subjects.filter(x=>x!==b.dataset.n);
+    S.examsConfirmed=false; S.plan=null; render();
+  });
   q('.tt-check input', el => el.onchange = () => {
     const s = S.standards[el.dataset.sub];
     el.checked ? s.add(el.dataset.code) : s.delete(el.dataset.code);
@@ -1168,7 +1185,8 @@ function wire(){
   q('.tt-slot', b => b.onclick = () => placeInto(+b.dataset.empty));
 
   q('.tt-gem', b => b.onclick = async () => {
-    const text = window.composePrompt({ level:S.level, subject:decodeURIComponent(b.dataset.sub),
+    const k = decodeURIComponent(b.dataset.sub);
+    const text = window.composePrompt({ level:kLvl(k), subject:kName(k),
       code:b.dataset.code, mode:b.dataset.mode, topic:decodeURIComponent(b.dataset.topic||'') });
     let ok = true;
     try { await navigator.clipboard.writeText(text); }
