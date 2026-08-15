@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 23 — all sitting modes complete';
+const TT_BUILD = 'build 24 — digital exam / paper exam wording';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -619,7 +619,7 @@ function sittingOf(k){
 function sittingChip(k, size){
   const v = sittingOf(k);
   if(!v) return '';
-  const txt = v === 'digital' ? 'On screen' : v === 'performance' ? 'Recorded' : 'On paper';
+  const txt = v === 'digital' ? 'Digital exam' : v === 'performance' ? 'Recorded performance' : 'Paper exam';
   return `<span class="tt-sit tt-sit-${v}${size==='sm'?' tt-sit-sm':''}">${txt}</span>`;
 }
 
@@ -891,7 +891,7 @@ function printPlan(scope){
            <td colspan="3"><strong>EXAM — ${label(sub)}</strong>
            ${(E().sessions.find(x=>x.id===S.exams[sub].session)||{}).label||''}
            ${(E().sessions.find(x=>x.id===S.exams[sub].session)||{}).start||''}
-           ${sittingOf(sub) ? '&nbsp;·&nbsp;' + ({digital:'ON SCREEN',paper:'ON PAPER',performance:'RECORDED PERFORMANCE'}[sittingOf(sub)]||'') : ''}</td></tr>`));
+           ${sittingOf(sub) ? '&nbsp;·&nbsp;' + ({digital:'DIGITAL EXAM',paper:'PAPER EXAM',performance:'RECORDED PERFORMANCE'}[sittingOf(sub)]||'') : ''}</td></tr>`));
       blocks.forEach(slot => {
         const it = slot.item;
         lines.push(`<tr>
@@ -1129,7 +1129,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=23';
+    t.src = src + '?v=24';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
@@ -1222,7 +1222,7 @@ function stepExams(){
     <h3 class="sec-h mb-1">Exam dates</h3>
     <p class="text-xs soft mb-3">Pre-filled from the ${E().year} timetable. Check yours on
       <a href="${E().timetableUrl}" target="_blank" rel="noopener" class="underline">NZQA</a>.
-      <strong>On screen</strong> or <strong>on paper</strong> shows how you will sit each one —
+      <strong>Digital exam</strong> or <strong>paper exam</strong> shows how you will sit each one —
       Waiheke enters students digitally wherever NZQA offers it. Ask your teacher if you would prefer paper.</p>
     ${S.subjects.map(sub=>{
       const ex = S.exams[sub]||{};
