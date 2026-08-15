@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 14 — plan renders';
+const TT_BUILD = 'build 17 — period styling';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -821,49 +821,93 @@ window.Timetable = { open: render, state: S, generate, realism, toICS, reset: wi
    ============================================================ */
 let ttLoading = null;      // level id currently being fetched
 
+/* Fetch each required file in turn and report which ones are actually
+   reachable. This turns "it doesn't work" into a specific missing file. */
+function diagnose(box){
+  if(!box) return;
+  if(typeof fetch !== 'function'){ box.innerHTML = ''; return; }
+  const files = ['ncea-exams-2026.js','ncea-l1.js','ncea-l2.js','ncea-l3.js','ncea-scholarship.js','timetable.js'];
+  box.innerHTML = 'Checking which files are on your site…';
+  Promise.all(files.map(f =>
+    fetch(f, { method:'GET', cache:'no-store' })
+      .then(r => ({ f, ok:r.ok, code:r.status }))
+      .catch(() => ({ f, ok:false, code:'no response' }))
+  )).then(rows => {
+    box.innerHTML = '<strong>Files on your site:</strong><br>' + rows.map(r =>
+      `${r.ok ? '\u2713' : '\u2717'} ${r.f}${r.ok ? '' : ' — ' + r.code + (r.code===404?' (MISSING — upload this file)':'')}`
+    ).join('<br>');
+  }).catch(() => { box.innerHTML = ''; });
+}
+
 function render(){
   const root = R();
   if(!root) return;
 
   if(!window.NCEA_DATA || !window.NCEA_DATA[S.level]){
-    root.innerHTML = `<div class="panel p-5"><p class="text-sm">Loading Level ${S.level}…</p></div>`;
-    if(ttLoading === S.level) return;          // already on its way
+    root.innerHTML = `<div class="panel p-5"><p class="text-sm">Loading ${S.level==='S'?'Scholarship':'Level '+S.level}…</p></div>`;
+    if(ttLoading === S.level) return;            // already on its way
     ttLoading = S.level;
 
     const src = S.level === 'S' ? 'ncea-scholarship.js' : 'ncea-l' + S.level + '.js';
-    // The engine may already have injected this file. Adding it a second time
-    // does nothing useful — the data file guards itself — so reuse the
-    // existing tag and wait for it rather than loading a duplicate.
-    const existing = [...document.querySelectorAll('script')]
-      .find(x => x.src && x.src.indexOf(src) !== -1);
 
-    const done = () => {
+    const ok   = () => { ttLoading = null; render(); };
+    const fail = why => {
       ttLoading = null;
-      if(window.NCEA_DATA && window.NCEA_DATA[S.level]) render();
-      else fail();
-    };
-    const fail = () => {
-      ttLoading = null;
-      root.innerHTML = `<div class="panel p-5">
-        <p class="text-sm"><strong>Could not load ${src}.</strong></p>
-        <p class="text-xs soft mt-2">It needs to sit in the same folder as this page.
-        If you have just uploaded new files, refresh with Ctrl+Shift+R (Cmd+Shift+R on a Mac).</p></div>`;
+      const url = new URL(src, location.href).href;
+      root.innerHTML = stepLevel() + `<div class="panel p-5">
+        <p class="text-sm"><strong>The timetable cannot load its data.</strong></p>
+        <p class="text-xs soft mt-2">${why}</p>
+        <p class="text-xs soft mt-2">It tried to fetch:<br><code style="font-size:11px">${url}</code></p>
+        <p class="text-xs soft mt-2">Open that address in a new tab. If it shows
+        <em>404</em> or <em>File not found</em>, that file is missing from your site —
+        upload it into the same folder as this page.</p>
+        <div id="tt-diag" class="text-xs soft mt-3"></div>
+        <button id="tt-recheck" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold mt-3">Check again</button>
+      </div>`;
+      // keep the level pills live so the student can go back to a level that works
+      root.querySelectorAll('.tt-lvl').forEach(b => b.onclick = () => {
+        S.level = b.dataset.l; S.faculty = null; ttLoading = null; render();
+      });
+      const rc = root.querySelector('#tt-recheck');
+      if(rc) rc.onclick = () => { ttLoading = null; render(); };
+      diagnose(root.querySelector('#tt-diag'));
     };
 
-    if(existing){
-      // it may already have finished, in which case the data is there now
-      if(window.NCEA_DATA && window.NCEA_DATA[S.level]){ ttLoading = null; render(); return; }
-      existing.addEventListener('load', done);
-      existing.addEventListener('error', fail);
-      // a tag that loaded before we started listening would never fire again
-      setTimeout(() => { if(ttLoading === S.level) done(); }, 1500);
+    // Whatever happens, never sit on "Loading…" indefinitely.
+    const giveUp = setTimeout(() => {
+      if(ttLoading !== S.level) return;
+      if(window.NCEA_DATA && window.NCEA_DATA[S.level]) ok();
+      else fail('The file did not respond within a few seconds.');
+    }, 6000);
+
+    const finish = good => {
+      clearTimeout(giveUp);
+      if(ttLoading !== S.level) return;
+      if(good && window.NCEA_DATA && window.NCEA_DATA[S.level]) ok();
+      else fail(good ? 'The file loaded but contained no data for this level.'
+                     : 'The file could not be fetched.');
+    };
+
+    // Prefer the engine's loader — the prompt builder already uses it, and it
+    // handles a file that has been requested once already.
+    if(typeof window.nceaLoadLevel === 'function' && S.level !== 'S'){
+      window.nceaLoadLevel(S.level).then(() => finish(true)).catch(() => finish(false));
       return;
     }
 
+    const already = [...document.querySelectorAll('script')]
+      .find(x => x.src && x.src.indexOf(src) !== -1);
+    if(already){
+      if(window.NCEA_DATA && window.NCEA_DATA[S.level]){ finish(true); return; }
+      already.addEventListener('load', () => finish(true));
+      already.addEventListener('error', () => finish(false));
+      return;                                   // giveUp covers the silent case
+    }
+
     const t = document.createElement('script');
-    t.src = src + '?v=14';
-    t.onload = done;
-    t.onerror = fail;
+    t.src = src + '?v=17';
+    t.onload  = () => finish(true);
+    t.onerror = () => finish(false);
     document.head.appendChild(t);
     return;
   }
@@ -988,11 +1032,11 @@ function stepPeriods(){
         <input type="date" class="field tt-pd" data-i="${i}" data-k="start" value="${p.start}">
         <span class="soft text-xs">to</span>
         <input type="date" class="field tt-pd" data-i="${i}" data-k="end" value="${p.end}">
-        <span class="text-xs soft ml-auto">${p.hours.reduce((a,b)=>a+b,0)} h/week</span>
+        <span class="tt-phrs">${p.hours.reduce((a,b)=>a+b,0)} h/week</span>
         <button class="tt-prem" data-i="${i}" title="Remove this period">&times;</button>
       </div>
       <div class="tt-hours">${WEEKDAYS.map((w,d)=>`<label class="tt-hour"><span>${w}</span>
-        <input type="number" min="0" max="10" class="field tt-ph" data-i="${i}" data-d="${d}" value="${p.hours[d]}"></label>`).join('')}</div>
+        <input type="number" min="0" max="10" class="tt-ph${p.hours[d]?'':' tt-zero'}" data-i="${i}" data-d="${d}" value="${p.hours[d]}"></label>`).join('')}</div>
     </div>`).join('')}
     <button id="tt-addp" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold mt-2">+ Add a period</button>
     <div class="mt-3">
