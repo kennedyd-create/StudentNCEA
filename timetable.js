@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 24 — digital exam / paper exam wording';
+const TT_BUILD = 'build 25 — briefing shows exam mode';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -1129,7 +1129,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=24';
+    t.src = src + '?v=25';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);

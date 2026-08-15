@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=24"></script>
+<script src="ncea-exams-2026.js?v=25"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -1107,7 +1107,7 @@ This guard outranks every other instruction in this prompt, including the answer
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 24 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 25 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -1143,10 +1143,10 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=24' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=24' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=24' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=24' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=25' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=25' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=25' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=25' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -1394,7 +1394,7 @@ function pickStd(code){
       </div>
       <div class="brief-row brief-alt">
         <p class="brief-h">What the assessment looks like</p>
-        <p class="brief-body">${sel.std.format}</p>
+        <p class="brief-body">${sel.std.format}${sittingNote()}</p>
       </div>
       <div class="brief-row">
         <p class="brief-h">What counts as evidence</p>
@@ -1467,6 +1467,18 @@ function setStep(n, collapsed, tag, text){
     crumb.classList.add('hidden');
     pick.classList.remove('hidden');
   }
+}
+
+/* Whether it is a digital or paper exam is a school-level fact, so it is
+   stated separately from NZQA's own description of the assessment. */
+function sittingNote(){
+  if(!sel.std || sel.std.mode !== 'external') return '';
+  const E = window.NCEA_EXAMS;
+  const v = E && E.sittingFor ? E.sittingFor(sel.level, sel.subject) : null;
+  if(!v) return '';
+  const words = { digital:'a DIGITAL EXAM', paper:'a PAPER EXAM',
+                  performance:'a RECORDED PERFORMANCE' }[v];
+  return ` <strong>At Waiheke this is ${words}.</strong>`;
 }
 
 function showBrief(open){
@@ -1738,6 +1750,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=24"></script>
+<script src="timetable.js?v=25"></script>
 </body>
 </html>
