@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 17 — period styling';
+const TT_BUILD = 'build 19 — clearer startup message';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -447,6 +447,46 @@ function methodFor(item, slotIndex){
   return pool[pick];
 }
 
+/* Most students open a planner wanting one answer: what now. */
+function nextBlock(){
+  if(!S.plan) return null;
+  const now = todayISO();
+  return S.plan.open.find(x => x.item && x.date >= now) || null;
+}
+
+/* ---------- exam clashes ----------
+   The dates are known, so tell the student before they build a plan that
+   two of their exams share a day or a session. ------------------------- */
+function clashes(){
+  const byDay = {};
+  S.subjects.forEach(k => {
+    const e = S.exams[k];
+    if(!e || !e.date || e.portfolio) return;
+    (byDay[e.date] = byDay[e.date] || []).push({ k, session: e.session });
+  });
+  const out = [];
+  Object.entries(byDay).forEach(([date, list]) => {
+    if(list.length < 2) return;
+    const same = list.filter(x => x.session === 'AM').length > 1 ||
+                 list.filter(x => x.session === 'PM').length > 1;
+    out.push({ date, list, same });
+  });
+  return out.sort((a,b) => a.date.localeCompare(b.date));
+}
+
+function clashNotes(){
+  const c = clashes();
+  if(!c.length) return '';
+  return c.map(x => {
+    const names = x.list.map(i => label(i.k) + ' ' + i.session).join(' and ');
+    return `<div class="tt-note ${x.same ? 'bad' : 'warn'}">
+      <strong>${pretty(x.date, {weekday:'long', day:'numeric', month:'long'})}:</strong>
+      ${names}. ${x.same
+        ? 'Two exams in the same session is not possible — check your dates, and talk to your school if it is right.'
+        : 'Two exams in one day. Your plan front-loads both, but that is a heavy day — make sure you are rested.'}</div>`;
+  }).join('');
+}
+
 /* ---------- realism ---------- */
 function realism(){
   const end = lastExamDate();
@@ -746,6 +786,8 @@ function renderPlan(){
           `<button class="tt-hm" data-h="${k}" aria-pressed="${S.howMode===k}">${l}</button>`).join('')}
       </div>
       <div class="tt-ph-side tt-ph-right">
+        ${nextBlock() ? `<button id="tt-now" class="tt-nowbtn" title="Jump to your next study block">What now?</button>` : ''}
+        <button id="tt-share" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Share plan</button>
         <button id="tt-ics" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Add to calendar</button>
         <button id="tt-print" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Print this view</button>
         <button id="tt-regen" class="btn-go px-3 py-1.5 text-[11px]">Regenerate</button>
@@ -812,9 +854,65 @@ function download(name,text,type){
 }
 
 load();
+// A ?plan= link beats whatever is saved locally — the student clicked it on purpose.
+try {
+  const code = new URLSearchParams(location.search).get('plan');
+  if(code && planFromCode(code)) S.sharedPlan = true;
+} catch(e){}
 S.cursor = S.cursor || todayISO();
 
-window.Timetable = { open: render, state: S, generate, realism, toICS, reset: wipe };
+/* ---------- the plan as a link ----------
+   Everything needed to rebuild the setup travels in the URL, so a student can
+   send their plan to a parent, or move it between phone and laptop. The
+   generated blocks are not included — they rebuild from the same inputs. */
+function planToCode(){
+  const payload = {
+    v:1, l:S.level, s:S.subjects,
+    d:Object.fromEntries(Object.entries(S.standards).map(([k,v]) => [k,[...v]])),
+    e:S.exams, p:S.periods, b:S.blackouts, t:S.withTopics, h:S.howMode
+  };
+  try {
+    return btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
+      .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  } catch(e){ return ''; }
+}
+
+function planFromCode(code){
+  try {
+    const json = decodeURIComponent(escape(
+      atob(code.replace(/-/g,'+').replace(/_/g,'/'))));
+    const o = JSON.parse(json);
+    if(!o || o.v !== 1) return false;
+    S.level = o.l || '3';
+    S.subjects = o.s || [];
+    S.standards = {};
+    Object.entries(o.d || {}).forEach(([k,v]) => S.standards[k] = new Set(v));
+    S.exams = o.e || {};
+    if(o.p) S.periods = o.p;
+    S.blackouts = o.b || [];
+    S.withTopics = o.t !== false;
+    S.howMode = o.h || 'ai';
+    S.examsConfirmed = false;      // the recipient confirms the dates themselves
+    S.plan = null; S.savedPlan = null;
+    return true;
+  } catch(e){ return false; }
+}
+
+async function copyPlanLink(btn){
+  const code = planToCode();
+  if(!code) return;
+  const url = location.origin + location.pathname + '?plan=' + code;
+  try { await navigator.clipboard.writeText(url); }
+  catch(e){ window.prompt('Copy this link:', url); return; }
+  const o = btn.textContent; btn.textContent = 'Link copied \u2713';
+  setTimeout(()=>btn.textContent = o, 1800);
+}
+
+/* Levels referenced by a shared plan must be loaded before it can render. */
+function levelsNeeded(){ return [...new Set(S.subjects.map(kLvl))]; }
+
+window.Timetable = { open: render, state: S, generate, realism, toICS, reset: wipe,
+                     fromCode: planFromCode };
 
 /* ============================================================
    UI
@@ -843,12 +941,17 @@ function render(){
   const root = R();
   if(!root) return;
 
-  if(!window.NCEA_DATA || !window.NCEA_DATA[S.level]){
-    root.innerHTML = `<div class="panel p-5"><p class="text-sm">Loading ${S.level==='S'?'Scholarship':'Level '+S.level}…</p></div>`;
-    if(ttLoading === S.level) return;            // already on its way
-    ttLoading = S.level;
+  // A shared plan can span levels, so load whichever is missing first —
+  // the level being browsed, or one referenced by the chosen subjects.
+  const need = [S.level].concat(levelsNeeded())
+    .find(l => !(window.NCEA_DATA && window.NCEA_DATA[l]));
+  if(need){
+    const wanted = need;
+    root.innerHTML = `<div class="panel p-5"><p class="text-sm">Loading ${wanted==='S'?'Scholarship':'Level '+wanted}…</p></div>`;
+    if(ttLoading === wanted) return;            // already on its way
+    ttLoading = wanted;
 
-    const src = S.level === 'S' ? 'ncea-scholarship.js' : 'ncea-l' + S.level + '.js';
+    const src = wanted === 'S' ? 'ncea-scholarship.js' : 'ncea-l' + wanted + '.js';
 
     const ok   = () => { ttLoading = null; render(); };
     const fail = why => {
@@ -875,37 +978,37 @@ function render(){
 
     // Whatever happens, never sit on "Loading…" indefinitely.
     const giveUp = setTimeout(() => {
-      if(ttLoading !== S.level) return;
-      if(window.NCEA_DATA && window.NCEA_DATA[S.level]) ok();
+      if(ttLoading !== wanted) return;
+      if(window.NCEA_DATA && window.NCEA_DATA[wanted]) ok();
       else fail('The file did not respond within a few seconds.');
     }, 6000);
 
     const finish = good => {
       clearTimeout(giveUp);
-      if(ttLoading !== S.level) return;
-      if(good && window.NCEA_DATA && window.NCEA_DATA[S.level]) ok();
+      if(ttLoading !== wanted) return;
+      if(good && window.NCEA_DATA && window.NCEA_DATA[wanted]) ok();
       else fail(good ? 'The file loaded but contained no data for this level.'
                      : 'The file could not be fetched.');
     };
 
     // Prefer the engine's loader — the prompt builder already uses it, and it
     // handles a file that has been requested once already.
-    if(typeof window.nceaLoadLevel === 'function' && S.level !== 'S'){
-      window.nceaLoadLevel(S.level).then(() => finish(true)).catch(() => finish(false));
+    if(typeof window.nceaLoadLevel === 'function' && wanted !== 'S'){
+      window.nceaLoadLevel(wanted).then(() => finish(true)).catch(() => finish(false));
       return;
     }
 
     const already = [...document.querySelectorAll('script')]
       .find(x => x.src && x.src.indexOf(src) !== -1);
     if(already){
-      if(window.NCEA_DATA && window.NCEA_DATA[S.level]){ finish(true); return; }
+      if(window.NCEA_DATA && window.NCEA_DATA[wanted]){ finish(true); return; }
       already.addEventListener('load', () => finish(true));
       already.addEventListener('error', () => finish(false));
       return;                                   // giveUp covers the silent case
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=17';
+    t.src = src + '?v=19';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
@@ -913,11 +1016,22 @@ function render(){
   }
 
   if(S.savedPlan) rehydrate();
-  root.innerHTML = stepLevel() + stepSubjects() + stepStandards() + stepExams() +
+  root.innerHTML = intro() + stepLevel() + stepSubjects() + stepStandards() + stepExams() +
                    stepPeriods() + stepGo() + (S.plan ? renderPlan() : '') +
                    `<p class="tt-build">${TT_BUILD}</p>`;
   wire();
   save();
+}
+
+/* Shown until a plan exists, so a first-time student knows what this is. */
+function intro(){
+  if(S.plan) return '';
+  return `<div class="tt-intro">
+    <p class="tt-intro-h">Build a revision timetable that works backwards from your exams.</p>
+    <p class="tt-intro-b">Pick your subjects and standards, check your exam dates, say when you can study —
+      then it schedules the lot: spaced out, weighted by credits, and heaviest just before each exam.
+      Takes about two minutes, and it saves on this device so you can come back to it.</p>
+  </div>`;
 }
 
 function stepLevel(){
@@ -929,7 +1043,16 @@ function stepLevel(){
   </div>`;
 }
 
+/* A finished step folds to one line, the way the prompt builder does. */
+function doneBar(n, text, id){
+  return `<div class="panel p-3"><button class="crumb tt-reopen" data-step="${id}">
+    <span class="crumb-tag">${n}</span><span>${text}</span>
+    <span class="crumb-edit">Change</span></button></div>`;
+}
+
 function stepSubjects(){
+  if(S.plan && !S.open1) return doneBar('SUBJECTS',
+    S.subjects.map(label).join(' · ') || 'none chosen', '1');
   const all = externalSubjects();
   const facs = D().faculties.filter(f => f.subjects.some(n => all.includes(n)));
   return `<div class="panel p-4 md:p-5">
@@ -951,6 +1074,8 @@ function stepSubjects(){
 
 function stepStandards(){
   if(!S.subjects.length) return '';
+  if(S.plan && !S.open2) return doneBar('STANDARDS',
+    chosenStandards().length + ' standards selected', '2');
   return `<div class="panel p-4 md:p-5">
     <h3 class="sec-h mb-1">Which standards are you sitting?</h3>
     <p class="text-xs soft mb-3">All ticked to start with. Untick anything you are not doing.</p>
@@ -988,6 +1113,7 @@ function stepExams(){
           `<option value="${s.id}" ${ex.session===s.id?'selected':''}>${s.label} ${s.start}</option>`).join('')}</select>
         <span class="tt-warn">${prob||''}</span></div>`;
     }).join('')}
+    ${clashNotes()}
     ${examConfirmBox()}
   </div>`;
 }
@@ -1021,6 +1147,8 @@ function examConfirmBox(){
 
 function stepPeriods(){
   if(!S.subjects.length) return '';
+  if(S.plan && !S.open3) return doneBar('WHEN YOU STUDY',
+    S.periods.map(p => p.name).join(' · '), '3');
   const r = realism();
   return `<div class="panel p-4 md:p-5">
     <h3 class="sec-h mb-1">When can you study?</h3>
@@ -1119,6 +1247,7 @@ function wire(){
 
   // Switching level only changes what you are BROWSING — chosen subjects stay,
   // so a Level 3 student can add a Scholarship subject to the same plan.
+  q('.tt-reopen', b => b.onclick = () => { S['open'+b.dataset.step] = true; render(); });
   q('.tt-lvl', b => b.onclick = () => { S.level = b.dataset.l; S.faculty = null; render(); });
   q('.tt-fac', b => b.onclick = () => { S.faculty = +b.dataset.i; render(); });
   q('.tt-pick', b => b.onclick = () => {
@@ -1222,6 +1351,12 @@ function wire(){
     try { await navigator.clipboard.writeText(text); } catch { return; }
     const o = b.textContent; b.textContent='Copied ✓'; setTimeout(()=>b.textContent=o,1500);
   });
+  const nw = one('#tt-now');
+  if(nw) nw.onclick = () => {
+    const b = nextBlock(); if(!b) return;
+    S.cursor = b.date; S.view = 'day'; render();
+  };
+  const sh = one('#tt-share'); if(sh) sh.onclick = () => copyPlanLink(sh);
   const ics = one('#tt-ics'); if(ics) ics.onclick = () => download('ncea-study-plan.ics', toICS(), 'text/calendar');
   const pr  = one('#tt-print'); if(pr) pr.onclick = printPlan;
 

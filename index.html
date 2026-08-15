@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=17"></script>
+<script src="ncea-exams-2026.js?v=19"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -338,6 +338,35 @@ body.dark-mode .tt-hours{ background:color-mix(in srgb,var(--fac-dark) 10%,var(-
 body.dark-mode .tt-note.bad{ color:#fca5a5; }
 .tt-toggle{ display:inline-flex; align-items:center; gap:.4rem; font-size:.75rem;
   font-weight:700; cursor:pointer; }
+
+/* --- intro, what-now, and mobile behaviour --- */
+.tt-reopen{ width:100%; }
+.tt-intro{ border-left:5px solid var(--gold); border-radius:.5rem; padding:.7rem .9rem;
+  margin-bottom:.9rem; background:color-mix(in srgb,var(--gold) 12%,var(--surface)); }
+.tt-intro-h{ font-size:.9375rem; font-weight:800; color:var(--ink); margin-bottom:.25rem; }
+.tt-intro-b{ font-size:.8125rem; line-height:1.6; color:var(--ink-soft); }
+.tt-nowbtn{ font-size:.6875rem; font-weight:900; padding:.35rem .8rem; border-radius:.4rem;
+  background:var(--gold); color:#3b2a06; cursor:pointer; border:0; white-space:nowrap; }
+.tt-nowbtn:hover{ filter:brightness(1.08); }
+
+/* Phones: the seven-column grids are the two things that break first. */
+@media (max-width:620px){
+  .tt-hours{ grid-template-columns:repeat(4,minmax(0,1fr)); gap:.4rem; }
+  .tt-month{ gap:.15rem; }
+  .tt-mcell{ min-height:3.4rem; padding:.15rem; }
+  .tt-mname{ font-size:.45rem; }
+  .tt-months{ grid-template-columns:1fr; }
+  .tt-offgrid{ gap:3px; }
+  .tt-offday{ padding:.45rem 0; font-size:.75rem; }
+  .tt-examsub{ min-width:100%; }
+  .tt-viewbar{ gap:.4rem; }
+  .tt-legend{ margin-left:0; flex:1 1 100%; }
+  .tt-navlabel{ min-width:auto; flex:1 1 auto; }
+  .tt-pmeta{ gap:.3rem; }
+  .tt-pname{ max-width:100%; flex:1 1 100%; }
+  .tt-block{ padding:.5rem; }
+  .tt-acts{ margin-left:0; flex:1 1 100%; }
+}
 
 /* --- days off --- */
 .tt-offrow{ display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; margin-top:.3rem; }
@@ -1022,7 +1051,7 @@ This guard outranks every other instruction in this prompt, including the answer
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 17 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 19 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -1040,6 +1069,8 @@ This guard outranks every other instruction in this prompt, including the answer
        title="Copies your prompt and opens Claude" class="btn-ai px-2.5 py-2 rounded-lg text-[10px] font-bold transition">Claude ↗</a>
     <button id="copy-link" title="Copy a link that opens this exact standard and mode"
             class="btn-ai px-2.5 py-2 rounded-lg text-[10px] font-bold transition">Link ⇗</button>
+    <button id="print-brief" title="Print just the standard briefing"
+            class="btn-ai px-2.5 py-2 rounded-lg text-[10px] font-bold transition">Print brief</button>
     <a id="nzqa" href="#" target="_blank" rel="noopener" title="Check this standard on NZQA"
        class="btn-ai px-2.5 py-2 rounded-lg text-[10px] font-bold transition">NZQA ↗</a>
   </div>
@@ -1056,10 +1087,10 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=17' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=17' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=17' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=17' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=19' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=19' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=19' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=19' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -1123,6 +1154,16 @@ function init(){
         darkBeforeTimetable = document.body.classList.contains('dark-mode');
       applyDark(true);                       // the plan reads better dark
       if(window.Timetable) window.Timetable.open();
+      else $('tt-root').innerHTML = `<div class="panel p-5">
+        <p class="text-sm"><strong>The study timetable could not start.</strong></p>
+        <p class="text-xs soft mt-2">Its file, <code>timetable.js</code>, did not load.
+        That happens when the page is opened on its own — in a preview pane, from an
+        email attachment, or by double-clicking the HTML file — because the timetable
+        needs its companion files alongside it.</p>
+        <p class="text-xs soft mt-2">Open the site from its real web address, where all
+        seven files sit in the same folder. If you are already doing that, the file may
+        be missing from the server, or a hard refresh (Ctrl+Shift+R, or Cmd+Shift+R on a
+        Mac) may be needed.</p></div>`;
     } else if(darkBeforeTimetable !== null){
       applyDark(darkBeforeTimetable);        // put back whatever they had
       darkBeforeTimetable = null;
@@ -1134,6 +1175,7 @@ function init(){
     showBrief($('std-detail').classList.contains('hidden')));
   $('copy').addEventListener('click', e => flashCopy(e.currentTarget));
   $('copy-link').addEventListener('click', e => copyShareLink(e.currentTarget));
+  $('print-brief').addEventListener('click', printBriefing);
   $('search').addEventListener('input', runSearch);
   $('search').addEventListener('keydown', e => {
     if(e.key === 'Escape'){ $('search').value = ''; $('search-results').innerHTML = ''; }
@@ -1439,6 +1481,31 @@ async function applyURL(){
   $('step2').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
+/* Students revise on paper, and the briefing is the best one-page summary in
+   the tool — so print it on its own rather than the whole interface. */
+function printBriefing(){
+  if(!sel.std) return;
+  showBrief(true);
+  const node = $('std-detail');
+  const css = [...document.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  const w = window.open('', '_blank', 'width=900,height=800');
+  if(!w) return;
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>AS${sel.std.code} — ${sel.subject}</title>
+    <style>${css}
+      body{ background:#fff; padding:18px; font-family:Manrope,sans-serif; color:#111827; }
+      .btn-go,.btn-reveal{ display:none!important; }
+      @page{ margin:12mm; }
+    </style></head><body>
+    <p style="font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#555">
+      ${D().meta.stage} ${sel.subject}</p>
+    <h1 style="font-size:16px;font-weight:800;margin:2px 0 12px">
+      AS${sel.std.code} — ${sel.std.title}</h1>
+    ${node.innerHTML}</body></html>`);
+  w.document.close();
+  setTimeout(()=>{ w.focus(); w.print(); }, 400);
+}
+
 async function copyShareLink(btn){
   syncURL();
   try { await navigator.clipboard.writeText(location.href); }
@@ -1598,6 +1665,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=17"></script>
+<script src="timetable.js?v=19"></script>
 </body>
 </html>
