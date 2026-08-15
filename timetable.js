@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 19 — clearer startup message';
+const TT_BUILD = 'build 20 — printable plan with tickboxes';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -789,7 +789,8 @@ function renderPlan(){
         ${nextBlock() ? `<button id="tt-now" class="tt-nowbtn" title="Jump to your next study block">What now?</button>` : ''}
         <button id="tt-share" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Share plan</button>
         <button id="tt-ics" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Add to calendar</button>
-        <button id="tt-print" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Print this view</button>
+        <button id="tt-print" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Print plan</button>
+        <button id="tt-print1" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold" title="Just the week you are looking at">Print week</button>
         <button id="tt-regen" class="btn-go px-3 py-1.5 text-[11px]">Regenerate</button>
       </div>
     </div>
@@ -824,27 +825,126 @@ function toICS(){
 }
 /* Print just the plan. Opening a clean window avoids fighting the page's
    own layout and lets the student Save as PDF from the same dialog. */
-function printPlan(){
-  const node = R().querySelector('.tt-plan');
-  if(!node) return;
-  const css = [...document.querySelectorAll('style')].map(s => s.textContent).join('\n');
-  const w = window.open('', '_blank', 'width=1100,height=800');
-  if(!w) return;
+/* ============================================================
+   PRINTING
+   A printed plan is a different object from the screen one: you
+   cannot navigate it, so it runs the whole period continuously,
+   week per page, with a tickbox against every block and room to
+   write. Study methods print rather than prompt names — paper is
+   by definition the no-screen version.
+   ============================================================ */
+function printPlan(scope){
+  const p = S.plan;
+  if(!p) return;
+
+  const today = todayISO();
+  const weeks = {};
+  p.open.forEach(slot => { const wk = weekStart(slot.date); (weeks[wk] = weeks[wk] || []).push(slot); });
+  let keys = Object.keys(weeks).sort();
+  if(scope === 'week'){
+    const wk = weekStart(S.cursor || today);
+    keys = keys.filter(k => k === wk);
+    if(!keys.length) keys = [Object.keys(weeks).sort().find(k => k >= weekStart(today)) || Object.keys(weeks).sort()[0]];
+  }
+  if(!keys.length) return;
+
+  // exams get their own line in the flow, not a separate list
+  const examOn = d => S.subjects.filter(x => S.exams[x] && S.exams[x].date === d);
+
+  const firstExam = S.subjects.map(x => S.exams[x] && S.exams[x].date).filter(Boolean).sort()[0];
+  const totalHrs  = p.open.filter(x => x.item).length;
+
+  const pages = keys.map((wk, i) => {
+    const days = [];
+    for(let d = 0; d < 7; d++) days.push(addDays(wk, d));
+    const rows = days.map(date => {
+      const blocks = weeks[wk].filter(x => x.date === date && x.item);
+      const ex = examOn(date);
+      if(!blocks.length && !ex.length){
+        return `<tr class="pl-off"><td class="pl-day">${pretty(date,{weekday:'short'})}
+          <span>${pretty(date,{day:'numeric',month:'short'})}</span></td>
+          <td colspan="3" class="pl-none">—</td></tr>`;
+      }
+      const lines = [];
+      ex.forEach(sub => lines.push(
+        `<tr class="pl-exam"><td class="pl-tick"></td>
+           <td colspan="3"><strong>EXAM — ${label(sub)}</strong>
+           ${(E().sessions.find(x=>x.id===S.exams[sub].session)||{}).label||''}
+           ${(E().sessions.find(x=>x.id===S.exams[sub].session)||{}).start||''}</td></tr>`));
+      blocks.forEach(slot => {
+        const it = slot.item;
+        lines.push(`<tr>
+          <td class="pl-tick">&#9744;</td>
+          <td class="pl-sub">${label(it.subject)}<span>${it.st.credits?'AS':''}${it.st.code}</span></td>
+          <td class="pl-what">
+            <strong>${it.topic || it.st.title}</strong>
+            <span>${methodFor(it, p.open.indexOf(slot))}</span>
+          </td>
+          <td class="pl-notes"></td></tr>`);
+      });
+      const span = lines.length;
+      return lines.map((row, n) => n === 0
+        ? row.replace('<tr', `<tr`).replace('<td class="pl-tick"',
+            `<td class="pl-day" rowspan="${span}">${pretty(date,{weekday:'short'})}<span>${pretty(date,{day:'numeric',month:'short'})}</span></td><td class="pl-tick"`)
+        : row).join('');
+    }).join('');
+
+    return `<section class="pl-page">
+      <header class="pl-head">
+        <div>
+          <h1>Study plan${keys.length>1?` — week ${i+1} of ${keys.length}`:''}</h1>
+          <p>${pretty(wk,{day:'numeric',month:'long'})} to ${pretty(addDays(wk,6),{day:'numeric',month:'long'})}</p>
+        </div>
+        <div class="pl-meta">
+          <p><strong>Name:</strong> ______________________</p>
+          <p>${S.subjects.map(label).join(' · ')}</p>
+        </div>
+      </header>
+      <table class="pl-table">
+        <thead><tr><th class="pl-day">Day</th><th class="pl-tick">Done</th>
+          <th class="pl-sub">Subject</th><th class="pl-what">What to do</th><th class="pl-notes">Notes</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <footer class="pl-foot">Tick each block as you finish it. If you miss one, move it — do not just drop it.</footer>
+    </section>`;
+  }).join('');
+
+  const w = window.open('', '_blank', 'width=1000,height=900');
+  if(!w){ alert('Your browser blocked the print window. Allow pop-ups for this site and try again.'); return; }
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
     <title>NCEA study plan</title>
-    <script src="https://cdn.tailwindcss.com"><\/script>
-    <style>${css}
-      body{ background:#fff; padding:18px; font-family:Manrope,sans-serif; }
-      .tt-acts,.tt-del,.tt-slot,.tt-armbar,.tt-viewbar,.tt-fullswitch{ display:none!important; }
-      .panel{ box-shadow:none!important; border:0!important; }
-      @page{ margin:12mm; }
-    </style></head><body>
-    <h1 style="font-size:17px;font-weight:800;margin-bottom:2px">NCEA study plan</h1>
-    <p style="font-size:11px;color:#555;margin-bottom:12px">${S.subjects.map(label).join(' · ')}</p>
-    ${node.innerHTML}
-    </body></html>`);
+    <style>
+      *{ box-sizing:border-box; }
+      body{ font-family:'Segoe UI',Arial,sans-serif; color:#111; margin:0; padding:14mm; font-size:11px; }
+      .pl-page{ page-break-after:always; }
+      .pl-page:last-child{ page-break-after:auto; }
+      .pl-head{ display:flex; justify-content:space-between; align-items:flex-start;
+        border-bottom:2px solid #111; padding-bottom:6px; margin-bottom:10px; }
+      .pl-head h1{ font-size:16px; margin:0 0 2px; }
+      .pl-head p{ margin:0; font-size:10px; color:#444; }
+      .pl-meta{ text-align:right; }
+      .pl-meta p{ margin:0 0 3px; }
+      .pl-table{ width:100%; border-collapse:collapse; }
+      .pl-table th{ background:#eee; font-size:9px; text-transform:uppercase;
+        letter-spacing:.06em; text-align:left; padding:4px 6px; border:1px solid #999; }
+      .pl-table td{ border:1px solid #bbb; padding:5px 6px; vertical-align:top; }
+      .pl-day{ width:52px; font-weight:700; font-size:10px; background:#f4f4f4; }
+      .pl-day span{ display:block; font-weight:400; color:#555; font-size:9px; }
+      .pl-tick{ width:34px; text-align:center; font-size:15px; line-height:1; }
+      .pl-sub{ width:110px; font-weight:700; }
+      .pl-sub span{ display:block; font-weight:400; color:#555; font-size:9px; }
+      .pl-what strong{ display:block; font-weight:700; margin-bottom:2px; }
+      .pl-what span{ color:#333; font-size:10px; line-height:1.4; }
+      .pl-notes{ width:120px; }
+      .pl-none{ color:#999; font-style:italic; }
+      .pl-off td{ background:#fafafa; }
+      .pl-exam td{ background:#f0e2b8; font-size:11px; }
+      .pl-foot{ margin-top:8px; font-size:9px; color:#555; border-top:1px solid #ccc; padding-top:4px; }
+      @page{ margin:10mm; size:A4 portrait; }
+      @media print{ body{ padding:0; } }
+    </style></head><body>${pages}</body></html>`);
   w.document.close();
-  setTimeout(()=>{ w.focus(); w.print(); }, 400);
+  setTimeout(()=>{ w.focus(); w.print(); }, 500);
 }
 
 function download(name,text,type){
@@ -1008,7 +1108,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=19';
+    t.src = src + '?v=20';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
@@ -1358,7 +1458,8 @@ function wire(){
   };
   const sh = one('#tt-share'); if(sh) sh.onclick = () => copyPlanLink(sh);
   const ics = one('#tt-ics'); if(ics) ics.onclick = () => download('ncea-study-plan.ics', toICS(), 'text/calendar');
-  const pr  = one('#tt-print'); if(pr) pr.onclick = printPlan;
+  const pr  = one('#tt-print');  if(pr)  pr.onclick  = () => printPlan('all');
+  const pr1 = one('#tt-print1'); if(pr1) pr1.onclick = () => printPlan('week');
 
   const tp = one('#tt-topics');
   if(tp) tp.onchange = () => { S.withTopics = tp.checked; S.plan = null; render(); };
