@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 20 — printable plan with tickboxes';
+const TT_BUILD = 'build 21 — header layout';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -624,8 +624,9 @@ function viewBar(){
               : S.view==='month' ? pretty(S.cursor,{month:'long',year:'numeric'})
               : 'Whole plan';
   return `<div class="tt-viewbar">
-    <div class="flex gap-1">${views.map(([v,l])=>
-      `<button class="tt-view" data-v="${v}" aria-pressed="${S.view===v}">${l}</button>`).join('')}</div>
+    <div class="flex gap-1 items-center">${views.map(([v,l])=>
+      `<button class="tt-view" data-v="${v}" aria-pressed="${S.view===v}">${l}</button>`).join('')}
+      <button id="tt-regen" class="tt-regenbtn" title="Build the plan again from scratch">Regenerate</button></div>
     ${S.view!=='full' ? `<div class="tt-nav">
       <button class="tt-arrow" data-step="-1">&lsaquo;</button>
       <span class="tt-navlabel">${heading}</span>
@@ -778,20 +779,25 @@ function renderPlan(){
              : S.view==='month' ? monthView() : fullView();
   return `<div class="panel p-4 md:p-5 tt-plan">
     <div class="tt-planhead mb-3">
-      <div class="tt-ph-side">
-        <h3 class="sec-h">Your plan</h3><span class="text-xs soft">${p.used} study blocks</span>
+      <div class="tt-ph-left">
+        <div class="tt-how-switch" role="group" aria-label="How to study each block">
+          ${[['ai','With AI'],['mix','Mix'],['offline','Without AI'],['none','None']].map(([k,l])=>
+            `<button class="tt-hm" data-h="${k}" aria-pressed="${S.howMode===k}">${l}</button>`).join('')}
+        </div>
+        <span class="text-xs soft">${p.used} blocks</span>
       </div>
-      <div class="tt-how-switch" role="group" aria-label="How to study each block">
-        ${[['ai','With AI'],['mix','Mix'],['offline','Without AI'],['none','None']].map(([k,l])=>
-          `<button class="tt-hm" data-h="${k}" aria-pressed="${S.howMode===k}">${l}</button>`).join('')}
-      </div>
-      <div class="tt-ph-side tt-ph-right">
+
+      <div class="tt-ph-mid">
         ${nextBlock() ? `<button id="tt-now" class="tt-nowbtn" title="Jump to your next study block">What now?</button>` : ''}
-        <button id="tt-share" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Share plan</button>
-        <button id="tt-ics" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Add to calendar</button>
-        <button id="tt-print" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Print plan</button>
-        <button id="tt-print1" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold" title="Just the week you are looking at">Print week</button>
-        <button id="tt-regen" class="btn-go px-3 py-1.5 text-[11px]">Regenerate</button>
+      </div>
+
+      <div class="tt-ph-rt">
+        <button id="tt-print"  class="tt-printbtn">Print plan</button>
+        <button id="tt-print1" class="tt-printbtn" title="Just the week you are looking at">Print week</button>
+        <div class="tt-mini-stack">
+          <button id="tt-share" class="tt-minibtn">Share plan</button>
+          <button id="tt-ics"   class="tt-minibtn">Add to calendar</button>
+        </div>
       </div>
     </div>
     ${viewBar()}
@@ -1108,7 +1114,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=20';
+    t.src = src + '?v=21';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
@@ -1135,6 +1141,9 @@ function intro(){
 }
 
 function stepLevel(){
+  if(S.plan && !S.open0) return doneBar('LEVEL',
+    [...new Set(S.subjects.map(kLvl))].map(l => l==='S' ? 'Scholarship' : 'Level '+l).join(' · ')
+      || (S.level==='S' ? 'Scholarship' : 'Level '+S.level), '0');
   return `<div class="panel p-4 md:p-5">
     <h3 class="sec-h mb-2">NCEA level</h3>
     <div class="flex flex-wrap gap-2">${[['1','Level 1'],['2','Level 2'],['3','Level 3'],['S','Scholarship']].map(([l,lab])=>
@@ -1191,6 +1200,9 @@ function stepStandards(){
 
 function stepExams(){
   if(!S.subjects.length) return '';
+  if(S.plan && !S.open4) return doneBar('EXAM DATES',
+    S.subjects.map(k => label(k) + ' ' + (S.exams[k] && S.exams[k].date
+      ? pretty(S.exams[k].date,{day:'numeric',month:'short'}) : '?')).join(' · '), '4');
   return `<div class="panel p-4 md:p-5">
     <h3 class="sec-h mb-1">Exam dates</h3>
     <p class="text-xs soft mb-3">Pre-filled from the ${E().year} timetable. Check yours on
