@@ -45,68 +45,76 @@ window.NCEA_EXAMS = {
   timetableUrl: 'https://www2.nzqa.govt.nz/ncea/exam-timetable-and-key-assessment-dates/exam-timetable/',
   timetablePdf: 'https://www2.nzqa.govt.nz/assets/NCEA/2026-Exam-Timetable.pdf',
 
+  /* sitting: 'digital', 'paper', or 'performance' — how WAIHEKE students sit
+     each exam. Scholarship Drama is assessed by RECORDED PERFORMANCE rather
+     than a written paper, so it needs neither typing nor handwriting practice.
+     NZQA marks which papers are AVAILABLE digitally, but each school chooses
+     per session; WHS enters students digitally wherever it is offered. Two
+     entries have no sitting recorded (Level 1 Mathematics and Statistics,
+     Scholarship Drama) and simply show nothing rather than a guess. */
+
   /* ---- Per-subject exam dates, keyed by level then subject name.
      Subject names must match those in the ncea-lN.js data files.
      Session is 'AM' (09:30) or 'PM' (14:00). ---- */
   subjectDates: {
     '3': {
-      'Digital Technologies':      { date:'2026-11-10', session:'PM' },
-      'English':                   { date:'2026-11-11', session:'AM' },
-      'Physics':                   { date:'2026-11-12', session:'PM' },
-      'Te Ao Haka':                { date:'2026-11-12', session:'PM' },
-      'Calculus':                  { date:'2026-11-16', session:'AM' },
-      'History':                   { date:'2026-11-16', session:'PM' },
-      'Biology':                   { date:'2026-11-17', session:'PM' },
-      'Health':                    { date:'2026-11-18', session:'AM' },
-      'Psychology':                { date:'2026-11-18', session:'PM' },
-      'Economics':                 { date:'2026-11-18', session:'PM' },
-      'Drama':                     { date:'2026-11-20', session:'AM' },
-      'Chemistry':                 { date:'2026-11-20', session:'PM' },
-      'Statistics':                { date:'2026-11-24', session:'AM' },
-      'Geography':                 { date:'2026-11-24', session:'PM' },
-      'Te Reo Māori':              { date:'2026-11-26', session:'AM' },
-      'Media Studies':             { date:'2026-11-26', session:'PM' },
-      'Music':                     { date:'2026-11-27', session:'AM' },
-      'Art History':               { date:'2026-11-27', session:'PM' },
-      'Classical Studies':         { date:'2026-12-01', session:'AM' },
-      'Earth & Space Science':     { date:'2026-12-02', session:'PM' },
-      'Business Studies':          { date:'2026-12-03', session:'PM' }
+      'Digital Technologies':      { date:'2026-11-10', session:'PM', sitting:'digital' },
+      'English':                   { date:'2026-11-11', session:'AM', sitting:'digital' },
+      'Physics':                   { date:'2026-11-12', session:'PM', sitting:'paper' },
+      'Te Ao Haka':                { date:'2026-11-12', session:'PM', sitting:'digital' },
+      'Calculus':                  { date:'2026-11-16', session:'AM', sitting:'paper' },
+      'History':                   { date:'2026-11-16', session:'PM', sitting:'digital' },
+      'Biology':                   { date:'2026-11-17', session:'PM', sitting:'paper' },
+      'Health':                    { date:'2026-11-18', session:'AM', sitting:'digital' },
+      'Psychology':                { date:'2026-11-18', session:'PM', sitting:'digital' },
+      'Economics':                 { date:'2026-11-18', session:'PM', sitting:'paper' },
+      'Drama':                     { date:'2026-11-20', session:'AM', sitting:'paper' },
+      'Chemistry':                 { date:'2026-11-20', session:'PM', sitting:'paper' },
+      'Statistics':                { date:'2026-11-24', session:'AM', sitting:'paper' },
+      'Geography':                 { date:'2026-11-24', session:'PM', sitting:'paper' },
+      'Te Reo Māori':              { date:'2026-11-26', session:'AM', sitting:'digital' },
+      'Media Studies':             { date:'2026-11-26', session:'PM', sitting:'digital' },
+      'Music':                     { date:'2026-11-27', session:'AM', sitting:'paper' },
+      'Art History':               { date:'2026-11-27', session:'PM', sitting:'digital' },
+      'Classical Studies':         { date:'2026-12-01', session:'AM', sitting:'digital' },
+      'Earth & Space Science':     { date:'2026-12-02', session:'PM', sitting:'digital' },
+      'Business Studies':          { date:'2026-12-03', session:'PM', sitting:'digital' }
       // Physical Education has no externals, so it never appears here.
       // Te Ao Haka's TAPā assessments were moved into the exam period;
       // this date was confirmed against the published timetable.
     },
     '2': {
-      'Geography':                 { date:'2026-11-10', session:'AM' },
-      'English':                   { date:'2026-11-12', session:'AM' },
-      'Chemistry':                 { date:'2026-11-16', session:'PM' },
-      'Te Reo Māori':              { date:'2026-11-16', session:'AM' },
-      'Art History':               { date:'2026-11-18', session:'AM' },
-      'Physics':                   { date:'2026-11-18', session:'PM' },
-      'Mathematics and Statistics':{ date:'2026-11-19', session:'AM' },
-      'Biology':                   { date:'2026-11-20', session:'AM' },
-      'Drama':                     { date:'2026-11-20', session:'PM' },
-      'Business Studies':          { date:'2026-11-23', session:'PM' },
-      'History':                   { date:'2026-11-24', session:'PM' },
-      'Classical Studies':         { date:'2026-11-25', session:'PM' },
-      'Media Studies':             { date:'2026-11-26', session:'AM' },
-      'Health':                    { date:'2026-11-26', session:'PM' },
-      'Digital Technologies':      { date:'2026-11-27', session:'PM' },
-      'Earth & Space Science':     { date:'2026-12-01', session:'AM' },
-      'Music':                     { date:'2026-12-01', session:'PM' }
+      'Geography':                 { date:'2026-11-10', session:'AM', sitting:'paper' },
+      'English':                   { date:'2026-11-12', session:'AM', sitting:'digital' },
+      'Chemistry':                 { date:'2026-11-16', session:'PM', sitting:'paper' },
+      'Te Reo Māori':              { date:'2026-11-16', session:'AM', sitting:'digital' },
+      'Art History':               { date:'2026-11-18', session:'AM', sitting:'digital' },
+      'Physics':                   { date:'2026-11-18', session:'PM', sitting:'paper' },
+      'Mathematics and Statistics':{ date:'2026-11-19', session:'AM', sitting:'paper' },
+      'Biology':                   { date:'2026-11-20', session:'AM', sitting:'paper' },
+      'Drama':                     { date:'2026-11-20', session:'PM', sitting:'paper' },
+      'Business Studies':          { date:'2026-11-23', session:'PM', sitting:'digital' },
+      'History':                   { date:'2026-11-24', session:'PM', sitting:'digital' },
+      'Classical Studies':         { date:'2026-11-25', session:'PM', sitting:'digital' },
+      'Media Studies':             { date:'2026-11-26', session:'AM', sitting:'digital' },
+      'Health':                    { date:'2026-11-26', session:'PM', sitting:'digital' },
+      'Digital Technologies':      { date:'2026-11-27', session:'PM', sitting:'digital' },
+      'Earth & Space Science':     { date:'2026-12-01', session:'AM', sitting:'paper' },
+      'Music':                     { date:'2026-12-01', session:'PM', sitting:'paper' }
       // Physical Education and Psychology have no externals at Level 2.
     },
     '1': {
-      'Mathematics and Statistics':{ date:'2026-11-10', session:'AM' },
-      'Physics, Earth and Space Science':{ date:'2026-11-12', session:'PM' },
-      'Te Reo Māori':              { date:'2026-11-16', session:'PM' },
-      'English':                   { date:'2026-11-17', session:'AM' },
-      'Geography':                 { date:'2026-11-17', session:'PM' },
-      'History':                   { date:'2026-11-18', session:'AM' },
-      'Chemistry and Biology':     { date:'2026-11-19', session:'PM' },
-      'Commerce':                  { date:'2026-11-24', session:'AM' },
-      'Health Studies':            { date:'2026-11-25', session:'AM' },
-      'Science':                   { date:'2026-11-25', session:'PM' },
-      'Digital Technologies':      { date:'2026-11-26', session:'AM' },
+      'Mathematics and Statistics':{ date:'2026-11-10', session:'AM', sitting:'paper' },
+      'Physics, Earth and Space Science':{ date:'2026-11-12', session:'PM', sitting:'paper' },
+      'Te Reo Māori':              { date:'2026-11-16', session:'PM', sitting:'digital' },
+      'English':                   { date:'2026-11-17', session:'AM', sitting:'digital' },
+      'Geography':                 { date:'2026-11-17', session:'PM', sitting:'paper' },
+      'History':                   { date:'2026-11-18', session:'AM', sitting:'digital' },
+      'Chemistry and Biology':     { date:'2026-11-19', session:'PM', sitting:'digital' },
+      'Commerce':                  { date:'2026-11-24', session:'AM', sitting:'digital' },
+      'Health Studies':            { date:'2026-11-25', session:'AM', sitting:'digital' },
+      'Science':                   { date:'2026-11-25', session:'PM', sitting:'digital' },
+      'Digital Technologies':      { date:'2026-11-26', session:'AM', sitting:'digital' },
       // No sat examination — these are externally assessed by PORTFOLIO,
       // submitted digitally on a date the school sets. The student enters
       // their own submission date and the plan runs up to it.
@@ -121,16 +129,22 @@ window.NCEA_EXAMS = {
      nothing reads them yet. Scholarship has no credits and no A/M/E bands:
      one three-hour paper per subject, graded Scholarship or Outstanding. */
   scholarshipDates: {
-    'Classical Studies': { date:'2026-11-10', session:'AM' },
-    'Geography':         { date:'2026-11-11', session:'PM' },
-    'Chemistry':         { date:'2026-11-12', session:'AM' },
-    'Statistics':        { date:'2026-11-16', session:'PM' },
-    'Physics':           { date:'2026-11-18', session:'AM' },
-    'Biology':           { date:'2026-11-19', session:'AM' },
-    'English':           { date:'2026-11-23', session:'AM' },
-    'Calculus':          { date:'2026-11-25', session:'AM' },
-    'Drama':             { date:'2026-11-25', session:'PM' },
-    'History':           { date:'2026-11-27', session:'PM' }
+    'Classical Studies': { date:'2026-11-10', session:'AM', sitting:'paper' },
+    'Geography':         { date:'2026-11-11', session:'PM', sitting:'paper' },
+    'Chemistry':         { date:'2026-11-12', session:'AM', sitting:'paper' },
+    'Statistics':        { date:'2026-11-16', session:'PM', sitting:'paper' },
+    'Physics':           { date:'2026-11-18', session:'AM', sitting:'paper' },
+    'Biology':           { date:'2026-11-19', session:'AM', sitting:'digital' },
+    'English':           { date:'2026-11-23', session:'AM', sitting:'digital' },
+    'Calculus':          { date:'2026-11-25', session:'AM', sitting:'paper' },
+    'Drama':             { date:'2026-11-25', session:'PM', sitting:'performance' },
+    'History':           { date:'2026-11-27', session:'PM', sitting:'digital' }
+  },
+
+  // 'digital', 'paper', or null where we have not recorded it.
+  sittingFor(level, subject){
+    const d = this.dateFor(level, subject);
+    return (d && d.sitting) ? d.sitting : null;
   },
 
   // Pre-filled date for a subject, or null if we do not have one.

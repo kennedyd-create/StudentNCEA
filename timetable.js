@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 21 — header layout';
+const TT_BUILD = 'build 23 — all sitting modes complete';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -594,7 +594,7 @@ function examBanner(date, size){
       `<div class="tt-exambar tt-exam-sm"><strong>${label(sub)}</strong><span>${word}${isPf(sub)?'':' '+S.exams[sub].session+' '+time(sub)}</span></div>`);
     else out.push(
       `<div class="tt-exambar"><span class="tt-exampill">${word}</span><strong>${label(sub)}</strong>
-        <span class="tt-examwhen">${when}</span></div>`);
+        ${sittingChip(sub,'sm')}<span class="tt-examwhen">${when}</span></div>`);
   });
 
   // The night before is its own kind of day — same gold, quieter treatment,
@@ -607,6 +607,20 @@ function examBanner(date, size){
   });
 
   return out.join('');
+}
+
+/* Digital or paper changes how you should practise, so it travels with the
+   exam date rather than being buried in the standard text. */
+function sittingOf(k){
+  const e = S.exams[k];
+  if(e && e.sitting) return e.sitting;
+  return E().sittingFor(kLvl(k), kName(k));
+}
+function sittingChip(k, size){
+  const v = sittingOf(k);
+  if(!v) return '';
+  const txt = v === 'digital' ? 'On screen' : v === 'performance' ? 'Recorded' : 'On paper';
+  return `<span class="tt-sit tt-sit-${v}${size==='sm'?' tt-sit-sm':''}">${txt}</span>`;
 }
 
 const modeLabel = m => ({ explainer:'Learn it', exam:'Practise it', recall:'Drill it' })[m] || m;
@@ -876,7 +890,8 @@ function printPlan(scope){
         `<tr class="pl-exam"><td class="pl-tick"></td>
            <td colspan="3"><strong>EXAM — ${label(sub)}</strong>
            ${(E().sessions.find(x=>x.id===S.exams[sub].session)||{}).label||''}
-           ${(E().sessions.find(x=>x.id===S.exams[sub].session)||{}).start||''}</td></tr>`));
+           ${(E().sessions.find(x=>x.id===S.exams[sub].session)||{}).start||''}
+           ${sittingOf(sub) ? '&nbsp;·&nbsp;' + ({digital:'ON SCREEN',paper:'ON PAPER',performance:'RECORDED PERFORMANCE'}[sittingOf(sub)]||'') : ''}</td></tr>`));
       blocks.forEach(slot => {
         const it = slot.item;
         lines.push(`<tr>
@@ -1114,7 +1129,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=21';
+    t.src = src + '?v=23';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
@@ -1206,7 +1221,9 @@ function stepExams(){
   return `<div class="panel p-4 md:p-5">
     <h3 class="sec-h mb-1">Exam dates</h3>
     <p class="text-xs soft mb-3">Pre-filled from the ${E().year} timetable. Check yours on
-      <a href="${E().timetableUrl}" target="_blank" rel="noopener" class="underline">NZQA</a>.</p>
+      <a href="${E().timetableUrl}" target="_blank" rel="noopener" class="underline">NZQA</a>.
+      <strong>On screen</strong> or <strong>on paper</strong> shows how you will sit each one —
+      Waiheke enters students digitally wherever NZQA offers it. Ask your teacher if you would prefer paper.</p>
     ${S.subjects.map(sub=>{
       const ex = S.exams[sub]||{};
       // A portfolio subject has no sat examination — the school sets a
@@ -1223,6 +1240,7 @@ function stepExams(){
           min="${E().window.start}" max="${E().window.end}">
         <select class="field tt-sess" data-sub="${sub}">${E().sessions.map(s=>
           `<option value="${s.id}" ${ex.session===s.id?'selected':''}>${s.label} ${s.start}</option>`).join('')}</select>
+        ${sittingChip(sub)}
         <span class="tt-warn">${prob||''}</span></div>`;
     }).join('')}
     ${clashNotes()}

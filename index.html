@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=21"></script>
+<script src="ncea-exams-2026.js?v=23"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -367,6 +367,21 @@ body.dark-mode .tt-note.bad{ color:#fca5a5; }
   .tt-block{ padding:.5rem; }
   .tt-acts{ margin-left:0; flex:1 1 100%; }
 }
+
+/* --- how the exam is sat --- */
+.tt-sit, .sit-chip{ font-size:.5625rem; font-weight:900; text-transform:uppercase;
+  letter-spacing:.06em; border-radius:9999px; padding:.15rem .5rem; white-space:nowrap; }
+.tt-sit-digital, .sit-digital{ background:rgba(13,148,136,.18); color:#0f766e;
+  border:1px solid rgba(13,148,136,.5); }
+.tt-sit-performance, .sit-performance{ background:rgba(154,99,0,.18); color:#7c4a00;
+  border:1px solid rgba(154,99,0,.45); }
+body.dark-mode .tt-sit-performance, body.dark-mode .sit-performance{ color:#e0b877; }
+.tt-sit-paper, .sit-paper{ background:rgba(120,113,108,.18); color:#57534e;
+  border:1px solid rgba(120,113,108,.45); }
+body.dark-mode .tt-sit-digital, body.dark-mode .sit-digital{ color:#5eead4; }
+body.dark-mode .tt-sit-paper, body.dark-mode .sit-paper{ color:#d6d3d1; }
+.tt-sit-sm{ font-size:.5rem; padding:.1rem .35rem; }
+.tt-exambar .tt-sit{ background:rgba(59,42,6,.18); color:#3b2a06; border-color:rgba(59,42,6,.3); }
 
 /* --- days off --- */
 .tt-offrow{ display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; margin-top:.3rem; }
@@ -1092,7 +1107,7 @@ This guard outranks every other instruction in this prompt, including the answer
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 21 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 23 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -1128,10 +1143,10 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=21' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=21' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=21' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=21' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=23' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=23' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=23' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=23' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -1350,6 +1365,9 @@ function renderStandards(){
         <span class="font-mono text-[11px] font-bold hd">AS${s.code}</span>
         <span class="font-mono text-[10px] faint">${s.ref}</span>
         <span class="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full ${s.mode==='internal'?'badge-int':'badge-ext'}">${s.mode.slice(0,3)}</span>
+        ${s.mode==='external' && window.NCEA_EXAMS && window.NCEA_EXAMS.sittingFor(sel.level, sel.subject)
+          ? `<span class="sit-chip sit-${window.NCEA_EXAMS.sittingFor(sel.level, sel.subject)}">${
+              ({digital:'screen',paper:'paper',performance:'recorded'})[window.NCEA_EXAMS.sittingFor(sel.level, sel.subject)]}</span>` : ''}
         <span class="ml-auto text-[10px] font-bold soft whitespace-nowrap">${s.credits ? s.credits + ' cr' : 'no credits'}${s.creditsUnverified?' <span title="Credit value not yet confirmed against NZQA" style="color:var(--gold)">\u2022</span>':''}</span>
       </div>
       <p class="text-[13px] font-semibold leading-snug mt-1">${s.title}</p>
@@ -1608,6 +1626,20 @@ function jumpTo(subject, code){
 
 /* Compose a prompt from plain values, independent of any UI state.
    build() uses it, and so does the study timetable. */
+/* How the exam is actually sat changes how a student should practise, so it
+   goes into the prompt rather than sitting as a badge in the interface. */
+function sittingLine(level, subject, st){
+  if(st.mode !== 'external') return '';
+  const E = window.NCEA_EXAMS;
+  const v = E && E.sittingFor ? E.sittingFor(level, subject) : null;
+  if(!v) return '';
+  if(v === 'performance')
+    return '\nHOW IT IS SAT: this is assessed by RECORDED PERFORMANCE, not a written paper. Preparation is rehearsal, refinement and reflection on the work itself — do not frame practice as exam questions or timed writing. Where you set tasks, make them about developing, testing and articulating the performance.';
+  return v === 'digital'
+    ? '\nHOW IT IS SAT: this is an ONLINE DIGITAL examination at this school. Practice should be TYPED under time, not handwritten. Where you set practice questions, remind the student to work in a plain text box without spellcheck or formatting, to plan briefly before typing rather than at length, and that planning notes are not marked. Handwriting speed is irrelevant here; typing speed and on-screen proofreading are not.'
+    : '\nHOW IT IS SAT: this is a PAPER examination at this school. Practice should be HANDWRITTEN under time. Where relevant, remind the student that diagrams, annotations, graphs and working are drawn by hand, that legibility affects the marker, and that writing stamina over two or three hours is itself something to train.';
+}
+
 function composePrompt({ level, subject, code, mode, topic, context }){
   const d = window.NCEA_DATA && window.NCEA_DATA[level];
   if(!d) return '';
@@ -1636,7 +1668,7 @@ What actually lifts the grade in this standard:
   Achieved to Merit:    ${s.bandShift.aToM}
   Merit to Excellence:  ${s.bandShift.mToE}
 
-Command verbs used in this standard: ${s.verbs.join(', ')}${sub.verifyNote ? '\nSubject note: ' + sub.verifyNote : ''}
+Command verbs used in this standard: ${s.verbs.join(', ')}${sub.verifyNote ? '\nSubject note: ' + sub.verifyNote : ''}${sittingLine(level, subject, s)}
 ${sub.lens}
 How this subject reasons: ${sub.discipline}
 
@@ -1706,6 +1738,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=21"></script>
+<script src="timetable.js?v=23"></script>
 </body>
 </html>
