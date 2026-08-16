@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 28 — launch buttons under the prompt';
+const TT_BUILD = 'build 29 — contour banner';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -1129,7 +1129,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=28';
+    t.src = src + '?v=29';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
