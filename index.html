@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=25"></script>
+<script src="ncea-exams-2026.js?v=28"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -180,7 +180,8 @@ body.dark-mode .sec-h{ color:var(--fac-dark); }
 
 /* Sticky action bar, shown once a prompt exists */
 #actionbar{
-  position:fixed; left:0; right:0; bottom:0; z-index:40;
+  position:fixed; left:0; right:0; bottom:0; z-index:9999;
+  padding-bottom:env(safe-area-inset-bottom,0px);
   background:color-mix(in srgb,var(--fac-dark) 8%,var(--surface));
   border-top:2px solid var(--fac-dark);
   box-shadow:0 -6px 20px -10px rgba(15,23,42,.4);
@@ -606,8 +607,11 @@ body.dark-mode .tt-regenbtn:hover{ background:#fcd34d; color:#3b2a06; }
 .tt-build{ font-size:.625rem; color:var(--ink-faint); text-align:center; padding:.6rem 0 0; }
 
 @media print{
+  /* Screen-only furniture. Scoped to print so it can never affect the page
+     being read — an unscoped rule here would silently hide the action bar. */
   header, #modetabs, #actionbar, main, .tt-acts, .tt-armbar, .tt-viewbar,
-  .tt-fullswitch, .tt-del, .tt-slot, .tt-addhr, #tt-ics, #tt-print, #tt-regen{ display:none!important; }
+  .tt-fullswitch, .tt-del, .tt-slot, .tt-addhr, #tt-ics, #tt-print,
+  #tt-print1, #tt-share, #tt-now, #tt-regen{ display:none!important; }
   .panel{ box-shadow:none; border:1px solid #999; }
 }
 
@@ -976,6 +980,37 @@ Write your own version rather than reusing that wording, and vary it if they ask
 
 Read the room first. If they sound anxious, if the deadline is close, or if they are already down on themselves, skip the joke entirely and just be kind and direct: you cannot see the task or the marking schedule, their teacher can, and here is the one thing that would make the work stronger.`},
 
+reference:{ label:'Build me a reference sheet', blurb:'One organised page of everything I need to remember',
+  accent:'#0369a1', badge:'Resource',
+  blocks:['technique','misconception','mine'],
+  body:`YOUR TASK — BUILD A REFERENCE RESOURCE
+
+The student wants a finished ARTEFACT: one organised document covering everything this standard requires them to know, laid out so it can be studied from, printed, or stuck on a wall. This is not a lesson. Do not teach step by step, do not ask what they already know, and do not stop to check understanding — produce the thing.
+
+WHAT DECIDES THE SHAPE
+Read the standard block first and let the subject dictate the format. Pick the one that actually fits:
+- Reactions, processes or transformations → a CONVERSION TABLE: start material, product, reagent, conditions, observation, one row per reaction. Follow it with a text reaction map written as arrows, for example: alkene --[HBr, room temp]--> haloalkane.
+- Formulae, equations or rules → a grouped formula sheet: the relationship, what each symbol means, its units, and when it applies.
+- Case studies, events or texts → a fact sheet: names, dates, figures, locations, quotations, with a line on what each is evidence FOR.
+- Definitions and terminology → a glossary, grouped by theme rather than alphabetically, each with the distinction from the term it is most confused with.
+- Models, theories or approaches → a comparison grid: what each claims, what it explains well, where it fails.
+Most standards want a combination. Say at the top which you have chosen and why.
+
+RULES FOR THE CONTENT
+1. SCOPE IT TIGHTLY. Include only what this standard actually requires. The standard block sets the boundary — where it says something is NOT required, leave it out and say so in a short "not required for this standard" note at the end. Over-inclusion is the most common failure of a resource like this: it makes the student learn material they will never be examined on.
+2. COMPLETE, NOT SELECTIVE. Within that scope, cover everything. A reference sheet with gaps is worse than none, because the student trusts it.
+3. EVERY ENTRY CARRIES ITS DETAIL. Use the evidence line of the standard to decide what each row must contain. If the standard demands reagents AND conditions, every row has both — never one without the other.
+4. FLAG THE TRAPS INLINE. Where a row touches one of the misconceptions listed in the standard block, mark it and say what students get wrong. Do not save these for a separate section; they belong where the mistake happens.
+5. USE TEXT STRUCTURES, NOT PICTURES. Tables, indented lists, and arrow notation survive being copied anywhere. Do not attempt ASCII diagrams of structures or apparatus — describe them precisely instead and let the student draw them.
+6. ORDER FOR LEARNING. Group by what connects, not alphabetically or by chapter. Things confused with each other go side by side so the difference is visible.
+
+FINISHING
+End with a short section headed "How to use this" giving three or four concrete ways to study from it — for example covering a column and reciting it, or working the map backwards from product to starting material.
+
+If anything in the standard is ambiguous or you are unsure whether it is in scope, say so plainly at that point rather than guessing. A resource that quietly includes the wrong material is worse than one that admits a gap.
+
+Produce the resource now, in full.`},
+
 recall:{ label:'Facts & detail drill', blurb:'Drill me on the detail I need to remember',
   blocks:['retrieval','pressure','misconception'],
   body:`YOUR TASK — RECALL AND EVIDENCE DRILL
@@ -1104,10 +1139,22 @@ This guard outranks every other instruction in this prompt, including the answer
          style="background:var(--int-bg);color:var(--int-ink)"></div>
     <textarea id="prompt" readonly rows="12"
       class="w-full font-mono text-[11px] leading-relaxed inset p-3"></textarea>
+    <div class="flex flex-wrap items-center gap-2 mt-3">
+      <button id="copy2" class="btn-copy-prompt px-4 py-2 rounded-lg text-xs transition">COPY PROMPT</button>
+      <a href="https://gemini.google.com/app" target="_blank" rel="noopener" data-launch
+         title="Copies your prompt and opens Gemini"
+         class="btn-gemini px-3 py-2 rounded-lg text-xs font-bold transition">Gemini ↗</a>
+      <a href="https://chatgpt.com/" target="_blank" rel="noopener" data-launch
+         title="Copies your prompt and opens ChatGPT"
+         class="btn-ai px-2.5 py-2 rounded-lg text-[10px] font-bold transition">ChatGPT ↗</a>
+      <a href="https://claude.ai/new" target="_blank" rel="noopener" data-launch
+         title="Copies your prompt and opens Claude"
+         class="btn-ai px-2.5 py-2 rounded-lg text-[10px] font-bold transition">Claude ↗</a>
+    </div>
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 25 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 28 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -1143,10 +1190,10 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=25' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=25' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=25' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=25' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=28' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=28' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=28' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=28' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -1230,6 +1277,7 @@ function init(){
   $('brief-toggle').addEventListener('click', ()=>
     showBrief($('std-detail').classList.contains('hidden')));
   $('copy').addEventListener('click', e => flashCopy(e.currentTarget));
+  $('copy2').addEventListener('click', e => flashCopy(e.currentTarget));
   $('copy-link').addEventListener('click', e => copyShareLink(e.currentTarget));
   $('print-brief').addEventListener('click', printBriefing);
   $('search').addEventListener('input', runSearch);
@@ -1436,6 +1484,9 @@ function pickStd(code){
   });
   setStep(2, true, 'AS'+sel.std.code, `${sel.std.title}`);
   $('ab-label').textContent = `AS${sel.std.code} · ${sel.std.credits} cr · ${sel.std.mode}`;
+  if(sel.mode === 'reference' && !sel.std.reference) sel.mode = null;
+  renderModes();
+  markModes();
   $('brief-toggle').classList.remove('hidden');
   showBrief(false);
   $('nzqa').href = `https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=${sel.std.code}`;
@@ -1443,7 +1494,13 @@ function pickStd(code){
 }
 
 function renderModes(){
-  $('modes').innerHTML = Object.entries(MODES).map(([k,m])=>`
+  // "Build me a reference sheet" only appears on standards whose content is
+  // fixed by the standard itself. Where the material is the student's own
+  // chosen text, case study or investigation, a complete sheet is impossible,
+  // so the mode is hidden rather than producing something thin.
+  const usable = Object.entries(MODES).filter(([k]) =>
+    k !== 'reference' || (sel.std && sel.std.reference));
+  $('modes').innerHTML = usable.map(([k,m])=>`
     <button class="tile text-left px-3 py-2.5${m.accent?' tile-accent':''}" aria-pressed="false" data-k="${k}"
             ${m.accent?`style="--fac-dark:${m.accent}"`:''}>
       <p class="font-bold hd text-[13px] leading-tight">${m.label}${m.badge?` <span class="mode-badge">${m.badge}</span>`:''}</p>
@@ -1546,7 +1603,7 @@ async function applyURL(){
   if(p.get('context')) setChoice('context', p.get('context'));
 
   const m = p.get('mode');
-  if(m && MODES[m]){ sel.mode = m; markModes(); }
+  if(m && MODES[m] && (m !== 'reference' || sel.std.reference)){ sel.mode = m; markModes(); }
   showBrief(true);
   build();
   $('step2').scrollIntoView({behavior:'smooth', block:'start'});
@@ -1750,6 +1807,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=25"></script>
+<script src="timetable.js?v=28"></script>
 </body>
 </html>

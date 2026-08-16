@@ -46,7 +46,7 @@ const SUBJECTS = {
 'Biology':{
   lens:'Scholarship Biology asks you to integrate ecological, genetic and evolutionary thinking into a single extended answer, usually about material you have never seen before.',
   discipline:'Biology at this level reasons across scales and across time. The best answers move fluently between molecule, organism, population and ecosystem, and treat evolution as the explanation underlying all of it.',
-  standards:[{ code:'93101', ref:'S', credits:0, mode:'external', verified:true,
+  standards:[{ code:'93101', ref:'S', credits:0, mode:'external', reference:true, verified:true,
     title:'Scholarship Biology',
     bigIdea:'Take unfamiliar biological material and build one sustained argument from it, using everything you know about ecology, genetics and evolution together.',
     format:'Three-hour examination. The 2026 specification sets THREE questions, all of which should be attempted, requiring analysis of biological contexts and the use of ecological, genetic and evolutionary concepts integrated into an extended answer. The curriculum examined includes Biology achievement objectives up to and including Level 8 of the New Zealand Curriculum. A digital option is available — check the current specification.',
@@ -70,7 +70,7 @@ const SUBJECTS = {
 'Chemistry':{
   lens:'Scholarship Chemistry rewards moving between the particle, the equation and the observable — and reasoning quantitatively about systems that have not been set up neatly for you.',
   discipline:'Chemistry at this level is about mechanism and quantity together. Show what the particles are doing, support it with the maths, and be explicit about the assumptions your model makes.',
-  standards:[{ code:'93102', ref:'S', credits:0, mode:'external', verified:true,
+  standards:[{ code:'93102', ref:'S', credits:0, mode:'external', reference:true, verified:true,
     title:'Scholarship Chemistry',
     bigIdea:'Apply chemical reasoning to unfamiliar, multi-step problems where the route to the answer is not signposted.',
     format:'Three-hour examination. Check the current NZQA specification for the number of questions and any digital option.',
@@ -93,7 +93,7 @@ const SUBJECTS = {
 'Physics':{
   lens:'Scholarship Physics asks you to build a model of an unfamiliar situation, defend the model, then do the mathematics — in that order.',
   discipline:'Physics at this level rewards the physical argument as much as the algebra. Name the principle, justify why it applies, state your assumptions, then calculate — and say what the answer means.',
-  standards:[{ code:'93103', ref:'S', credits:0, mode:'external', verified:true,
+  standards:[{ code:'93103', ref:'S', credits:0, mode:'external', reference:true, verified:true,
     title:'Scholarship Physics',
     bigIdea:'Model situations you have never met, using principles you have, and defend every step of the reasoning.',
     format:'Three-hour examination. Check the current NZQA specification for the paper structure and any digital option.',
@@ -116,7 +116,7 @@ const SUBJECTS = {
 'Calculus':{
   lens:'Scholarship Calculus is about mathematical argument. Getting the answer is necessary and not sufficient — the marks are in the proof.',
   discipline:'At this level mathematics is written, not just computed. Every step follows from the last for a stated reason, and a generalisation is worth more than a particular case.',
-  standards:[{ code:'93202', ref:'S', credits:0, mode:'external', verified:true,
+  standards:[{ code:'93202', ref:'S', credits:0, mode:'external', reference:true, verified:true,
     title:'Scholarship Calculus',
     bigIdea:'Construct and communicate rigorous mathematical arguments about problems with no obvious method.',
     format:'Three-hour examination. Check the current NZQA specification for the paper structure and permitted technology.',
@@ -139,7 +139,7 @@ const SUBJECTS = {
 'Statistics':{
   lens:'Scholarship Statistics rewards statistical thinking over statistical procedure: what the data can support, what it cannot, and how confident you are entitled to be.',
   discipline:'Statistics at this level is argument under uncertainty. Every conclusion is bounded by how the data were gathered, and saying clearly what you cannot conclude is part of the answer.',
-  standards:[{ code:'93201', ref:'S', credits:0, mode:'external', verified:true,
+  standards:[{ code:'93201', ref:'S', credits:0, mode:'external', reference:true, verified:true,
     title:'Scholarship Statistics',
     bigIdea:'Reason critically about real statistical situations, including the ones where the honest answer is that the data will not bear the claim.',
     format:'Three-hour examination. Check the current NZQA specification for the paper structure and permitted technology.',

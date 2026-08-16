@@ -82,7 +82,7 @@ subjects:{
       'Treating the event as purely natural when the damage pattern is usually shaped by human decisions about where and how people live.'],
     pitfalls:['Retelling the news story instead of analysing it geographically.','No geographic concepts used to frame the analysis.','Significance asserted rather than justified with evidence.'] },
 
-  { code:'91429', ref:'3.4', credits:4, mode:'external', verified:true,
+  { code:'91429', ref:'3.4', credits:4, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of a given environment(s) through selection and application of geographic concepts and skills',
     bigIdea:'A resource-booklet paper on an overseas environment you have never studied. You are marked on choosing the right concept and skill and applying them well — not on prior knowledge.',
     format:'One exam question with multiple parts, overseas setting, resource booklet supplied. Each part asks you to select and apply skills and concepts. Concept definitions are provided in the booklet.',
@@ -325,7 +325,7 @@ subjects:{
       'Viewpoints listed but never evaluated against the evidence.',
       'No named groups or sources behind the positions described.'] },
 
-  { code:'91603', ref:'3.3', credits:5, mode:'external', verified:true,
+  { code:'91603', ref:'3.3', credits:5, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of the responses of plants and animals to their external environment',
     bigIdea:'Explain how plants and animals detect what is happening around them and change their behaviour or physiology in response.',
     format:'End-of-year examination on printed paper, with resource-based questions. Annotated diagrams may be used as evidence where appropriate. You should be comfortable reading graphical and tabulated data. The largest Biology external at 5 credits.',
@@ -367,7 +367,7 @@ subjects:{
       'Naming hormones without saying what they act on and what changes as a result.',
       'No link back to why the regulation matters for the animal.'] },
 
-  { code:'91605', ref:'3.5', credits:4, mode:'external', verified:true,
+  { code:'91605', ref:'3.5', credits:4, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of evolutionary processes leading to speciation',
     bigIdea:'Explain how one population becomes two species — the isolation, the selection, and the genetic change that makes it permanent.',
     format:'End-of-year examination on printed paper, with resource-based questions and annotated diagrams permitted. You should be comfortable with graphical and tabulated data. Geological events that influence speciation include tectonic movement, glaciation, orogeny and sea level change.',
@@ -389,7 +389,7 @@ subjects:{
       'Teleological language — "the species evolved in order to".',
       'Phylogenetic trees misread, particularly which taxa share the most recent common ancestor.'] },
 
-  { code:'91606', ref:'3.6', credits:4, mode:'external', verified:true,
+  { code:'91606', ref:'3.6', credits:4, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of trends in human evolution',
     bigIdea:'Trace what changed across hominin evolution — skeleton, brain, behaviour, culture — and explain the selection pressures behind each trend.',
     format:'End-of-year examination on printed paper. Trends are limited to early bipedal hominins onwards, and may involve comparison with living hominids. Dispersal covers the period up to 6,000 years ago. Cultural evolution covers the Earlier, Middle and Later Stone Age, the Middle and Upper Palaeolithic, the Neolithic, and Oldowan, Acheulean and Mousterian tool cultures. If you name a species, everything you say about it must be consistent with that species. All answers must be based on scientific evidence.',
@@ -495,7 +495,7 @@ subjects:{
       'A research report that summarises sources rather than explaining chemistry.',
       'Implications discussed with no chemical basis.'] },
 
-  { code:'91390', ref:'3.4', credits:5, mode:'external', verified:true,
+  { code:'91390', ref:'3.4', credits:5, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of thermochemical principles and the properties of particles and substances',
     bigIdea:'Explain why substances behave as they do from their particles up — structure, bonding, energy and spontaneity.',
     format:'End-of-year examination on printed paper. Contexts may be unfamiliar and any context-specific formulae are supplied. A resource booklet provides relevant formulae, a periodic table with molar masses, and a list of nine complex ions. An approved scientific or graphics calculator is required. Show all working, use correct units, and round to an appropriate number of significant figures — usually three. Resonance, Hund\u2019s rule and the stability of half-filled sublevels are NOT assessed; the specific heat capacity of water is supplied when needed.',
@@ -517,7 +517,7 @@ subjects:{
       'Explanations that name an intermolecular force without saying why it arises in that molecule.',
       'Assuming resonance or Hund\u2019s rule is required — the specifications exclude both.'] },
 
-  { code:'91391', ref:'3.5', credits:5, mode:'external', verified:true,
+  { code:'91391', ref:'3.5', credits:5, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of the properties of organic compounds',
     bigIdea:'Work out what an organic molecule will do from its functional groups, and be able to get from any compound to any other.',
     format:'End-of-year examination on printed paper, with a resource booklet. Constitutional isomers are those with the same molecular formula but a different structural formula. Systematic naming of amines is restricted to primary amines, and you will not be expected to recall the common names of amino acids. Knowledge of Level 2 organic chemistry (AS 91165) is assumed.',
@@ -538,7 +538,7 @@ subjects:{
       'Reaction schemes with a missing intermediate step.',
       'Mechanism arrows drawn in the wrong direction.'] },
 
-  { code:'91392', ref:'3.6', credits:5, mode:'external', verified:true,
+  { code:'91392', ref:'3.6', credits:5, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of equilibrium principles in aqueous systems',
     bigIdea:'Work out what is actually in the solution, then calculate and explain what the system does.',
     format:'End-of-year examination on printed paper, with a resource booklet containing formulae, a periodic table and nine named complex ions. Calculator required. You are expected to recognise strong acids (HCl, HBr, HNO₃, H₂SO₄), strong bases (KOH, NaOH), weak acids (HF, CH₃COOH, NH₄⁺) and weak bases (NH₃, CH₃NH₂, CH₃COO⁻). Values of Kb or pKb are not supplied but may be derived and used.',
@@ -625,7 +625,7 @@ subjects:{
       'No real numbers from the application.',
       'Diagrams copied without annotation or explanation.'] },
 
-  { code:'91523', ref:'3.3', credits:4, mode:'external', verified:true,
+  { code:'91523', ref:'3.3', credits:4, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of wave systems',
     bigIdea:'Understand waves as systems — how they superpose, resonate and shift, and what that predicts.',
     format:'End-of-year examination on printed paper. Show reasoning clearly using numerical working, words and/or diagrams. Mathematical solutions require you to show mathematically that two phenomena, concepts or principles are connected. Standard form is recommended, significant figures should match the data, and in a "show that" question write down unrounded values. An approved calculator, ruler and protractor are required.',
@@ -647,7 +647,7 @@ subjects:{
       'Equations used without naming the principle they come from.',
       'No diagram where a diagram would settle the geometry.'] },
 
-  { code:'91524', ref:'3.4', credits:6, mode:'external', verified:true,
+  { code:'91524', ref:'3.4', credits:6, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of mechanical systems',
     bigIdea:'Extend mechanics to systems that rotate, orbit and oscillate — and keep the conservation laws in view throughout.',
     format:'End-of-year examination on printed paper, and the joint-largest Physics external at 6 credits. Show reasoning clearly; mathematical solutions require you to demonstrate that principles are connected. g is given as 9.81 m s⁻². Calculator, ruler and protractor required.',
@@ -690,7 +690,7 @@ subjects:{
       'Energy level diagrams read in the wrong direction.',
       'Qualitative answers where the standard expects quantities.'] },
 
-  { code:'91526', ref:'3.6', credits:6, mode:'external', verified:true,
+  { code:'91526', ref:'3.6', credits:6, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of electrical systems',
     bigIdea:'Circuits that store, oppose and oscillate — capacitors, inductors and AC behaviour.',
     format:'End-of-year examination on printed paper, and the joint-largest Physics external at 6 credits. Show reasoning clearly with working, words and/or diagrams. Calculator, ruler and protractor required. Standard form recommended; significant figures consistent with the data.',
@@ -936,7 +936,7 @@ subjects:{
       'Statistics quoted without a source or date.',
       'Recommendations not connected to the factors identified.'] },
 
-  { code:'91462', ref:'3.2', credits:5, creditsUnverified:true, mode:'external', verified:true,
+  { code:'91462', ref:'3.2', credits:5, creditsUnverified:true, mode:'external', reference:true, verified:true,
     title:'Analyse an international health issue',
     bigIdea:'Take a health issue playing out beyond New Zealand and analyse its determinants and consequences with real international evidence.',
     format:'End-of-year examination, available in paper or digital format. You apply learning to scenarios and stimulus material in a separate resource booklet, and must use specific relevant research evidence to support your analysis. Marking is based on quality of content rather than length, and planning space is not marked. Candidates should be familiar with health issues related to poverty.',
@@ -996,7 +996,7 @@ subjects:{
       'A personal stance asserted in the conclusion with no justification.',
       'Consequences for well-being not analysed across the socio-ecological levels.'] },
 
-  { code:'91465', ref:'3.5', credits:5, creditsUnverified:true, mode:'external', verified:true,
+  { code:'91465', ref:'3.5', credits:5, creditsUnverified:true, mode:'external', reference:true, verified:true,
     title:'Evaluate models for health promotion',
     bigIdea:'Judge which health promotion approach actually works for which problem, and be able to say why.',
     format:'End-of-year examination, available in paper or digital format, with a separate resource booklet of scenarios and stimulus material. You must use specific relevant research evidence, and marking is based on quality of content rather than length. Planning space is not marked.',
@@ -1267,7 +1267,7 @@ Never translate, draft or reword any part of the student's assessed work, in eit
       'Preparing content but not preparing to be asked something unexpected.',
       'Note: this is assessed work, so an AI must not script it for you.'] },
 
-  { code:'91652', ref:'3.3', credits:6, mode:'external', verified:true,
+  { code:'91652', ref:'3.3', credits:6, mode:'external', reference:true, verified:true,
     title:'Pānui kia mōhio ki te reo Māori o te ao whānui',
     bigIdea:'Reading to understand. Written te reo Māori on topics from the wider world, understood in detail under exam conditions.',
     format:'End-of-year examination. NZQA publishes a list of vocabulary that is assessable in the external examination on the subject landing page — worth working through with your kaiako well before the exam.',
@@ -1287,7 +1287,7 @@ Never translate, draft or reword any part of the student's assessed work, in eit
       'Missing cohesion devices that signal contrast or cause, and so misreading the argument.',
       'Running out of time on the longest text.'] },
 
-  { code:'91653', ref:'3.4', credits:6, mode:'external', verified:true,
+  { code:'91653', ref:'3.4', credits:6, mode:'external', reference:true, verified:true,
     title:'Tuhi i te reo Māori o te ao whānui',
     bigIdea:'Writing in te reo Māori about the wider world, under exam conditions, with range and control.',
     format:'End-of-year examination. NZQA publishes the assessable vocabulary list for the external examination on the subject landing page.',
@@ -1471,7 +1471,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
       'The critical path identified but never interpreted for the actual project.',
       'Float calculated without saying which activities have it.'] },
 
-  { code:'91577', ref:'3.5', credits:5, mode:'external', verified:true,
+  { code:'91577', ref:'3.5', credits:5, mode:'external', reference:true, verified:true,
     title:'Apply the algebra of complex numbers in solving problems',
     bigIdea:'Extend algebra beyond the real numbers, and work fluently between rectangular and polar forms.',
     format:'End-of-year examination on printed paper. A Formulae and Tables Booklet is supplied and you may keep it. You must bring an approved calculator, preferably a graphing calculator — candidates without one will be disadvantaged. Unless a method is specified you may choose your own, but guess-and-check is unlikely to show the required thinking, and questions are written to test understanding rather than results transferred straight off a graphing calculator.',
@@ -1493,7 +1493,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
       'Decimal approximations where exact form was expected.',
       'No Argand diagram where one would have prevented a quadrant error.'] },
 
-  { code:'91578', ref:'3.6', credits:6, mode:'external', verified:true,
+  { code:'91578', ref:'3.6', credits:6, mode:'external', reference:true, verified:true,
     title:'Apply differentiation methods in solving problems',
     bigIdea:'Rates of change, and what they tell you about the behaviour of a function and the situation it models.',
     format:'End-of-year examination on printed paper, and one of the two largest Calculus externals at 6 credits. Formulae and Tables Booklet supplied. Approved calculator required, preferably graphing. You must show any working the question asks for — derivatives, anti-derivatives and equations are specifically named in the specifications.',
@@ -1515,7 +1515,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
       'Optimisation answers with no check that the value is a maximum, or no interpretation in context.',
       'Results transferred from a graphing calculator without the mathematical reasoning.'] },
 
-  { code:'91579', ref:'3.7', credits:6, mode:'external', verified:true,
+  { code:'91579', ref:'3.7', credits:6, mode:'external', reference:true, verified:true,
     title:'Apply integration methods in solving problems',
     bigIdea:'Accumulation — reversing differentiation, and using it to find areas, volumes and totals.',
     format:'End-of-year examination on printed paper, 6 credits. Formulae and Tables Booklet supplied. Approved calculator required, preferably graphing. Working asked for — including anti-derivatives — must be shown.',
@@ -1622,7 +1622,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
       'The causal conclusion stated more strongly than the design supports.',
       'Design decisions described but not justified.'] },
 
-  { code:'91584', ref:'3.12', credits:4, mode:'external', verified:true,
+  { code:'91584', ref:'3.12', credits:4, mode:'external', reference:true, verified:true,
     title:'Evaluate statistically based reports',
     bigIdea:'Read a real statistical report critically — what it claims, what the data can support, and where the errors hide.',
     format:'End-of-year examination on printed paper, with a resource booklet and a separate question-and-answer booklet. Reports are set in real-life contexts. You will evaluate claims and conclusions, which may involve identifying and discussing sources of error, calculating and interpreting margins of error, and considering study design and the type of inference. You should recall and use the rule of thumb based on 1/√n for margin of error. Approved calculator required, preferably graphing; a Formulae and Tables Booklet is supplied.',
@@ -1642,7 +1642,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
       'Margin of error quoted but not interpreted for the claim being made.',
       'The type of study never identified, so the discussion of causation has no basis.'] },
 
-  { code:'91585', ref:'3.13', credits:4, mode:'external', verified:true,
+  { code:'91585', ref:'3.13', credits:4, mode:'external', reference:true, verified:true,
     title:'Apply probability concepts in solving problems',
     bigIdea:'Reason about uncertainty properly — especially conditional probability, where intuition fails most often.',
     format:'End-of-year examination on printed paper. Probabilities may need to be calculated from formulae, a probability distribution table or graph, tables or visual representations of counts or proportions, simulation results, or written information. You must clearly show the method used and state any assumptions made. Approved calculator required; Formulae and Tables Booklet supplied. Sensible rounding is expected and early rounding may be penalised.',
@@ -1664,7 +1664,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
       'Early rounding, which the specifications say may be penalised.',
       'Probability calculated but not interpreted in the real context.'] },
 
-  { code:'91586', ref:'3.14', credits:4, mode:'external', verified:true,
+  { code:'91586', ref:'3.14', credits:4, mode:'external', reference:true, verified:true,
     title:'Apply probability distributions in solving problems',
     bigIdea:'Choose the right model for the randomness in front of you, check it fits, and use it.',
     format:'End-of-year examination on printed paper. You must clearly identify the probability distribution applied and state any assumptions. You need to be familiar with the normal, Poisson, binomial, uniform and triangular distributions, and may be expected to calculate or estimate the mean and standard deviation of a random variable. Approved calculator required; Formulae and Tables Booklet supplied.',
@@ -1893,7 +1893,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
       'Alternatives never considered, which is the usual Excellence gap.',
       'Note: this is assessed work, so an AI must not write or reword it.'] },
 
-  { code:'91908', ref:'3.9', credits:3, mode:'external', verified:true,
+  { code:'91908', ref:'3.9', credits:3, mode:'external', reference:true, verified:true,
     title:'Analyse an area of computer science',
     bigIdea:'Take one area of computer science and analyse it properly — the concepts, the trade-offs, and how they apply to unfamiliar situations.',
     format:'Online digital examination requiring a laptop or desktop computer. You receive a printed resource booklet, and respond in short and/or extended answers totalling 800–1500 words on ONE chosen area: Complexity and tractability, Big data, or Formal languages. NZQA notes that teachers should prepare students to apply their understanding to unfamiliar contexts, and to identify where areas overlap — with artificial intelligence, for instance.',
@@ -1979,7 +1979,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
       'Assumptions behind each method never stated.',
       'No evaluation of reliability, which is where Excellence sits.'] },
 
-  { code:'91413', ref:'3.4', credits:4, mode:'external', verified:true,
+  { code:'91413', ref:'3.4', credits:4, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of processes in the ocean system',
     bigIdea:'The ocean as a connected system — circulation, chemistry, energy and the interactions that drive them.',
     format:'End-of-year examination. The achievement standard was updated for 2025, so check you are working from the current version. Resource-based questions; annotated diagrams are useful where they clarify a process.',
@@ -1999,7 +1999,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
       'No named regions, currents or figures.',
       'Resource material ignored in favour of memorised content.'] },
 
-  { code:'91414', ref:'3.5', credits:4, mode:'external', verified:true,
+  { code:'91414', ref:'3.5', credits:4, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of processes in the atmosphere system',
     bigIdea:'Why weather and climate behave as they do — the energy, the circulation and the interactions.',
     format:'End-of-year examination. The achievement standard was updated for 2025, so check you are working from the current version. Resource-based questions; annotated diagrams are useful.',
@@ -2636,7 +2636,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
   discipline:'Economics reasons through models. The model is not decoration — it IS the argument. Draw it, shift the right curve, label the new equilibrium, then say in words what happened to whom and why. An answer with a model and no explanation, or an explanation and no model, is half an answer.',
   verifyNote:'Five standards, three external and two internal. Economics is no longer offered at Level 1 — it has been replaced by Commerce.',
   standards:[
-  { code:'91399', ref:'3.1', credits:4, mode:'external', verified:true,
+  { code:'91399', ref:'3.1', credits:4, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of the efficiency of market equilibrium',
     bigIdea:'Why a free market lands where it does, and what "efficient" actually means when it gets there.',
     format:'End-of-year examination. You will be required to draw, annotate and interpret models, and to explain changes in context. Diagrams are marked on whether the shift, the new equilibrium and the labels are right, not on neatness.',
@@ -2658,7 +2658,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
       'Explanation given in general terms rather than in the context of the question.',
       'Surplus areas mentioned but never identified on the diagram.'] },
 
-  { code:'91400', ref:'3.2', credits:4, mode:'external', verified:true,
+  { code:'91400', ref:'3.2', credits:4, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of the efficiency of different market structures using marginal analysis',
     bigIdea:'Firms behave differently depending on how much competition they face. Use marginal analysis to show how, and what it costs society.',
     format:'End-of-year examination. Expect to draw, annotate and interpret firm-level models under different market structures, and to compare outcomes across them.',
@@ -2720,7 +2720,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
       'A recommendation made with no evaluation of alternatives.',
       'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your teacher sets what use is acceptable — ask before you use it.'] },
 
-  { code:'91403', ref:'3.5', credits:4, mode:'external', verified:true,
+  { code:'91403', ref:'3.5', credits:4, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of macro-economic influences on the New Zealand economy',
     bigIdea:'What moves the whole New Zealand economy — and how the goals of growth, jobs, stable prices and trade pull against each other.',
     format:'End-of-year examination. This standard focuses on the effects of INTERNAL AND EXTERNAL influences on macro-economic goals, and expects you to describe the impact of government policies on the New Zealand economy as well as other influences. It builds on the Level 2 government policy standard rather than repeating it.',

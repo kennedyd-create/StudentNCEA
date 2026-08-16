@@ -254,7 +254,7 @@ const SUBJECTS = {
       'Approaches described generically with no link to the actual context.',
       'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
 
-  { code:'91922', ref:'1.3', credits:5, mode:'external', verified:true,
+  { code:'91922', ref:'1.3', credits:5, mode:'external', reference:true, verified:true,
     title:'Describe features of science that have contributed to the development of a science idea in a local context',
     bigIdea:'Science ideas do not appear fully formed. Show how one actually developed — the evidence, the arguments, the people.',
     format:'End-of-year examination. Submitted reports were removed as a method of external assessment at Level 1 from 2025, so this is examined.',
@@ -340,7 +340,7 @@ const SUBJECTS = {
       'Observations recorded with no chemistry explaining them.',
       'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
 
-  { code:'92022', ref:'1.3', credits:5, mode:'external', verified:true,
+  { code:'92022', ref:'1.3', credits:5, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of genetic variation in relation to an identified characteristic',
     bigIdea:'Why individuals differ — where the variation comes from, and how it passes on.',
     format:'End-of-year examination. You are given a characteristic to work with and asked about the genetics behind its variation.',
@@ -361,7 +361,7 @@ const SUBJECTS = {
       'Variation described but its source never explained.',
       'Genetic terms used loosely or interchangeably.'] },
 
-  { code:'92023', ref:'1.4', credits:4, mode:'external', verified:true,
+  { code:'92023', ref:'1.4', credits:4, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of how the physical properties of materials inform their use',
     bigIdea:'Why things are made of what they are made of — properties, structure, and fitness for purpose.',
     format:'End-of-year examination, and at 4 credits the smallest standard in this subject.',
@@ -427,7 +427,7 @@ const SUBJECTS = {
       'Graphs without labelled axes or units.',
       'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
 
-  { code:'92046', ref:'1.3', credits:5, mode:'external', verified:true,
+  { code:'92046', ref:'1.3', credits:5, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of the effect on the Earth of interactions between the Sun and the Earth-Moon system',
     bigIdea:'Day, night, seasons, tides, eclipses — all of it comes from three bodies moving in relation to each other.',
     format:'End-of-year examination. Diagrams are often the clearest way to show these relationships, so practise drawing and annotating them.',
@@ -448,7 +448,7 @@ const SUBJECTS = {
       'Effects described without the geometry that causes them.',
       'Southern Hemisphere seasons and Moon orientation reversed from Northern Hemisphere textbooks.'] },
 
-  { code:'92047', ref:'1.4', credits:5, mode:'external', verified:true,
+  { code:'92047', ref:'1.4', credits:5, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of a physical system using energy concepts',
     bigIdea:'Follow the energy — where it starts, what it becomes, and what gets wasted along the way.',
     format:'End-of-year examination. Show working for any calculations, with units.',
@@ -517,7 +517,7 @@ const SUBJECTS = {
       'The answer left as a number with no meaning attached to it.',
       'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
 
-  { code:'91946', ref:'1.3', credits:5, mode:'external', verified:true,
+  { code:'91946', ref:'1.3', credits:5, mode:'external', reference:true, verified:true,
     title:'Interpret and apply mathematical and statistical information in context',
     bigIdea:'You are given real information — graphs, tables, statements — and asked what it actually means and what follows from it.',
     format:'End-of-year examination, sat alongside AS91947. The specifications state that candidates are expected to demonstrate understanding of the mathematical concepts rather than directly transferring results from a graphing calculator, so show your reasoning.',
@@ -537,7 +537,7 @@ const SUBJECTS = {
       'Interpretations that are generic rather than about the actual context.',
       'Working omitted, so a correct answer earns less than it could.'] },
 
-  { code:'91947', ref:'1.4', credits:5, mode:'external', verified:true,
+  { code:'91947', ref:'1.4', credits:5, mode:'external', reference:true, verified:true,
     title:'Demonstrate mathematical reasoning',
     bigIdea:'Show how you got there. This standard is about the argument, not the answer.',
     format:'End-of-year examination, sat alongside AS91946. Reasoning must be visible — the specifications expect understanding of concepts rather than results transferred from a graphing calculator.',
@@ -703,7 +703,7 @@ Never translate, draft, script or reword any part of the student's assessed work
       'Ideas stated but not developed.',
       'Note: this is assessed work with no teacher feedback permitted. An AI must not write, translate or reword any part of it, and NZQA requires any use of generative AI to be acknowledged.'] },
 
-  { code:'92095', ref:'1.4', credits:5, mode:'external', verified:true,
+  { code:'92095', ref:'1.4', credits:5, mode:'external', reference:true, verified:true,
     title:'Te tuhi e pā ana ki tētahi horopaki e taunga ana',
     bigIdea:'Write in te reo Māori, independently, about something familiar — and show what you can actually produce on your own.',
     format:'Externally assessed, and sat after a significant portion of the year\u2019s teaching and learning has been delivered. This assesses your INDEPENDENT ability to communicate in written reo Māori about a familiar context. You should have had many opportunities to practise writing and receive formative feedback beforehand. Approved for Te Reo Matatini and Literacy during the transition period.',
@@ -862,7 +862,7 @@ Remember these are Year 11 students, many of them fifteen. Keep the register age
       'Consequences listed without connecting them back to the decision.',
       'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
 
-  { code:'92010', ref:'1.3', credits:5, mode:'external', verified:true,
+  { code:'92010', ref:'1.3', credits:5, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of factors that influence hauora',
     bigIdea:'What shapes well-being — and why some people find it much harder than others.',
     format:'End-of-year examination with a resource booklet supplied. NZQA publishes past papers, resource booklets and annotated exemplar answer scripts at all three grades for 2023, 2024 and 2025 — reading Achieved, Merit and Excellence side by side on the same paper is the fastest way to see the difference.',
@@ -882,7 +882,7 @@ Remember these are Year 11 students, many of them fifteen. Keep the register age
       'Factors listed with no explanation of their effect.',
       'Only one dimension of hauora considered.'] },
 
-  { code:'92011', ref:'1.4', credits:5, mode:'external', verified:true,
+  { code:'92011', ref:'1.4', credits:5, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of strategies that enhance hauora',
     bigIdea:'What actually helps — and at which level it has to happen to make a real difference.',
     format:'End-of-year examination with a resource booklet supplied. NZQA publishes a sample assessment, past papers and annotated exemplar scripts at all three grades.',
@@ -994,7 +994,7 @@ Remember these are Year 11 students, many of them fifteen. Keep the register age
   discipline:'These standards are assessed on reasoning about digital outcomes rather than on producing them: judging how usable an interface is, and justifying design decisions against the people who will use them. Precision and real examples do the work.',
   verifyNote:'Two of the four Level 1 standards are loaded — the written externals AS92006 and AS92007. The two build standards (AS92004 Create a computer program and AS92005 Develop a digital technologies outcome) are excluded as practical work an AI cannot honestly support.',
   standards:[
-  { code:'92006', ref:'1.3', credits:5, mode:'external', verified:true,
+  { code:'92006', ref:'1.3', credits:5, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of usability in human-computer interfaces',
     bigIdea:'Why some apps and websites feel obvious and others make you want to throw your phone. Usability is a set of principles, not an opinion.',
     format:'End-of-year examination with an answer booklet. NZQA publishes a sample assessment plus annotated exemplar answer scripts at all three grades for 2023, 2024 and 2025 — reading Achieved, Merit and Excellence on the same paper is the quickest way to see the difference.',
@@ -1015,7 +1015,7 @@ Remember these are Year 11 students, many of them fifteen. Keep the register age
       'Suggestions for improvement that are not tied to the intended users.',
       'General praise or criticism instead of specific features and their effects.'] },
 
-  { code:'92007', ref:'1.4', credits:5, mode:'external', verified:true,
+  { code:'92007', ref:'1.4', credits:5, mode:'external', reference:true, verified:true,
     title:'Design a digital technologies outcome',
     bigIdea:'Design something before building it — and be able to say why every decision is the right one for the people using it.',
     format:'End-of-year examination. This is a DESIGN standard, not a build standard: you are assessed on the design and your reasoning, not on producing a working outcome. NZQA publishes sample assessments for 2024 and 2026 plus annotated exemplar scripts at all three grades for 2024 and 2025.',

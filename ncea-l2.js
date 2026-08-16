@@ -92,7 +92,7 @@ const SUBJECTS = {
       'Causes listed without explaining how they produce the difference.',
       'Stereotyped description of less developed places rather than evidenced analysis.'] },
 
-  { code:'91243', ref:'2.4', credits:4, creditsUnverified:true, mode:'external', verified:true,
+  { code:'91243', ref:'2.4', credits:4, creditsUnverified:true, mode:'external', reference:true, verified:true,
     title:'Apply geography concepts and skills to demonstrate understanding of a given environment',
     bigIdea:'A resource-booklet paper on an environment you have never studied — you are marked on skills and concepts, not prior knowledge.',
     format:'End-of-year examination on printed paper with a resource booklet. ONE question with multiple parts covering a range of geographic concepts and skills. Definitions of key geographic concepts are NOT given in the questions but ARE provided in the resource booklet. You will be required to apply particular skills using the specified resource material, construct and/or interpret maps, graphs and diagrams, and apply concepts in extended paragraphs.',
@@ -604,7 +604,7 @@ const SUBJECTS = {
       'No named species, or a species described generically.',
       'Behavioural adaptations left out when the standard covers way of life as a whole.'] },
 
-  { code:'91156', ref:'2.4', credits:4, mode:'external', verified:true,
+  { code:'91156', ref:'2.4', credits:4, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of life processes at the cellular level',
     bigIdea:'What cells actually do — and how the molecular machinery behind it works.',
     format:'End-of-year examination on printed paper. You may be required to interpret diagrams and new information, draw diagrams, and write responses of one or more paragraphs. Some questions are resource-based, and annotated diagrams may be used as evidence. The 2026 specification is explicit about scope: photosynthesis includes BOTH light-dependent and light-independent processes; cell respiration includes BOTH anaerobic and aerobic; cell division includes semi-conservative replication, with the antiparallel arrangement of DNA strands and complementary base pairing expected; movement of materials may include facilitated diffusion; and factors affecting enzyme activity may include temperature, pH, substrate concentration, co-enzymes, co-factors and enzyme inhibitors.',
@@ -625,7 +625,7 @@ const SUBJECTS = {
       'Diagrams drawn but not annotated, when annotation is what earns the marks.',
       'Resource material ignored in favour of memorised content.'] },
 
-  { code:'91157', ref:'2.5', credits:4, mode:'external', verified:true,
+  { code:'91157', ref:'2.5', credits:4, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of genetic variation and change',
     bigIdea:'Where variation comes from, how it is inherited, and how populations change because of it.',
     format:'End-of-year examination on printed paper, with resource-based questions and annotated diagrams permitted as evidence. The 2026 specification requires you to understand the difference between GAMETIC and SOMATIC mutations, to draw and interpret Punnett squares for any specified monohybrid OR DIHYBRID pattern and calculate expected proportions as a ratio, fraction, percentage or decimal, and it treats linked genes as including sex linkage and genetic drift as including founder effect and genetic bottlenecks.',
@@ -666,7 +666,7 @@ const SUBJECTS = {
       'Sampling method not stated, so the data cannot be judged.',
       'Note: this is assessed work, so an AI must not draft or reword it.'] },
 
-  { code:'91159', ref:'2.7', credits:4, mode:'external', verified:true,
+  { code:'91159', ref:'2.7', credits:4, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of gene expression',
     bigIdea:'How the information in DNA actually becomes a protein — and what happens when that goes wrong.',
     format:'End-of-year examination on printed paper, with resource-based questions and annotated diagrams permitted as evidence. The 2026 specification names the bases as adenine, thymine, guanine, cytosine AND URACIL, and expects you to understand the relationships between them. Gene mutation examples may come from plants or animals, including humans.',
@@ -730,7 +730,7 @@ const SUBJECTS = {
       'Equations missing or unbalanced.',
       'Note: this is assessed work, so an AI must not draft or reword it.'] },
 
-  { code:'91164', ref:'2.4', credits:5, mode:'external', verified:true,
+  { code:'91164', ref:'2.4', credits:5, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of bonding, structure, properties and energy changes',
     bigIdea:'Why substances behave as they do — from how their particles stick together.',
     format:'End-of-year examination on printed paper, and the largest Level 2 Chemistry standard at 5 credits. Questions may use unfamiliar contexts, and any context-specific formulae are provided. Show all working; round numerical answers to three significant figures; include correct units; use the molar masses given with the question or on the periodic table provided. An approved scientific or graphics calculator is required. The Level 2 Chemistry resource booklet, available on the Chemistry subject page, contains the chemical formulae you need (for example n = cV) and a periodic table giving element symbols, atomic numbers and molar masses. Symbols, nomenclature, spelling and formatting follow IUPAC conventions — and that reference sheet is NOT provided in the examination, so learn the conventions beforehand. In Explanatory Note 5, solubility refers to polar and non-polar solvents.',
@@ -751,7 +751,7 @@ const SUBJECTS = {
       'Shapes named without reference to lone pairs.',
       'Molar masses invented rather than taken from the periodic table supplied.'] },
 
-  { code:'91165', ref:'2.5', credits:4, mode:'external', verified:true,
+  { code:'91165', ref:'2.5', credits:4, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of the properties of selected organic compounds',
     bigIdea:'Name them, draw them, react them — and know what their structure does to their properties.',
     format:'End-of-year examination on printed paper, with the Level 2 Chemistry resource booklet supplied. Naming, symbols, spelling and formatting follow IUPAC conventions, and that reference sheet is NOT provided in the exam. In Explanatory Note 3, solubility, melting and boiling points require you to understand how carbon-chain length and functional groups affect these properties — but an explanation of the chemistry of WHY they do is NOT required in this standard.',
@@ -771,7 +771,7 @@ const SUBJECTS = {
       'Names that do not follow systematic rules.',
       'Reaction schemes with a missing step.'] },
 
-  { code:'91166', ref:'2.6', credits:4, mode:'external', verified:true,
+  { code:'91166', ref:'2.6', credits:4, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of chemical reactivity',
     bigIdea:'Rates, equilibrium and acids — the three ideas that decide whether and how fast a reaction goes.',
     format:'End-of-year examination on printed paper, with the resource booklet supplying chemical formulae and a periodic table. Show all working, round numerical answers to three significant figures, include correct units, and use the molar mass values given with the question or on the periodic table provided. Approved scientific or graphics calculator required. Contexts may be unfamiliar, and any context-specific formulae are provided.',
@@ -856,7 +856,7 @@ const SUBJECTS = {
       'No real numbers from the context.',
       'Note: this is assessed work, so an AI must not draft or reword it.'] },
 
-  { code:'91170', ref:'2.3', credits:4, mode:'external', verified:true,
+  { code:'91170', ref:'2.3', credits:4, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of waves',
     bigIdea:'How waves behave — and why light and sound do the things they do.',
     format:'End-of-year examination on printed paper. Show your reasoning clearly using numerical working, words and/or diagrams; mathematical solutions require you to show mathematically that two phenomena, concepts or principles are connected. Formulae and physical constants are supplied on a separate resource sheet with the paper. g is given as 9.8 m s⁻² at Level 2 (note: Level 3 uses 9.81). Significant figures should match the data in the question, and you are expected to understand the prefixes micro, milli, centi, kilo and mega. Approved calculator, ruler and protractor required. You should be able to compare electromagnetic and mechanical waves, and diffraction around an object can be treated as diffraction through a slit of infinite width.',
@@ -877,7 +877,7 @@ const SUBJECTS = {
       'Answers without units.',
       'Equations used without naming the principle behind them.'] },
 
-  { code:'91171', ref:'2.4', credits:6, mode:'external', verified:true,
+  { code:'91171', ref:'2.4', credits:6, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of mechanics',
     bigIdea:'Forces, motion and energy — and how the conservation laws tie them together.',
     format:'End-of-year examination on printed paper, and one of the two largest Level 2 Physics standards at 6 credits. Formulae and physical constants are supplied on a separate resource sheet. g is given as 9.8 m s⁻² at Level 2 (Level 3 uses 9.81). Show reasoning clearly with working, words and/or diagrams; mathematical solutions must show that two principles are connected. Significant figures should match the data given. Approved calculator, ruler and protractor required.',
@@ -918,7 +918,7 @@ const SUBJECTS = {
       'Half-life calculations with the wrong number of half-lives counted.',
       'Note: this is assessed work, so an AI must not draft or reword it.'] },
 
-  { code:'91173', ref:'2.6', credits:6, mode:'external', verified:true,
+  { code:'91173', ref:'2.6', credits:6, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of electricity and electromagnetism',
     bigIdea:'Circuits and fields — what current, voltage and magnetism actually do.',
     format:'End-of-year examination on printed paper, 6 credits. Formulae and physical constants supplied on a separate resource sheet. Approved calculator, ruler and protractor required. Answers need appropriate units, and you are expected to understand the prefixes micro, milli, centi, kilo and mega. Motors and generators are not named in the standard but MAY appear as resource contexts — you do not need to know the functions of their parts. Weight force is not named either, but resource-based questions may use F = mg with direction and balanced forces.',
@@ -1023,7 +1023,7 @@ const SUBJECTS = {
       'Adaptations listed with no mechanism explained.',
       'Note: this is assessed work, so an AI must not draft or reword it.'] },
 
-  { code:'91191', ref:'2.5', credits:4, mode:'external', verified:true,
+  { code:'91191', ref:'2.5', credits:4, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of the causes of extreme Earth events in New Zealand',
     bigIdea:'Why New Zealand gets the hazards it does — the processes behind our earthquakes, eruptions, storms and floods.',
     format:'End-of-year examination. Many schools offer a choice between this standard and AS91192 rather than both, so check which your course covers.',
@@ -1043,7 +1043,7 @@ const SUBJECTS = {
       'No named events, dates or magnitudes.',
       'The New Zealand tectonic setting assumed rather than described.'] },
 
-  { code:'91192', ref:'2.6', credits:4, mode:'external', verified:true,
+  { code:'91192', ref:'2.6', credits:4, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of stars and planetary systems',
     bigIdea:'How stars work, how they end, and how planetary systems form around them.',
     format:'End-of-year examination. Many schools offer a choice between this standard and AS91191 rather than both.',
@@ -1363,7 +1363,7 @@ const SUBJECTS = {
       'The solution stated with no interpretation for the actual problem.',
       'Note: this is assessed work, so an AI must not do it for you.'] },
 
-  { code:'91261', ref:'2.6', credits:4, mode:'external', verified:true,
+  { code:'91261', ref:'2.6', credits:4, mode:'external', reference:true, verified:true,
     title:'Apply algebraic methods in solving problems',
     bigIdea:'The algebra everything else at Level 3 depends on.',
     format:'End-of-year examination on printed paper. Each paper contains resource-based AND knowledge-based questions, made up of THREE questions with multiple parts, some requiring you to process word problems. Approved calculator required. For this standard: any equations you form must be STATED as part of solving the problem, algebraic techniques must be SHOWN rather than just the answer, and answers should be in simplest algebraic form. You should know common 2D and 3D shapes and their formulae, may need to form and solve exponential equations for compound interest, growth and decay, and should understand rational (fractional) numbers as roots of equations.',
@@ -1384,7 +1384,7 @@ const SUBJECTS = {
       'Solutions not checked against the original equation, so extraneous roots survive.',
       'Decimal approximations where exact form was expected.'] },
 
-  { code:'91262', ref:'2.7', credits:5, mode:'external', verified:true,
+  { code:'91262', ref:'2.7', credits:5, mode:'external', reference:true, verified:true,
     title:'Apply calculus methods in solving problems',
     bigIdea:'Rates of change and accumulation — the first real calculus, and the largest standard in the subject.',
     format:'End-of-year examination on printed paper, and at 5 credits the largest standard in this subject. Three questions with multiple parts, resource-based and knowledge-based. Approved calculator required. You may be required to draw the graph of a function\u2019s gradient given the function (or the reverse), to JUSTIFY the nature of maximum or minimum points — by second derivative, testing points around the turning point, or an annotated sketch — and to form polynomials from a variety of contexts. Familiarity with common 2D and 3D shapes and their formulae is expected.',
@@ -1486,7 +1486,7 @@ const SUBJECTS = {
       'The type of study never identified.',
       'Note: this is assessed work, so an AI must not write it for you.'] },
 
-  { code:'91267', ref:'2.12', credits:4, mode:'external', verified:true,
+  { code:'91267', ref:'2.12', credits:4, mode:'external', reference:true, verified:true,
     title:'Apply probability methods in solving problems',
     bigIdea:'Reason about uncertainty — especially conditional probability, where intuition fails most often.',
     format:'End-of-year examination on printed paper. Probabilities may be calculated from one or more tables, written information, or a probability tree. ALL WORKING should be given to a minimum of THREE DECIMAL PLACES throughout. You may be required to create a probability tree from written information, to describe and compare distributions referring to shape, centre and spread with numerical justification, and to calculate and interpret relative risks both above and below 1.',
@@ -1604,7 +1604,7 @@ Never translate, draft or reword any part of the student's assessed work, in eit
       'The same few structures reused throughout.',
       'Note: this is assessed work, so an AI must not script it for you.'] },
 
-  { code:'91286', ref:'2.3', credits:6, mode:'external', verified:true,
+  { code:'91286', ref:'2.3', credits:6, mode:'external', reference:true, verified:true,
     title:'Pānui kia mōhio ki te reo o te ao torotoro',
     bigIdea:'Reading to understand — written te reo Māori understood in detail under exam conditions.',
     format:'End-of-year examination, sat in November. NZQA publishes a list of vocabulary assessable in the external examination on the Te Reo Māori subject page — work through it with your kaiako well before the exam.',
@@ -1624,7 +1624,7 @@ Never translate, draft or reword any part of the student's assessed work, in eit
       'Misreading cohesion devices that signal contrast or cause.',
       'Running out of time on the longest text.'] },
 
-  { code:'91287', ref:'2.4', credits:6, mode:'external', verified:true,
+  { code:'91287', ref:'2.4', credits:6, mode:'external', reference:true, verified:true,
     title:'Tuhi i te reo o te ao torotoro',
     bigIdea:'Writing in te reo Māori under exam conditions, with range and control.',
     format:'End-of-year examination, sat in November alongside the reading paper. The assessable vocabulary list on the subject page applies here too.',
@@ -2067,7 +2067,7 @@ Do not attempt to counsel, diagnose, or advise on their personal situation. Your
 
 When the work is genuinely academic, treat these topics as the serious curriculum content they are: accurate, respectful, non-judgemental, and inclusive of the range of identities, families and experiences that exist in a New Zealand classroom.`,
   standards:[
-  { code:'91235', ref:'2.1', credits:5, mode:'external', verified:true,
+  { code:'91235', ref:'2.1', credits:5, mode:'external', reference:true, verified:true,
     title:'Analyse an adolescent health issue',
     bigIdea:'Take a real health issue affecting young people and analyse what drives it, what it does to well-being, and what would actually help.',
     format:'End-of-year examination. You are assessed on how comprehensively you can analyse an adolescent health issue — explaining the influences behind it, the consequences for well-being, and health-enhancing strategies to address it.',
@@ -2127,7 +2127,7 @@ When the work is genuinely academic, treat these topics as the serious curriculu
       'No stated aim, so there is nothing to evaluate against.',
       'Note: this is assessed work, so an AI must not draft or reword it.'] },
 
-  { code:'91238', ref:'2.4', credits:4, creditsUnverified:true, mode:'external', verified:true,
+  { code:'91238', ref:'2.4', credits:4, creditsUnverified:true, mode:'external', reference:true, verified:true,
     title:'Analyse an interpersonal issue(s) that places personal safety at risk',
     bigIdea:'Analyse situations where relationships put someone\u2019s safety at risk, and what actually keeps people safe.',
     format:'End-of-year examination. You analyse the issue, its influences and consequences, and strategies that would enhance personal safety.',
@@ -2308,7 +2308,7 @@ When the work is genuinely academic, treat these topics as the serious curriculu
   discipline:'This standard is assessed on reasoning about technology rather than on producing it. Precision of terminology and concrete examples do the work, and the questions are set in real contexts — often school ones — rather than in the abstract.',
   verifyNote:'One of the ten Level 2 standards is loaded. The build standards (AS91890–AS91897, covering inquiry, user experience, databases, digital media, electronics, networks, programming and digital outcomes) are excluded as practical work. AS91899 is also excluded on purpose: NZQA requires the digital outcome it reflects on to be the student\u2019s own and states it must not be selected or sourced from AI, so no AI study tool should be involved with that standard at all.',
   standards:[
-  { code:'91898', ref:'2.9', credits:3, mode:'external', verified:true,
+  { code:'91898', ref:'2.9', credits:3, mode:'external', reference:true, verified:true,
     title:'Demonstrate understanding of a computer science concept',
     bigIdea:'Pick one computer science concept — computer security or encryption — and show you really understand how it works and what it does to people.',
     format:'Online digital examination requiring a laptop or desktop computer. You respond in matching lists, short and/or extended answers totalling 800–1500 words, on your choice of ONE concept: computer security OR encryption. For 2026, questions on impacts focus on human factors and social impact. Several topics are specified as focusing on use in schools.',
