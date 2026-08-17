@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 30 — consolidated buttons, day view, presets';
+const TT_BUILD = 'build 32 — edit without losing your plan, real sharing';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -61,6 +61,8 @@ const S = {
   howMode: 'ai',            // 'ai' | 'mix' | 'offline' | 'none'
   armed: null,              // subject picked from the tab bar, ready to place
   justBuilt: false,         // true for one render after generating, so print pulses briefly
+  stale: false,             // settings changed since the plan was built
+  shareOpen: false,         // the share panel is showing
   examsConfirmed: false,    // student has checked the dates against NZQA
   pickerOpen: false,        // the days-off calendar
   pickerMonth: null,
@@ -560,6 +562,11 @@ function addHourTo(date){
   else { save(); render(); }
 }
 
+/* A setting changed. Keep the plan visible — losing it on every edit is what
+   made people feel they had to start over — but mark it out of date so the
+   student knows to rebuild when they are finished changing things. */
+function touch(){ if(S.plan) S.stale = true; }
+
 function placeInto(n){
   if(!S.armed || !S.plan) return;
   const slot = S.plan.open[n];
@@ -843,6 +850,12 @@ function renderPlan(){
         <button id="tt-ics"   class="btn-3">Calendar</button>
       </div>
     </div>
+    ${S.shareOpen ? shareSheet() : ''}
+    ${S.stale ? `<div class="tt-stale">
+      <span>You have changed your settings since this plan was built.</span>
+      <button id="tt-rebuild" class="btn-1">Rebuild it</button>
+      <button id="tt-keep" class="btn-3">Keep this one</button>
+    </div>` : ''}
     ${viewBar()}
     ${`<div class="tt-armbar">
       <span class="tt-armlabel">${S.armed ? 'Click a + to place ' + label(S.armed) : 'Add a block:'}</span>
@@ -1048,18 +1061,58 @@ function planFromCode(code){
   } catch(e){ return false; }
 }
 
-async function copyPlanLink(btn){
+/* Sharing a plan means different things depending on who you are sending it
+   to, so offer the three that actually get used rather than one silent copy. */
+function planURL(){
   const code = planToCode();
-  if(!code) return;
-  const url = location.origin + location.pathname + '?plan=' + code;
+  return code ? location.origin + location.pathname + '?plan=' + code : '';
+}
+
+function shareSheet(){
+  const url = planURL();
+  if(!url) return '';
+  const subj = encodeURIComponent('My NCEA study plan');
+  const body = encodeURIComponent(
+    'Here is my study plan.\n\n' + url +
+    '\n\nIt opens in the browser — no sign-in needed.');
+  return `<div class="tt-share">
+    <p class="tt-share-h">Share this plan</p>
+    <p class="tt-share-b">Anyone opening the link gets your subjects, standards, dates and study hours — they can rebuild the same plan. Nothing is uploaded; it all travels in the link.</p>
+    <div class="tt-share-acts">
+      <button id="tt-share-copy" class="btn-2">Copy link</button>
+      <a class="btn-2" href="mailto:?subject=${subj}&body=${body}">Email it</a>
+      <button id="tt-share-close" class="btn-3">Close</button>
+    </div>
+    <input id="tt-share-url" class="field tt-share-url" readonly value="${url}">
+  </div>`;
+}
+
+async function copyPlanLink(btn){
+  const url = planURL();
+  if(!url) return;
   try { await navigator.clipboard.writeText(url); }
-  catch(e){ window.prompt('Copy this link:', url); return; }
-  const o = btn.textContent; btn.textContent = 'Link copied \u2713';
+  catch(e){ const f = document.getElementById('tt-share-url'); if(f){ f.select(); } return; }
+  const o = btn.textContent; btn.textContent = 'Copied \u2713';
   setTimeout(()=>btn.textContent = o, 1800);
 }
 
 /* Levels referenced by a shared plan must be loaded before it can render. */
 function levelsNeeded(){ return [...new Set(S.subjects.map(kLvl))]; }
+
+/* Reopening a collapsed step is bound once on the container, so it works no
+   matter when the bar itself was drawn. */
+let reopenBound = false;
+function bindReopen(){
+  const root = R();
+  if(!root || reopenBound) return;
+  reopenBound = true;
+  root.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('.tt-reopen');
+    if(!b) return;
+    S['open' + b.dataset.step] = true;
+    render();
+  });
+}
 
 window.Timetable = { open: render, state: S, generate, realism, toICS, reset: wipe,
                      fromCode: planFromCode };
@@ -1158,7 +1211,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=30';
+    t.src = src + '?v=32';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
@@ -1169,6 +1222,7 @@ function render(){
   root.innerHTML = intro() + stepLevel() + stepSubjects() + stepStandards() + stepExams() +
                    stepPeriods() + stepGo() + (S.plan ? renderPlan() : '') +
                    `<p class="tt-build">${TT_BUILD}</p>`;
+  bindReopen();
   wire();
   save();
 }
@@ -1208,6 +1262,12 @@ function stepSubjects(){
     S.subjects.map(label).join(' · ') || 'none chosen', '1');
   const all = externalSubjects();
   const facs = D().faculties.filter(f => f.subjects.some(n => all.includes(n)));
+  // Coming back to this step with no faculty open would show an empty row, so
+  // land on the one holding the first chosen subject.
+  if(S.faculty == null && S.subjects.length){
+    const i = facs.findIndex(f => f.subjects.includes(kName(S.subjects[0])));
+    if(i >= 0) S.faculty = i;
+  }
   return `<div class="panel p-4 md:p-5">
     <h3 class="sec-h mb-1">Which subjects are you sitting?</h3>
     <p class="text-xs soft mb-3">Only subjects with external exams appear. Choose up to ${MAX_SUBJECTS}.</p>
@@ -1414,7 +1474,7 @@ function wire(){
 
   // Switching level only changes what you are BROWSING — chosen subjects stay,
   // so a Level 3 student can add a Scholarship subject to the same plan.
-  q('.tt-reopen', b => b.onclick = () => { S['open'+b.dataset.step] = true; render(); });
+
   q('.tt-lvl', b => b.onclick = () => { S.level = b.dataset.l; S.faculty = null; render(); });
   q('.tt-fac', b => b.onclick = () => { S.faculty = +b.dataset.i; render(); });
   q('.tt-pick', b => b.onclick = () => {
@@ -1427,33 +1487,33 @@ function wire(){
       S.exams[k] = d ? { date:d.date||'', session:d.session||'AM', portfolio:!!d.portfolio }
                      : { date:'', session:'AM' };
     }
-    S.examsConfirmed = false; S.plan = null; render();
+    S.examsConfirmed = false; touch(); render();
   });
   q('.tt-x', b => b.onclick = () => {
     S.subjects = S.subjects.filter(x=>x!==b.dataset.n);
-    S.examsConfirmed=false; S.plan=null; render();
+    S.examsConfirmed=false; touch(); render();
   });
   q('.tt-check input', el => el.onchange = () => {
     const s = S.standards[el.dataset.sub];
     el.checked ? s.add(el.dataset.code) : s.delete(el.dataset.code);
-    S.plan = null;
+    touch();
   });
-  q('.tt-date', el => el.onchange = () => { S.exams[el.dataset.sub].date = el.value; S.examsConfirmed=false; S.plan=null; render(); });
-  q('.tt-sess', el => el.onchange = () => { S.exams[el.dataset.sub].session = el.value; S.examsConfirmed=false; S.plan=null; render(); });
+  q('.tt-date', el => el.onchange = () => { S.exams[el.dataset.sub].date = el.value; S.examsConfirmed=false; touch(); render(); });
+  q('.tt-sess', el => el.onchange = () => { S.exams[el.dataset.sub].session = el.value; S.examsConfirmed=false; touch(); render(); });
 
   q('.tt-pname', el => el.onchange = () => { S.periods[+el.dataset.i].name = el.value; });
-  q('.tt-pd', el => el.onchange = () => { S.periods[+el.dataset.i][el.dataset.k] = el.value; S.plan=null; render(); });
+  q('.tt-pd', el => el.onchange = () => { S.periods[+el.dataset.i][el.dataset.k] = el.value; touch(); render(); });
   q('.tt-ph', el => el.onchange = () => {
     S.periods[+el.dataset.i].hours[+el.dataset.d] = Math.max(0, Math.min(10, +el.value||0));
-    S.plan=null; render();
+    touch(); render();
   });
   q('.tt-preset', b => b.onclick = () => {
     S.periods[+b.dataset.i].hours = [...HOUR_PRESETS[b.dataset.p]];
-    S.plan = null; render();
+    touch(); render();
   });
   // Applying a heavy preset to every period at once is the easy mistake,
   // so realism() already flags it — this just makes it visible immediately.
-  q('.tt-prem', b => b.onclick = () => { S.periods.splice(+b.dataset.i,1); S.plan=null; render(); });
+  q('.tt-prem', b => b.onclick = () => { S.periods.splice(+b.dataset.i,1); touch(); render(); });
   const addp = one('#tt-addp');
   if(addp) addp.onclick = () => {
     const last = S.periods[S.periods.length-1];
@@ -1465,7 +1525,7 @@ function wire(){
   };
   const addOff = d => {
     if(!d || S.blackouts.includes(d)) return;
-    S.blackouts.push(d); S.plan = null; render();
+    S.blackouts.push(d); touch(); render();
   };
   const oa = one('#tt-offadd');
   if(oa) oa.onclick = () => { const el = one('#tt-offdate'); addOff(el && el.value); };
@@ -1476,7 +1536,7 @@ function wire(){
     render();
   };
   q('.tt-offx', b => b.onclick = () => {
-    S.blackouts = S.blackouts.filter(x => x !== b.dataset.d); S.plan = null; render();
+    S.blackouts = S.blackouts.filter(x => x !== b.dataset.d); touch(); render();
   });
   q('.tt-offcal [data-step]', b => b.onclick = () => {
     S.pickerMonth = addMonths(monthStart(S.pickerMonth || planStart()), +b.dataset.step); render();
@@ -1492,7 +1552,7 @@ function wire(){
   if(go) go.onclick = () => {
     try {
       S.plan = generate();
-      S.justBuilt = true;
+      S.justBuilt = true; S.stale = false;
       if(!S.plan){ alert('Nothing to schedule yet. Check you have ticked some standards and set your study hours.'); return; }
       const first = nextBlock();
       S.view = 'week';
@@ -1504,13 +1564,21 @@ function wire(){
       alert('Something went wrong building the timetable. If this keeps happening, use Start again to clear your saved plan.');
     }
   };
+  const rb = one('#tt-rebuild');
+  if(rb) rb.onclick = () => {
+    S.plan = generate(); S.stale = false; S.justBuilt = true;
+    const f = nextBlock(); if(f) S.cursor = f.date;
+    render(); setTimeout(()=>{ S.justBuilt = false; }, 8000);
+  };
+  const kp = one('#tt-keep'); if(kp) kp.onclick = () => { S.stale = false; render(); };
+
   const rg = one('#tt-regen');
   if(rg) rg.onclick = () => {
     const edited = S.plan && S.plan.open.some(x => x.extra);
     const msg = edited
       ? 'Regenerating builds the plan again from scratch. Any blocks you added, moved or cleared by hand will be lost. Carry on?'
       : 'Regenerating builds the plan again from scratch, so any changes you have made by hand will be lost. Carry on?';
-    if(confirm(msg)){ S.plan = generate(); save(); render(); }
+    if(confirm(msg)){ S.plan = generate(); S.stale = false; save(); render(); }
   };
 
   q('.seg [data-v]', b => b.onclick = () => { S.view = b.dataset.v; render(); });
@@ -1534,13 +1602,15 @@ function wire(){
     const b = nextBlock(); if(!b) return;
     S.cursor = b.date; S.view = 'day'; render();
   };
-  const sh = one('#tt-share'); if(sh) sh.onclick = () => copyPlanLink(sh);
+  const sh = one('#tt-share'); if(sh) sh.onclick = () => { S.shareOpen = !S.shareOpen; render(); };
+  const sc = one('#tt-share-copy'); if(sc) sc.onclick = () => copyPlanLink(sc);
+  const sx = one('#tt-share-close'); if(sx) sx.onclick = () => { S.shareOpen = false; render(); };
   const ics = one('#tt-ics'); if(ics) ics.onclick = () => download('ncea-study-plan.ics', toICS(), 'text/calendar');
   const pr  = one('#tt-print');  if(pr)  pr.onclick  = () => printPlan('all');
   const pr1 = one('#tt-print1'); if(pr1) pr1.onclick = () => printPlan('week');
 
   const tp = one('#tt-topics');
-  if(tp) tp.onchange = () => { S.withTopics = tp.checked; S.plan = null; render(); };
+  if(tp) tp.onchange = () => { S.withTopics = tp.checked; touch(); render(); };
 
   const rs = one('#tt-reset');
   if(rs) rs.onclick = () => {

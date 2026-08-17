@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=30"></script>
+<script src="ncea-exams-2026.js?v=32"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -496,6 +496,22 @@ body.dark-mode .tt-sit-paper, body.dark-mode .sit-paper{ color:#d6d3d1; }
   background:color-mix(in srgb,var(--hue) 12%,transparent);
   border-left:3px solid var(--hue); border-radius:.3rem; padding:.35rem .5rem; margin-top:.15rem; }
 .tt-block.tt-offline{ align-items:flex-start; }
+
+/* --- settings changed since the plan was built --- */
+.tt-stale{ display:flex; flex-wrap:wrap; align-items:center; gap:.6rem;
+  border:2px solid var(--gold); border-radius:.5rem; padding:.6rem .8rem; margin-bottom:.8rem;
+  background:color-mix(in srgb,var(--gold) 14%,transparent); font-size:.8125rem; font-weight:700; }
+.tt-stale span{ flex:1 1 14rem; }
+
+/* --- share panel --- */
+.tt-share{ border:1px solid var(--line-strong); border-radius:.55rem;
+  padding:.8rem .9rem; margin-bottom:.8rem; background:var(--surface-2); }
+.tt-share-h{ font-size:.875rem; font-weight:900; margin-bottom:.25rem; }
+.tt-share-b{ font-size:.75rem; line-height:1.55; color:var(--ink-soft); margin-bottom:.6rem; }
+.tt-share-acts{ display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; margin-bottom:.5rem; }
+.tt-share-acts a{ text-decoration:none; display:inline-block; }
+.tt-share-url{ width:100%; font-size:.6875rem; font-family:'JetBrains Mono',monospace;
+  padding:.35rem .5rem; color:var(--ink-soft); }
 
 /* --- view switcher row --- */
 .tt-viewbar{ display:flex; flex-wrap:wrap; gap:.6rem; align-items:center; margin-bottom:.8rem;
@@ -6992,7 +7008,7 @@ z
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 30 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 32 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7028,10 +7044,10 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=30' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=30' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=30' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=30' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=32' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=32' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=32' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=32' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7645,6 +7661,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=30"></script>
+<script src="timetable.js?v=32"></script>
 </body>
 </html>
