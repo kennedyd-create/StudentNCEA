@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 29 — contour banner';
+const TT_BUILD = 'build 30 — consolidated buttons, day view, presets';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -25,6 +25,16 @@ const kData = k => window.NCEA_DATA[kLvl(k)];
 
 const MAX_SUBJECTS = 6;
 const WEEKDAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+/* Typical patterns, so a student can set a whole period in one click and
+   only touch the day-by-day grid if they want something unusual. */
+const HOUR_PRESETS = {
+  'Light':      [1,1,1,1,0,2,0],
+  'Term-time':  [1,1,1,1,1,2,0],
+  'Holidays':   [3,3,3,0,3,3,0],
+  'Study leave':[5,5,5,5,5,3,0],
+  'Day off':    [0,0,0,0,0,0,0]
+};
+
 const HUES = ['#7900CC','#007040','#9F1559','#22229D','#DB2026','#9A6300'];
 
 const S = {
@@ -50,6 +60,7 @@ const S = {
   withTopics: true,         // allocate specific topics inside each standard
   howMode: 'ai',            // 'ai' | 'mix' | 'offline' | 'none'
   armed: null,              // subject picked from the tab bar, ready to place
+  justBuilt: false,         // true for one render after generating, so print pulses briefly
   examsConfirmed: false,    // student has checked the dates against NZQA
   pickerOpen: false,        // the days-off calendar
   pickerMonth: null,
@@ -494,8 +505,14 @@ function realism(){
   const notes = [];
   S.periods.forEach(p => {
     const w = p.hours.reduce((a,b)=>a+b,0);
-    if(w > 35) notes.push({ tone:'warn',
-      text:`${p.name} is set to ${w} hours a week. Even on study leave that is very hard to hold — 25 to 30 with rest built in is a pace people actually keep.` });
+    // Term-time and study leave have very different ceilings, so judge each
+    // period against what is plausible for it rather than one flat number.
+    const leave = /leave|holiday|break/i.test(p.name);
+    const cap = leave ? 30 : 15;
+    if(w > cap) notes.push({ tone:'warn',
+      text:`${p.name} is set to ${w} hours a week. ${leave
+        ? 'Even on study leave that is hard to hold — 20 to 25 with proper breaks is a pace people actually keep.'
+        : 'On top of a full school day that is a lot — around 10 to 12 is what most people manage without burning out.'}` });
     if(p.hours.every(h => h > 0)) notes.push({ tone:'warn',
       text:`${p.name} has no day off. Build in at least one — rest is part of the plan, not a failure of it.` });
     if(p.start > p.end) notes.push({ tone:'bad', text:`${p.name} ends before it starts.` });
@@ -638,14 +655,14 @@ function viewBar(){
               : S.view==='month' ? pretty(S.cursor,{month:'long',year:'numeric'})
               : 'Whole plan';
   return `<div class="tt-viewbar">
-    <div class="flex gap-1 items-center">${views.map(([v,l])=>
-      `<button class="tt-view" data-v="${v}" aria-pressed="${S.view===v}">${l}</button>`).join('')}
-      <button id="tt-regen" class="tt-regenbtn" title="Build the plan again from scratch">Regenerate</button></div>
+    <div class="seg">${views.map(([v,l])=>
+      `<button data-v="${v}" aria-pressed="${S.view===v}">${l}</button>`).join('')}</div>
+    <button id="tt-regen" class="btn-3" title="Build the plan again from scratch">Regenerate</button>
     ${S.view!=='full' ? `<div class="tt-nav">
-      <button class="tt-arrow" data-step="-1">&lsaquo;</button>
+      <button class="btn-2" data-step="-1">&lsaquo;</button>
       <span class="tt-navlabel">${heading}</span>
-      <button class="tt-arrow" data-step="1">&rsaquo;</button>
-      <button class="tt-today">Today</button></div>`
+      <button class="btn-2" data-step="1">&rsaquo;</button>
+      <button class="btn-2 tt-today">Today</button></div>`
       : `<span class="tt-navlabel">${heading}</span>`}
     <div class="tt-legend">${S.subjects.map(s=>
       `<span class="tt-key"><i style="background:${hueFor(s)}"></i>${label(s)}</span>`).join('')}</div>
@@ -666,8 +683,8 @@ function blockHTML(slot, n){
   const actions = S.howMode === 'none' ? ''
     : aiTurn
       ? `<div class="tt-acts">
-           <a class="tt-open" href="${q}" title="Open this in the prompt builder">Open &#8599;</a>
-           <button class="tt-gem" data-sub="${encodeURIComponent(it.subject)}" data-code="${it.st.code}"
+           <a class="btn-2 tt-open" href="${q}" title="Open this in the prompt builder">Open &#8599;</a>
+           <button class="btn-2 tt-gem" data-sub="${encodeURIComponent(it.subject)}" data-code="${it.st.code}"
              data-mode="${it.mode}" data-topic="${encodeURIComponent(it.topic||'')}"
              title="Copy the prompt and open Gemini">Gemini &#8599;</button>
          </div>`
@@ -688,11 +705,25 @@ function emptyHTML(n){
 
 function dayView(){
   const d = S.cursor;
-  const b = S.plan ? S.plan.open.map((s,n)=>({s,n})).filter(x => x.s.date === d) : [];
+  const rows = S.plan ? S.plan.open.map((s,n)=>({s,n})).filter(x => x.s.date === d) : [];
+  const done = rows.filter(x => x.s.item).length;
+  const isToday = d === todayISO();
+  const subjects = [...new Set(rows.filter(x=>x.s.item).map(x=>x.s.item.subject))];
+
   return `<div class="tt-dayview">
+    <div class="tt-dayhead">
+      <div>
+        <p class="tt-dayname">${isToday ? 'Today' : pretty(d,{weekday:'long'})}</p>
+        <p class="tt-daydate">${pretty(d,{day:'numeric', month:'long'})}</p>
+      </div>
+      <div class="tt-daystat">
+        ${done ? `<strong>${done}</strong> hour${done===1?'':'s'} planned` : 'Nothing planned'}
+        ${subjects.length ? `<span>${subjects.map(label).join(' · ')}</span>` : ''}
+      </div>
+    </div>
     ${examBanner(d)}
-    ${b.length ? b.map(x => x.s.item ? blockHTML(x.s, x.n) : emptyHTML(x.n)).join('')
-      : `<p class="text-sm soft mb-2">Nothing planned for this day.</p>`}
+    ${rows.length ? rows.map(x => x.s.item ? blockHTML(x.s, x.n) : emptyHTML(x.n)).join('')
+      : `<p class="tt-dayempty">A day off. Rest is part of the plan.</p>`}
     ${dayCapacity(d)}
     <button class="tt-addhr" data-date="${d}">${S.armed ? '+ Add ' + label(S.armed) + ' here' : '+ Add another hour'}</button>
   </div>`;
@@ -780,9 +811,9 @@ function fullCalendar(){
 }
 
 function fullView(){
-  return `<div class="tt-fullswitch">
-      <button class="tt-fm" data-m="subject" aria-pressed="${S.fullMode==='subject'}">By subject</button>
-      <button class="tt-fm" data-m="calendar" aria-pressed="${S.fullMode==='calendar'}">Calendar</button>
+  return `<div class="seg mb-3">
+      <button data-m="subject" aria-pressed="${S.fullMode==='subject'}">By subject</button>
+      <button data-m="calendar" aria-pressed="${S.fullMode==='calendar'}">Calendar</button>
     </div>
     ${S.fullMode==='calendar' ? fullCalendar() : subjectMatrix()}`;
 }
@@ -791,27 +822,25 @@ function renderPlan(){
   const p = S.plan; if(!p) return '';
   const body = S.view==='day' ? dayView() : S.view==='week' ? weekView()
              : S.view==='month' ? monthView() : fullView();
-  return `<div class="panel p-4 md:p-5 tt-plan">
+  return `<div class="panel p-4 md:p-5 tt-plan${S.justBuilt?' tt-fresh':''}">
     <div class="tt-planhead mb-3">
       <div class="tt-ph-left">
-        <div class="tt-how-switch" role="group" aria-label="How to study each block">
+        <div class="seg" role="group" aria-label="How to study each block">
           ${[['ai','With AI'],['mix','Mix'],['offline','Without AI'],['none','None']].map(([k,l])=>
-            `<button class="tt-hm" data-h="${k}" aria-pressed="${S.howMode===k}">${l}</button>`).join('')}
+            `<button data-h="${k}" aria-pressed="${S.howMode===k}">${l}</button>`).join('')}
         </div>
         <span class="text-xs soft">${p.used} blocks</span>
       </div>
 
       <div class="tt-ph-mid">
-        ${nextBlock() ? `<button id="tt-now" class="tt-nowbtn" title="Jump to your next study block">What now?</button>` : ''}
+        ${nextBlock() ? `<button id="tt-now" class="btn-now" title="Jump to your next study block">What now?</button>` : ''}
       </div>
 
       <div class="tt-ph-rt">
-        <button id="tt-print"  class="tt-printbtn">Print plan</button>
-        <button id="tt-print1" class="tt-printbtn" title="Just the week you are looking at">Print week</button>
-        <div class="tt-mini-stack">
-          <button id="tt-share" class="tt-minibtn">Share plan</button>
-          <button id="tt-ics"   class="tt-minibtn">Add to calendar</button>
-        </div>
+        <button id="tt-print"  class="btn-print">Print plan</button>
+        <button id="tt-print1" class="btn-print" title="Just the week you are looking at">Print week</button>
+        <button id="tt-share" class="btn-3">Share</button>
+        <button id="tt-ics"   class="btn-3">Calendar</button>
       </div>
     </div>
     ${viewBar()}
@@ -819,7 +848,7 @@ function renderPlan(){
       <span class="tt-armlabel">${S.armed ? 'Click a + to place ' + label(S.armed) : 'Add a block:'}</span>
       ${S.subjects.map(sub=>`<button class="tt-arm" data-s="${sub}" aria-pressed="${S.armed===sub}"
         style="--hue:${hueFor(sub)}">${label(sub)}</button>`).join('')}
-      ${S.armed?`<button class="tt-arm tt-armoff">Cancel</button>`:''}
+      ${S.armed?`<button class="btn-3 tt-arm tt-armoff">Cancel</button>`:''}
     </div>`}
     ${body}
   </div>`;
@@ -1086,7 +1115,7 @@ function render(){
         <em>404</em> or <em>File not found</em>, that file is missing from your site —
         upload it into the same folder as this page.</p>
         <div id="tt-diag" class="text-xs soft mt-3"></div>
-        <button id="tt-recheck" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold mt-3">Check again</button>
+        <button id="tt-recheck" class="btn-2 mt-3">Check again</button>
       </div>`;
       // keep the level pills live so the student can go back to a level that works
       root.querySelectorAll('.tt-lvl').forEach(b => b.onclick = () => {
@@ -1129,7 +1158,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=29';
+    t.src = src + '?v=30';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
@@ -1197,7 +1226,7 @@ function stepSubjects(){
 }
 
 function stepStandards(){
-  if(!S.subjects.length) return '';
+  if(!S.subjects.length) return '';   // nothing to choose from yet
   if(S.plan && !S.open2) return doneBar('STANDARDS',
     chosenStandards().length + ' standards selected', '2');
   return `<div class="panel p-4 md:p-5">
@@ -1261,7 +1290,7 @@ function examConfirmBox(){
     Still to sort: ${bad.map(label).join(', ')}. Every subject needs a date inside the exam period.</div>`;
   if(S.examsConfirmed) return `<div class="tt-confirm tt-confirm-ok">
     <span>Dates confirmed.</span>
-    <button id="tt-unconfirm" class="tt-linkbtn">Change them</button></div>`;
+    <button id="tt-unconfirm" class="btn-3">Change them</button></div>`;
   return `<div class="tt-confirm">
     <p class="tt-confirm-q">Check these against your own NZQA timetable before you go on — the whole plan is built backwards from these dates and times.</p>
     <ul class="tt-confirm-list">${S.subjects.map(sub=>{
@@ -1271,12 +1300,15 @@ function examConfirmBox(){
         <strong>${label(sub)}</strong> — ${pretty(ex.date,{weekday:'long', day:'numeric', month:'long'})}${
         ex.portfolio ? ' — portfolio submission' : ', ' + (sess.label||'') + ' ' + (sess.start||'')}</li>`;
     }).join('')}</ul>
-    <button id="tt-confirm" class="btn-go">These dates and times are right</button>
+    <button id="tt-confirm" class="btn-1">These dates and times are right</button>
   </div>`;
 }
 
 function stepPeriods(){
-  if(!S.subjects.length) return '';
+  // Availability only matters once there is something to schedule and a
+  // deadline to schedule against, so it stays hidden until then.
+  if(!S.subjects.length || !chosenStandards().length) return '';
+  if(!S.plan && !S.subjects.every(k => S.exams[k] && S.exams[k].date)) return '';
   if(S.plan && !S.open3) return doneBar('WHEN YOU STUDY',
     S.periods.map(p => p.name).join(' · '), '3');
   const r = realism();
@@ -1293,16 +1325,21 @@ function stepPeriods(){
         <span class="tt-phrs">${p.hours.reduce((a,b)=>a+b,0)} h/week</span>
         <button class="tt-prem" data-i="${i}" title="Remove this period">&times;</button>
       </div>
+      <div class="tt-presets">
+        <span class="tt-presetlabel">Quick set:</span>
+        ${Object.keys(HOUR_PRESETS).map(name=>
+          `<button class="btn-3 tt-preset" data-i="${i}" data-p="${name}">${name}</button>`).join('')}
+      </div>
       <div class="tt-hours">${WEEKDAYS.map((w,d)=>`<label class="tt-hour"><span>${w}</span>
         <input type="number" min="0" max="10" class="tt-ph${p.hours[d]?'':' tt-zero'}" data-i="${i}" data-d="${d}" value="${p.hours[d]}"></label>`).join('')}</div>
     </div>`).join('')}
-    <button id="tt-addp" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold mt-2">+ Add a period</button>
+    <button id="tt-addp" class="btn-2 mt-2">+ Add a period</button>
     <div class="mt-3">
       <span class="text-[10px] font-black uppercase tracking-widest soft">Individual days off</span>
       <div class="tt-offrow">
         <input type="date" id="tt-offdate" class="field" min="${planStart()}">
-        <button id="tt-offadd" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">Add this day</button>
-        <button id="tt-offcal" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold">
+        <button id="tt-offadd" class="btn-2">Add this day</button>
+        <button id="tt-offcal" class="btn-2">
           ${S.pickerOpen ? 'Close calendar' : 'Pick from a calendar'}</button>
       </div>
       ${S.pickerOpen ? offPicker() : ''}
@@ -1329,9 +1366,9 @@ function offPicker(){
   const end = lastExamDate();
   return `<div class="tt-offcal">
     <div class="tt-offhead">
-      <button class="tt-offnav" data-step="-1">&lsaquo;</button>
+      <button class="btn-2" data-step="-1">&lsaquo;</button>
       <span>${pretty(m,{month:'long', year:'numeric'})}</span>
-      <button class="tt-offnav" data-step="1">&rsaquo;</button>
+      <button class="btn-2" data-step="1">&rsaquo;</button>
     </div>
     <div class="tt-offgrid">
       ${WEEKDAYS.map(w=>`<div class="tt-offdow">${w[0]}</div>`).join('')}
@@ -1353,13 +1390,13 @@ function offPicker(){
 }
 
 function stepGo(){
-  if(!S.subjects.length) return '';
+  if(!S.subjects.length || !chosenStandards().length) return '';
   const n = chosenStandards().length;
   const dated = S.subjects.every(s => S.exams[s] && S.exams[s].date &&
     (S.exams[s].portfolio || !E().checkDate(S.exams[s].date)));
   const ready = n>0 && dated && S.examsConfirmed;
   return `<div class="panel p-4 md:p-5 flex flex-wrap items-center gap-3">
-    <button id="tt-go" class="btn-go"${ready?'':' disabled style="opacity:.5;cursor:not-allowed"'}>
+    <button id="tt-go" class="btn-1"${ready?'':' disabled style="opacity:.5;cursor:not-allowed"'}>
       ${S.plan?'Rebuild my timetable':'Create my study timetable'}</button>
     <label class="tt-toggle"><input type="checkbox" id="tt-topics" ${S.withTopics?'checked':''}>
       <span>Give each block a specific topic</span></label>
@@ -1367,7 +1404,7 @@ function stepGo(){
       ready ? '' : n===0 ? ' — tick at least one standard above'
              : !dated ? ' — needs a valid exam date: ' + S.subjects.filter(x=>!(S.exams[x]&&S.exams[x].date&&(S.exams[x].portfolio||!E().checkDate(S.exams[x].date)))).map(label).join(', ')
              : ' — confirm your exam dates above first'}</span>
-    <button id="tt-reset" class="btn-ai px-3 py-1.5 rounded-lg text-[11px] font-bold ml-auto">Start again</button>
+    <button id="tt-reset" class="btn-3 ml-auto">Start again</button>
   </div>`;
 }
 
@@ -1410,6 +1447,12 @@ function wire(){
     S.periods[+el.dataset.i].hours[+el.dataset.d] = Math.max(0, Math.min(10, +el.value||0));
     S.plan=null; render();
   });
+  q('.tt-preset', b => b.onclick = () => {
+    S.periods[+b.dataset.i].hours = [...HOUR_PRESETS[b.dataset.p]];
+    S.plan = null; render();
+  });
+  // Applying a heavy preset to every period at once is the easy mistake,
+  // so realism() already flags it — this just makes it visible immediately.
   q('.tt-prem', b => b.onclick = () => { S.periods.splice(+b.dataset.i,1); S.plan=null; render(); });
   const addp = one('#tt-addp');
   if(addp) addp.onclick = () => {
@@ -1435,7 +1478,7 @@ function wire(){
   q('.tt-offx', b => b.onclick = () => {
     S.blackouts = S.blackouts.filter(x => x !== b.dataset.d); S.plan = null; render();
   });
-  q('.tt-offnav', b => b.onclick = () => {
+  q('.tt-offcal [data-step]', b => b.onclick = () => {
     S.pickerMonth = addMonths(monthStart(S.pickerMonth || planStart()), +b.dataset.step); render();
   });
   q('.tt-offday', b => b.onclick = () => {
@@ -1449,8 +1492,13 @@ function wire(){
   if(go) go.onclick = () => {
     try {
       S.plan = generate();
+      S.justBuilt = true;
       if(!S.plan){ alert('Nothing to schedule yet. Check you have ticked some standards and set your study hours.'); return; }
-      S.view = 'week'; S.cursor = todayISO(); render();
+      const first = nextBlock();
+      S.view = 'week';
+      S.cursor = first ? first.date : todayISO();
+      render();
+      setTimeout(()=>{ S.justBuilt = false; }, 8000);
     } catch(err){
       console.error(err);
       alert('Something went wrong building the timetable. If this keeps happening, use Start again to clear your saved plan.');
@@ -1465,8 +1513,8 @@ function wire(){
     if(confirm(msg)){ S.plan = generate(); save(); render(); }
   };
 
-  q('.tt-view', b => b.onclick = () => { S.view = b.dataset.v; render(); });
-  q('.tt-arrow', b => b.onclick = () => {
+  q('.seg [data-v]', b => b.onclick = () => { S.view = b.dataset.v; render(); });
+  q('[data-step]', b => b.onclick = () => {
     const n = +b.dataset.step;
     if(S.view==='day') S.cursor = addDays(S.cursor,n);
     else if(S.view==='week') S.cursor = addDays(S.cursor,7*n);
@@ -1504,8 +1552,8 @@ function wire(){
   const uc = one('#tt-unconfirm');
   if(uc) uc.onclick = () => { S.examsConfirmed = false; render(); };
 
-  q('.tt-fm', b => b.onclick = () => { S.fullMode = b.dataset.m; render(); });
-  q('.tt-hm', b => b.onclick = () => { S.howMode = b.dataset.h; render(); });
+  q('.seg [data-m]', b => b.onclick = () => { S.fullMode = b.dataset.m; render(); });
+  q('.seg [data-h]', b => b.onclick = () => { S.howMode = b.dataset.h; render(); });
   q('.tt-mnum[data-goto]', c => c.onclick = () => { S.cursor = c.dataset.goto; S.view='day'; render(); });
   q('.tt-mslot', b => b.onclick = () => placeInto(+b.dataset.empty));
   q('.tt-addhr', b => b.onclick = () => addHourTo(b.dataset.date));
