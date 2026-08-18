@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=37"></script>
+<script src="ncea-exams-2026.js?v=38"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -7048,7 +7048,7 @@ z
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 37 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 38 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7084,10 +7084,10 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=37' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=37' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=37' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=37' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=38' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=38' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=38' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=38' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7701,6 +7701,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=37"></script>
+<script src="timetable.js?v=38"></script>
 </body>
 </html>

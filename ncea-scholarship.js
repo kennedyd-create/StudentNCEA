@@ -23,7 +23,7 @@
 (function () {
 
 const FACULTIES = [
- { name:'Social Sciences', dark:'#7900CC', light:'#F5EFFF', subjects:['Geography','History','Classical Studies'] },
+ { name:'Social Sciences', dark:'#7900CC', light:'#F5EFFF', subjects:['Geography','History','Classical Studies','Economics'] },
  { name:'Science',         dark:'#007040', light:'#E4F4E5', subjects:['Biology','Chemistry','Physics'] },
  { name:'Maths',           dark:'#9F1559', light:'#F8E7EE', subjects:['Calculus','Statistics'] },
  { name:'English',         dark:'#22229D', light:'#EBF5FA', subjects:['English'] },
@@ -250,6 +250,30 @@ const SUBJECTS = {
       'One kind of evidence used when the question invites several.',
       'A prepared essay reshaped to fit the question.',
       'Argument replaced by narrative.'] }]},
+
+'Economics':{
+  lens:'Scholarship Economics asks you to build and defend an economic argument about a real situation, using models as reasoning rather than decoration.',
+  discipline:'Economics at this level reasons through models to a defended position. Draw it, shift the right curve, then say what it means for real people — and be explicit about what the model assumes and where that assumption fails.',
+  standards:[{ code:'93401', ref:'S', credits:0, mode:'external', verified:true,
+    title:'Scholarship Economics',
+    bigIdea:'Apply economic reasoning to unfamiliar, contested situations and argue a position the examiner has not framed for you.',
+    format:'Three-hour written examination. Check the current NZQA assessment specification on the Scholarship Economics subject page for the paper structure.',
+    evidence:'Correctly drawn and fully labelled models, real data with figures and dates where it exists, and every conclusion tied to an identified group rather than to "the economy".',
+    criteria:SCHOL.criteria,
+    bandShift:{
+      aToM:'From Level 3 Excellence to Scholarship: stop applying the model you were told to use and start choosing between models, then justifying the choice. A Scholarship answer knows which framework fits and says why.',
+      mToE:'From Scholarship to Outstanding: hold one argument across the whole paper, weigh the distributional consequences — who gains, who loses — and acknowledge where your own model breaks down.'},
+    verbs:['model','analyse','evaluate','justify','predict','integrate'],
+    topics:['Choosing between competing models','Market failure and government response','Efficiency against equity','Macro-economic policy trade-offs','Distributional consequences','Interpreting real economic data','Assumptions and their limits','Building a sustained economic argument'],
+    contexts:['Unfamiliar economic situations supplied in the examination, plus contexts you have studied'],
+    misconceptions:['Treating a model as the answer rather than as the reasoning that produces one.',
+      'Confusing efficiency with fairness — a policy can improve one and worsen the other.',
+      'Assuming a diagram substitutes for an argument, or an argument for a diagram.',
+      'Writing about effects on "the economy" rather than on identified groups.'],
+    pitfalls:['Curves shifted the wrong way, which invalidates everything after it.',
+      'Models drawn and then never referred to in the writing.',
+      'A position asserted without weighing the alternative case.',
+      'Data quoted with no year attached.'] }]},
 
 'Drama':{
   lens:'Scholarship Drama rewards analysis of theatre as a made thing — the choices, their effects, and what the whole production is arguing.',

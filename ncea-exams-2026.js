@@ -135,6 +135,7 @@ window.NCEA_EXAMS = {
     'Statistics':        { date:'2026-11-16', session:'PM', sitting:'paper' },
     'Physics':           { date:'2026-11-18', session:'AM', sitting:'paper' },
     'Biology':           { date:'2026-11-19', session:'AM', sitting:'digital' },
+    'Economics':         { date:'2026-11-19', session:'AM', sitting:'paper' },
     'English':           { date:'2026-11-23', session:'AM', sitting:'digital' },
     'Calculus':          { date:'2026-11-25', session:'AM', sitting:'paper' },
     'Drama':             { date:'2026-11-25', session:'PM', sitting:'performance' },

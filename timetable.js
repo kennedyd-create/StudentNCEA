@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 37 — case study beside each standard';
+const TT_BUILD = 'build 38 — up to 10 subjects, Scholarship Economics';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -23,7 +23,7 @@ const kLvl  = k => k.split('::')[0];
 const kName = k => k.split('::')[1];
 const kData = k => window.NCEA_DATA[kLvl(k)];
 
-const MAX_SUBJECTS = 6;
+const MAX_SUBJECTS = 10;
 const WEEKDAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 /* Typical patterns, so a student can set a whole period in one click and
    only touch the day-by-day grid if they want something unusual. */
@@ -35,7 +35,11 @@ const HOUR_PRESETS = {
   'Day off':    [0,0,0,0,0,0,0]
 };
 
-const HUES = ['#7900CC','#007040','#9F1559','#22229D','#DB2026','#9A6300'];
+/* The six faculty colours first, so a subject usually matches its department,
+   then four more that stay distinguishable — a student can hold ten subjects
+   once Scholarship is in the mix, and two identical colours would be useless. */
+const HUES = ['#7900CC','#007040','#9F1559','#22229D','#DB2026','#9A6300',
+              '#0369a1','#0d9488','#7c2d12','#4338ca'];
 
 const S = {
   level: '3',
@@ -1248,7 +1252,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=37';
+    t.src = src + '?v=38';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
@@ -1311,7 +1315,8 @@ function stepSubjects(){
   return `<div class="panel p-4 md:p-5">
     <h3 class="sec-h mb-1"><span class="tt-step">2</span>Which subjects?</h3>
     <p class="tt-why">Only subjects with an exam appear — internals have no fixed date to work
-      backwards from. Choose up to ${MAX_SUBJECTS}; the plan splits your time between them by credits.</p>
+      backwards from. Choose up to ${MAX_SUBJECTS} — enough for a full Level 3 load plus Scholarship —
+      and the plan splits your time between them by credits.</p>
     <div class="flex flex-wrap gap-2 mb-3">${facs.map((f,i)=>
       `<button class="fac-pill tt-fac" data-i="${i}" aria-pressed="${S.faculty===i}"
         style="--fac-dark:${f.dark};--fac-light:${f.light}">${f.name}</button>`).join('')}</div>
