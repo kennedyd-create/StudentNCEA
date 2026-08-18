@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 34 — your own case study per standard';
+const TT_BUILD = 'build 36 — inline guidance';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -852,7 +852,8 @@ function renderPlan(){
   return `<div class="panel p-4 md:p-5 tt-plan${S.justBuilt?' tt-fresh':''}">
     <div class="tt-planhead mb-3">
       <div class="tt-ph-left">
-        <div class="seg" role="group" aria-label="How to study each block">
+        <div class="seg" role="group" aria-label="How to study each block"
+             title="Choose what each block tells you to do: an AI prompt, an off-screen study method, both, or nothing">
           ${[['ai','With AI'],['mix','Mix'],['offline','Without AI'],['none','None']].map(([k,l])=>
             `<button data-h="${k}" aria-pressed="${S.howMode===k}">${l}</button>`).join('')}
         </div>
@@ -877,8 +878,12 @@ function renderPlan(){
       <button id="tt-keep" class="btn-3">Keep this one</button>
     </div>` : ''}
     ${viewBar()}
+    <p class="tt-why tt-why-wide">Day and Week show what to do and let you copy prompts.
+      Month and Full plan are for checking the shape of it — click any day to open it.</p>
     ${`<div class="tt-armbar">
-      <span class="tt-armlabel">${S.armed ? 'Click a + to place ' + label(S.armed) : 'Add a block:'}</span>
+      <span class="tt-armlabel">${S.armed
+        ? 'Now click any + to put ' + label(S.armed) + ' there'
+        : 'To add a block: pick a subject, then click a + on any day'}</span>
       ${S.subjects.map(sub=>`<button class="tt-arm" data-s="${sub}" aria-pressed="${S.armed===sub}"
         style="--hue:${hueFor(sub)}">${label(sub)}</button>`).join('')}
       ${S.armed?`<button class="btn-3 tt-arm tt-armoff">Cancel</button>`:''}
@@ -1243,7 +1248,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=34';
+    t.src = src + '?v=36';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
@@ -1275,7 +1280,9 @@ function stepLevel(){
     [...new Set(S.subjects.map(kLvl))].map(l => l==='S' ? 'Scholarship' : 'Level '+l).join(' · ')
       || (S.level==='S' ? 'Scholarship' : 'Level '+S.level), '0');
   return `<div class="panel p-4 md:p-5">
-    <h3 class="sec-h mb-2">NCEA level</h3>
+    <h3 class="sec-h mb-1"><span class="tt-step">1</span>What are you studying?</h3>
+    <p class="tt-why">Pick the level you are sitting. Doing Scholarship as well? Choose it here too —
+      you can hold subjects from both in one plan.</p>
     <div class="flex flex-wrap gap-2">${[['1','Level 1'],['2','Level 2'],['3','Level 3'],['S','Scholarship']].map(([l,lab])=>
       `<button class="fac-pill lvl-pill tt-lvl" data-l="${l}" aria-pressed="${S.level===l}">${lab}</button>`).join('')}</div>
     <p class="text-xs soft mt-2">Sitting Scholarship as well as Level 3? Build one plan for each — they are different exams on different days.</p>
@@ -1284,7 +1291,8 @@ function stepLevel(){
 
 /* A finished step folds to one line, the way the prompt builder does. */
 function doneBar(n, text, id){
-  return `<div class="panel p-3"><button class="crumb tt-reopen" data-step="${id}">
+  return `<div class="panel p-3"><button class="crumb tt-reopen" data-step="${id}"
+    title="Click to change this — your plan stays until you rebuild it">
     <span class="crumb-tag">${n}</span><span>${text}</span>
     <span class="crumb-edit">Change</span></button></div>`;
 }
@@ -1301,8 +1309,9 @@ function stepSubjects(){
     if(i >= 0) S.faculty = i;
   }
   return `<div class="panel p-4 md:p-5">
-    <h3 class="sec-h mb-1">Which subjects are you sitting?</h3>
-    <p class="text-xs soft mb-3">Only subjects with external exams appear. Choose up to ${MAX_SUBJECTS}.</p>
+    <h3 class="sec-h mb-1"><span class="tt-step">2</span>Which subjects?</h3>
+    <p class="tt-why">Only subjects with an exam appear — internals have no fixed date to work
+      backwards from. Choose up to ${MAX_SUBJECTS}; the plan splits your time between them by credits.</p>
     <div class="flex flex-wrap gap-2 mb-3">${facs.map((f,i)=>
       `<button class="fac-pill tt-fac" data-i="${i}" aria-pressed="${S.faculty===i}"
         style="--fac-dark:${f.dark};--fac-light:${f.light}">${f.name}</button>`).join('')}</div>
@@ -1322,8 +1331,9 @@ function stepStandards(){
   if(S.plan && !S.open2) return doneBar('STANDARDS',
     chosenStandards().length + ' standards selected', '2');
   return `<div class="panel p-4 md:p-5">
-    <h3 class="sec-h mb-1">Which standards are you sitting?</h3>
-    <p class="text-xs soft mb-3">All ticked to start with. Untick anything you are not doing.</p>
+    <h3 class="sec-h mb-1"><span class="tt-step">3</span>Which standards?</h3>
+    <p class="tt-why">All ticked to start with. Untick anything your class is not doing —
+      otherwise you will be given revision for standards you never sit.</p>
     ${S.subjects.map(sub=>`<div class="tt-stdgroup">
       <p class="tt-stdsub" style="color:${hueFor(sub)}">${label(sub)}</p>
       ${externalStandards(sub).map(st=>`<label class="tt-check">
@@ -1340,7 +1350,9 @@ function stepExams(){
     S.subjects.map(k => label(k) + ' ' + (S.exams[k] && S.exams[k].date
       ? pretty(S.exams[k].date,{day:'numeric',month:'short'}) : '?')).join(' · '), '4');
   return `<div class="panel p-4 md:p-5">
-    <h3 class="sec-h mb-1">Exam dates</h3>
+    <h3 class="sec-h mb-1"><span class="tt-step">4</span>When are your exams?</h3>
+    <p class="tt-why"><strong>This is the part that matters most.</strong> The whole plan is built
+      backwards from these dates, so a wrong one puts your revision in the wrong place.</p>
     <p class="text-xs soft mb-3">Pre-filled from the ${E().year} timetable. Check yours on
       <a href="${E().timetableUrl}" target="_blank" rel="noopener" class="underline">NZQA</a>.
       <strong>Digital exam</strong> or <strong>paper exam</strong> shows how you will sit each one —
@@ -1405,9 +1417,11 @@ function stepPeriods(){
     S.periods.map(p => p.name).join(' · '), '3');
   const r = realism();
   return `<div class="panel p-4 md:p-5">
-    <h3 class="sec-h mb-1">When can you study?</h3>
-    <p class="text-xs soft mb-3">How much you can do changes across the year, so set it per period.
-      Term-time is squeezed; holidays and study leave are not. Edit the dates to match your school.</p>
+    <h3 class="sec-h mb-1"><span class="tt-step">5</span>When can you actually study?</h3>
+    <p class="tt-why">Be honest here rather than optimistic — a plan you cannot keep is worse than
+      no plan. How much you can do changes across the year, so it is set per period: term-time is
+      squeezed, study leave is not. Use <strong>Quick set</strong> for a typical pattern, then adjust
+      any day. A day on zero is a day off.</p>
     ${S.periods.map((p,i)=>`<div class="tt-period">
       <div class="tt-pmeta">
         <input class="field tt-pname" data-i="${i}" value="${p.name}">
@@ -1458,9 +1472,9 @@ function offPicker(){
   const end = lastExamDate();
   return `<div class="tt-offcal">
     <div class="tt-offhead">
-      <button class="btn-2" data-step="-1">&lsaquo;</button>
+      <button class="btn-2" data-offstep="-1" title="Previous month">&lsaquo;</button>
       <span>${pretty(m,{month:'long', year:'numeric'})}</span>
-      <button class="btn-2" data-step="1">&rsaquo;</button>
+      <button class="btn-2" data-offstep="1" title="Next month">&rsaquo;</button>
     </div>
     <div class="tt-offgrid">
       ${WEEKDAYS.map(w=>`<div class="tt-offdow">${w[0]}</div>`).join('')}
@@ -1492,6 +1506,8 @@ function stepGo(){
       ${S.plan?'Rebuild my timetable':'Create my study timetable'}</button>
     <label class="tt-toggle"><input type="checkbox" id="tt-topics" ${S.withTopics?'checked':''}>
       <span>Give each block a specific topic</span></label>
+    <p class="tt-why tt-why-wide">Your plan will space each standard out across the weeks, weight it
+      by credits, and finish with the subject you sit next. Nothing is scheduled on an exam day.</p>
     <span class="text-xs soft">${n} standard${n===1?'':'s'} selected${
       ready ? '' : n===0 ? ' — tick at least one standard above'
              : !dated ? ' — needs a valid exam date: ' + S.subjects.filter(x=>!(S.exams[x]&&S.exams[x].date&&(S.exams[x].portfolio||!E().checkDate(S.exams[x].date)))).map(label).join(', ')
@@ -1570,8 +1586,9 @@ function wire(){
   q('.tt-offx', b => b.onclick = () => {
     S.blackouts = S.blackouts.filter(x => x !== b.dataset.d); touch(); render();
   });
-  q('.tt-offcal [data-step]', b => b.onclick = () => {
-    S.pickerMonth = addMonths(monthStart(S.pickerMonth || planStart()), +b.dataset.step); render();
+  q('[data-offstep]', b => b.onclick = () => {
+    S.pickerMonth = addMonths(monthStart(S.pickerMonth || planStart()), +b.dataset.offstep);
+    render();
   });
   q('.tt-offday', b => b.onclick = () => {
     const d = b.dataset.d;
@@ -1614,7 +1631,7 @@ function wire(){
   };
 
   q('.seg [data-v]', b => b.onclick = () => { S.view = b.dataset.v; render(); });
-  q('[data-step]', b => b.onclick = () => {
+  q('.tt-nav [data-step]', b => b.onclick = () => {
     const n = +b.dataset.step;
     if(S.view==='day') S.cursor = addDays(S.cursor,n);
     else if(S.view==='week') S.cursor = addDays(S.cursor,7*n);

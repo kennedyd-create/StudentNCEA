@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=34"></script>
+<script src="ncea-exams-2026.js?v=36"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -277,6 +277,18 @@ body.dark-mode .filter-pill[aria-pressed="true"]{ color:#fff; }
    Restored in full — an earlier edit to the prompt layer
    accidentally removed this whole block.
    ============================================================ */
+
+/* --- inline guidance ---
+   Always present rather than a dismissible tour: a returning student needs the
+   reasoning as much as a new one, and nothing can silently fail to appear. --- */
+.tt-step{ display:inline-flex; align-items:center; justify-content:center;
+  width:1.35rem; height:1.35rem; margin-right:.5rem; border-radius:9999px;
+  background:var(--fac-dark); color:#fff; font-size:.75rem; font-weight:900;
+  vertical-align:middle; }
+.tt-why{ font-size:.75rem; line-height:1.6; color:var(--ink-soft);
+  margin-bottom:.8rem; max-width:62ch; }
+.tt-why strong{ color:var(--ink); font-weight:800; }
+.tt-why-wide{ max-width:none; margin:.5rem 0 .8rem; }
 
 /* --- subject basket --- */
 .tt-basket{ border:2px dashed var(--line); border-radius:.6rem; padding:.6rem .75rem;
@@ -7021,7 +7033,7 @@ z
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 34 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 36 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7057,10 +7069,10 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=34' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=34' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=34' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=34' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=36' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=36' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=36' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=36' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7674,6 +7686,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=34"></script>
+<script src="timetable.js?v=36"></script>
 </body>
 </html>
