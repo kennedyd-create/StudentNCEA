@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 36 — inline guidance';
+const TT_BUILD = 'build 37 — case study beside each standard';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -1248,7 +1248,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=36';
+    t.src = src + '?v=37';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
@@ -1330,18 +1330,72 @@ function stepStandards(){
   if(!S.subjects.length) return '';   // nothing to choose from yet
   if(S.plan && !S.open2) return doneBar('STANDARDS',
     chosenStandards().length + ' standards selected', '2');
+
+  const anyContext = S.subjects.some(sub => externalStandards(sub).some(st => st.ownContext));
+
   return `<div class="panel p-4 md:p-5">
     <h3 class="sec-h mb-1"><span class="tt-step">3</span>Which standards?</h3>
     <p class="tt-why">All ticked to start with. Untick anything your class is not doing —
-      otherwise you will be given revision for standards you never sit.</p>
+      otherwise you will be given revision for standards you never sit.${anyContext
+      ? ' Where a standard uses a text or case study you chose, name it on the right and every study block for it will say so.'
+      : ''}</p>
+    ${anyContext ? `<div class="tt-stdhead">
+      <span>Standard</span><span>Your text, case study or context</span></div>` : ''}
     ${S.subjects.map(sub=>`<div class="tt-stdgroup">
       <p class="tt-stdsub" style="color:${hueFor(sub)}">${label(sub)}</p>
-      ${externalStandards(sub).map(st=>`<label class="tt-check">
-        <input type="checkbox" data-sub="${sub}" data-code="${st.code}"
-          ${S.standards[sub]&&S.standards[sub].has(st.code)?'checked':''}>
-        <span><strong>AS${st.code}</strong> · ${st.credits} cr — ${st.title}</span></label>`).join('')}
+      ${externalStandards(sub).map(st=>{
+        const on = S.standards[sub] && S.standards[sub].has(st.code);
+        const k  = kLvl(sub) + '::' + kName(sub) + '::' + st.code;
+        return `<div class="tt-stdrow">
+          <label class="tt-check">
+            <input type="checkbox" data-sub="${sub}" data-code="${st.code}" ${on?'checked':''}>
+            <span><strong>AS${st.code}</strong> · ${st.credits} cr — ${st.title}</span>
+          </label>
+          <div class="tt-stdctx">${st.ownContext && on
+            ? `<input class="field tt-ctxfield" data-k="${k}" value="${(S.myContext[k]||'').replace(/"/g,'&quot;')}"
+                 placeholder="${ctxHint(st, kName(sub))}">`
+            : ''}</div>
+        </div>`;
+      }).join('')}
     </div>`).join('')}
   </div>`;
+}
+
+/* A concrete example beats a generic prompt — a Year 11 needs to see the KIND
+   of thing wanted. Subject-specific wording first, then the standard's own
+   context list if it names something real, then a plain fallback. */
+const CTX_HINT = {
+  'English':'e.g. Macbeth, or Whale Rider',
+  'Media Studies':'e.g. Get Out, or the crime genre',
+  'Drama':'e.g. the production you saw in Term 2',
+  'Music':'e.g. the two works you studied',
+  'Art History':'e.g. Early Renaissance works you studied',
+  'History':'e.g. the 1981 Springbok tour',
+  'Classical Studies':'e.g. Athens under Pericles',
+  'Geography':'e.g. Muriwai coastal environment',
+  'Business Studies':'e.g. the business you studied',
+  'Commerce':'e.g. the organisation you studied',
+  'Health':'e.g. the issue your class covered',
+  'Health Studies':'e.g. the issue your class covered',
+  'Physical Education':'e.g. the activity you took part in',
+  'Psychology':'e.g. the issue your class covered',
+  'Te Ao Haka':'e.g. the role you studied',
+  'Biology':'e.g. the plant or animal you studied',
+  'Science':'e.g. the idea your class followed',
+  'Earth & Space Science':'e.g. the event your class studied'
+};
+
+function ctxHint(st, subject){
+  // The standard's own first context is the most specific thing available —
+  // Geography 3.1 is coastal, 3.2 is urban, so a subject-wide example would
+  // be wrong for one of them. Only use it if it names something concrete.
+  const c = (st.contexts || [])[0] || '';
+  const first = c.split(/ — | - |,/)[0].trim();
+  if(first && first.length <= 42 && !/^(the|a|an|any)\b/i.test(first) &&
+     !/supplied|appropriate|resource booklet|studied in class|agreed with/i.test(first))
+    return 'e.g. ' + first;
+  if(CTX_HINT[subject]) return CTX_HINT[subject];
+  return 'optional — your text or case study';
 }
 
 function stepExams(){
@@ -1542,9 +1596,9 @@ function wire(){
     S.examsConfirmed=false; touch(); render();
   });
   q('.tt-check input', el => el.onchange = () => {
-    const s = S.standards[el.dataset.sub];
-    el.checked ? s.add(el.dataset.code) : s.delete(el.dataset.code);
-    touch();
+    const set = S.standards[el.dataset.sub];
+    el.checked ? set.add(el.dataset.code) : set.delete(el.dataset.code);
+    touch(); render();          // the context field appears with the tick
   });
   q('.tt-date', el => el.onchange = () => { S.exams[el.dataset.sub].date = el.value; S.examsConfirmed=false; touch(); render(); });
   q('.tt-sess', el => el.onchange = () => { S.exams[el.dataset.sub].session = el.value; S.examsConfirmed=false; touch(); render(); });
@@ -1640,6 +1694,14 @@ function wire(){
   });
   const td = one('.tt-today'); if(td) td.onclick = () => { S.cursor = todayISO(); render(); };
 
+  q('.tt-ctxfield', el => {
+    el.onchange = () => {
+      const v = el.value.trim();
+      if(v) S.myContext[el.dataset.k] = v; else delete S.myContext[el.dataset.k];
+      touch(); save();
+    };
+    el.onkeydown = e => { if(e.key === 'Enter') el.blur(); };
+  });
   q('.tt-ctxadd', b => b.onclick = () => { S.askingContext = b.dataset.k; render(); });
   q('.tt-ctxcancel', b => b.onclick = () => { S.askingContext = null; render(); });
   q('.tt-ctxsave', b => b.onclick = () => {

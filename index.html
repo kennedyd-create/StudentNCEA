@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=36"></script>
+<script src="ncea-exams-2026.js?v=37"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -310,6 +310,21 @@ body.dark-mode .filter-pill[aria-pressed="true"]{ color:#fff; }
 .tt-check:hover{ background:var(--surface-2); }
 .tt-check input{ margin-top:.2rem; flex:none; width:1rem; height:1rem; cursor:pointer; }
 .tt-check span{ flex:1 1 auto; }
+
+/* --- standards list, with the student's own context beside each one --- */
+.tt-stdhead{ display:grid; grid-template-columns:1fr 15rem; gap:.75rem;
+  font-size:.5625rem; font-weight:900; text-transform:uppercase; letter-spacing:.07em;
+  color:var(--ink-faint); padding:0 .35rem .25rem; border-bottom:1px solid var(--line); }
+.tt-stdrow{ display:grid; grid-template-columns:1fr 15rem; gap:.75rem; align-items:center; }
+.tt-stdrow .tt-check{ margin:0; }
+.tt-stdctx{ min-height:1px; }
+.tt-ctxfield{ width:100%; font-size:.75rem; padding:.3rem .45rem; }
+.tt-ctxfield::placeholder{ color:var(--ink-faint); font-style:italic; }
+@media (max-width:760px){
+  .tt-stdhead{ display:none; }
+  .tt-stdrow{ grid-template-columns:1fr; gap:.15rem; }
+  .tt-stdctx{ padding:0 0 .4rem 1.55rem; }
+}
 
 /* --- exam dates --- */
 .tt-examrow{ display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; padding:.3rem 0; }
@@ -7033,7 +7048,7 @@ z
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 36 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 37 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7069,10 +7084,10 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=36' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=36' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=36' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=36' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=37' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=37' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=37' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=37' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7686,6 +7701,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=36"></script>
+<script src="timetable.js?v=37"></script>
 </body>
 </html>
