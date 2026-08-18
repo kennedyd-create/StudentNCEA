@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 38 — up to 10 subjects, Scholarship Economics';
+const TT_BUILD = 'build 39 — Scholarship Biology PM';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -1252,7 +1252,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=38';
+    t.src = src + '?v=39';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
