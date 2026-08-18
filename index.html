@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=32"></script>
+<script src="ncea-exams-2026.js?v=34"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -577,6 +577,19 @@ body.dark-mode .tt-sit-paper, body.dark-mode .sit-paper{ color:#d6d3d1; }
 .tt-preset{ border:1px solid var(--line)!important; text-decoration:none!important;
   border-radius:9999px!important; padding:.15rem .55rem!important; }
 .tt-preset:hover{ background:var(--fac-dark); color:#fff!important; border-color:var(--fac-dark)!important; }
+
+/* --- the student's own case study, entered where it is relevant --- */
+.tt-mine{ color:var(--hue); font-weight:800; }
+.tt-ctxadd{ flex:1 1 100%; text-align:left; font-size:.625rem; font-weight:800;
+  color:var(--ink-faint); background:transparent; border:0; padding:.1rem 0 0;
+  cursor:pointer; text-decoration:underline; }
+.tt-ctxadd:hover{ color:var(--hue,var(--fac-dark)); }
+.tt-ctxbox{ flex:1 1 100%; display:flex; flex-wrap:wrap; gap:.3rem; align-items:center;
+  margin-top:.3rem; padding:.4rem .5rem; border-radius:.35rem;
+  background:color-mix(in srgb,var(--hue) 10%,transparent); }
+.tt-ctxbox label{ flex:1 1 100%; font-size:.5625rem; font-weight:900; text-transform:uppercase;
+  letter-spacing:.06em; color:var(--ink-soft); }
+.tt-ctxin{ flex:1 1 12rem; font-size:.75rem; padding:.3rem .45rem; }
 
 /* --- week grid --- */
 .tt-week{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.4rem; }
@@ -7008,7 +7021,7 @@ z
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 32 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 34 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7044,10 +7057,10 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=32' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=32' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=32' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=32' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=34' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=34' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=34' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=34' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7661,6 +7674,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=32"></script>
+<script src="timetable.js?v=34"></script>
 </body>
 </html>

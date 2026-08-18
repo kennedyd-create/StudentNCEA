@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 32 — edit without losing your plan, real sharing';
+const TT_BUILD = 'build 34 — your own case study per standard';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -63,6 +63,8 @@ const S = {
   justBuilt: false,         // true for one render after generating, so print pulses briefly
   stale: false,             // settings changed since the plan was built
   shareOpen: false,         // the share panel is showing
+  myContext: {},            // "level::Subject::code" -> the student's own text or case study
+  askingContext: null,      // the standard whose context field is currently open
   examsConfirmed: false,    // student has checked the dates against NZQA
   pickerOpen: false,        // the days-off calendar
   pickerMonth: null,
@@ -80,6 +82,7 @@ function save(){
       standards: Object.fromEntries(Object.entries(S.standards).map(([k,v]) => [k, [...v]])),
       exams:S.exams, periods:S.periods, blackouts:S.blackouts,
       withTopics:S.withTopics, howMode:S.howMode, examsConfirmed:S.examsConfirmed,
+      myContext:S.myContext,
       view:S.view, fullMode:S.fullMode, cursor:S.cursor,
       plan: S.plan ? S.plan.open.map(x => x.item
         ? { d:x.date, i:x.index, e:x.extra?1:0, s:x.item.subject, c:x.item.st.code, m:x.item.mode, t:x.item.topic||'' }
@@ -95,7 +98,7 @@ function load(){
     Object.assign(S, {
       level:o.level||'3', faculty:o.faculty, subjects:o.subjects||[],
       exams:o.exams||{}, periods:o.periods||S.periods, blackouts:o.blackouts||[],
-      withTopics: o.withTopics !== false, howMode:o.howMode||'ai',
+      withTopics: o.withTopics !== false, howMode:o.howMode||'ai', myContext:o.myContext||{},
       examsConfirmed: !!o.examsConfirmed, view:o.view||'week',
       fullMode:o.fullMode||'subject', cursor:o.cursor||todayISO()
     });
@@ -676,10 +679,18 @@ function viewBar(){
   </div>`;
 }
 
+/* The student's own text or case study, remembered per STANDARD — Muriwai
+   belongs to one Geography standard, not to Geography. Only offered where the
+   material is genuinely candidate-chosen. */
+const ctxKey = it => kLvl(it.subject) + '::' + kName(it.subject) + '::' + it.st.code;
+const myCtx  = it => S.myContext[ctxKey(it)] || '';
+const wantsCtx = it => !!it.st.ownContext;
+
 function blockHTML(slot, n){
   const it = slot.item;
   const q = `?level=${kLvl(it.subject)}&subject=${encodeURIComponent(kName(it.subject))}&std=${it.st.code}&mode=${it.mode}` +
-            (it.topic ? `&topic=${encodeURIComponent(it.topic)}` : '');
+            (it.topic ? `&topic=${encodeURIComponent(it.topic)}` : '') +
+            (myCtx(it) ? `&context=${encodeURIComponent(myCtx(it))}` : '');
   /* In Mix, alternate deterministically so the same block always shows the
      same thing — about half AI, half off-screen, for variety rather than a
      diet of one or the other. */
@@ -701,7 +712,16 @@ function blockHTML(slot, n){
     <button class="tt-del" data-slot="${n}" title="Clear this block">&times;</button>
     <div class="tt-bmeta"><strong>${label(it.subject)}</strong> · ${it.st.credits?'AS':''}${it.st.code}
       <span class="tt-mode">${modeLabel(it.mode)}</span></div>
-    <div class="tt-btitle">${it.topic ? it.topic : it.st.title}</div>
+    <div class="tt-btitle">${myCtx(it) ? `<strong class="tt-mine">${myCtx(it)}</strong> — ` : ''}${it.topic ? it.topic : it.st.title}</div>
+    ${wantsCtx(it) ? (S.askingContext === ctxKey(it)
+      ? `<div class="tt-ctxbox">
+           <label>Your text or case study for AS${it.st.code}</label>
+           <input class="field tt-ctxin" data-k="${ctxKey(it)}" value="${myCtx(it)}"
+             placeholder="e.g. Muriwai coastal environment">
+           <button class="btn-2 tt-ctxsave" data-k="${ctxKey(it)}">Save</button>
+           <button class="btn-3 tt-ctxcancel">Cancel</button>
+         </div>`
+      : `<button class="tt-ctxadd" data-k="${ctxKey(it)}">${myCtx(it) ? 'Change' : '+ Add your case study'}</button>`) : ''}
     ${actions}</div>`;
 }
 
@@ -938,9 +958,10 @@ function printPlan(scope){
         const it = slot.item;
         lines.push(`<tr>
           <td class="pl-tick">&#9744;</td>
-          <td class="pl-sub">${label(it.subject)}<span>${it.st.credits?'AS':''}${it.st.code}</span></td>
+          <td class="pl-sub" style="--hue:${hueFor(it.subject)}">
+            <span class="pl-swatch"></span>${label(it.subject)}<span class="pl-code">${it.st.credits?'AS':''}${it.st.code}</span></td>
           <td class="pl-what">
-            <strong>${it.topic || it.st.title}</strong>
+            <strong>${myCtx(it) ? myCtx(it) + ' — ' : ''}${it.topic || it.st.title}</strong>
             <span>${methodFor(it, p.open.indexOf(slot))}</span>
           </td>
           <td class="pl-notes"></td></tr>`);
@@ -960,7 +981,8 @@ function printPlan(scope){
         </div>
         <div class="pl-meta">
           <p><strong>Name:</strong> ______________________</p>
-          <p>${S.subjects.map(label).join(' · ')}</p>
+          <div class="pl-legend">${S.subjects.map(sub =>
+            `<span class="pl-key" style="--hue:${hueFor(sub)}"><i></i>${label(sub)}</span>`).join('')}</div>
         </div>
       </header>
       <table class="pl-table">
@@ -978,7 +1000,8 @@ function printPlan(scope){
     <title>NCEA study plan</title>
     <style>
       *{ box-sizing:border-box; }
-      body{ font-family:'Segoe UI',Arial,sans-serif; color:#111; margin:0; padding:14mm; font-size:11px; }
+      body{ font-family:'Segoe UI',Arial,sans-serif; color:#111; margin:0; padding:14mm; font-size:11px;
+        -webkit-print-color-adjust:exact; print-color-adjust:exact; }
       .pl-page{ page-break-after:always; }
       .pl-page:last-child{ page-break-after:auto; }
       .pl-head{ display:flex; justify-content:space-between; align-items:flex-start;
@@ -994,8 +1017,15 @@ function printPlan(scope){
       .pl-day{ width:52px; font-weight:700; font-size:10px; background:#f4f4f4; }
       .pl-day span{ display:block; font-weight:400; color:#555; font-size:9px; }
       .pl-tick{ width:34px; text-align:center; font-size:15px; line-height:1; }
-      .pl-sub{ width:110px; font-weight:700; }
-      .pl-sub span{ display:block; font-weight:400; color:#555; font-size:9px; }
+      /* Subject colour as a left band plus a swatch. A band survives greyscale
+         printing as a grey tone; the name is always there regardless. */
+      .pl-sub{ width:124px; font-weight:700; border-left:5px solid var(--hue,#999)!important; }
+      .pl-swatch{ display:inline-block; width:8px; height:8px; border-radius:2px;
+        background:var(--hue,#999); margin-right:5px; vertical-align:middle; }
+      .pl-code{ display:block; font-weight:400; color:#555; font-size:9px; margin-left:13px; }
+      .pl-legend{ display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; margin-top:3px; }
+      .pl-key{ font-size:9px; font-weight:700; display:inline-flex; align-items:center; gap:3px; }
+      .pl-key i{ width:8px; height:8px; border-radius:2px; background:var(--hue,#999); display:inline-block; }
       .pl-what strong{ display:block; font-weight:700; margin-bottom:2px; }
       .pl-what span{ color:#333; font-size:10px; line-height:1.4; }
       .pl-notes{ width:120px; }
@@ -1032,6 +1062,7 @@ function planToCode(){
   const payload = {
     v:1, l:S.level, s:S.subjects,
     d:Object.fromEntries(Object.entries(S.standards).map(([k,v]) => [k,[...v]])),
+    x:S.myContext,
     e:S.exams, p:S.periods, b:S.blackouts, t:S.withTopics, h:S.howMode
   };
   try {
@@ -1054,6 +1085,7 @@ function planFromCode(code){
     if(o.p) S.periods = o.p;
     S.blackouts = o.b || [];
     S.withTopics = o.t !== false;
+    S.myContext = o.x || {};
     S.howMode = o.h || 'ai';
     S.examsConfirmed = false;      // the recipient confirms the dates themselves
     S.plan = null; S.savedPlan = null;
@@ -1211,7 +1243,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=32';
+    t.src = src + '?v=34';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
@@ -1591,6 +1623,18 @@ function wire(){
   });
   const td = one('.tt-today'); if(td) td.onclick = () => { S.cursor = todayISO(); render(); };
 
+  q('.tt-ctxadd', b => b.onclick = () => { S.askingContext = b.dataset.k; render(); });
+  q('.tt-ctxcancel', b => b.onclick = () => { S.askingContext = null; render(); });
+  q('.tt-ctxsave', b => b.onclick = () => {
+    const f = R().querySelector('.tt-ctxin[data-k="'+b.dataset.k+'"]');
+    const v = f ? f.value.trim() : '';
+    if(v) S.myContext[b.dataset.k] = v; else delete S.myContext[b.dataset.k];
+    S.askingContext = null; save(); render();
+  });
+  q('.tt-ctxin', el => el.onkeydown = e => {
+    if(e.key === 'Enter'){ const btn = R().querySelector('.tt-ctxsave[data-k="'+el.dataset.k+'"]'); if(btn) btn.click(); }
+    if(e.key === 'Escape'){ S.askingContext = null; render(); }
+  });
   q('.tt-copy', b => b.onclick = async () => {
     const text = window.composePrompt({ level:S.level, subject:decodeURIComponent(b.dataset.sub),
       code:b.dataset.code, mode:b.dataset.mode });
@@ -1644,7 +1688,8 @@ function wire(){
   q('.tt-gem', b => b.onclick = async () => {
     const k = decodeURIComponent(b.dataset.sub);
     const text = window.composePrompt({ level:kLvl(k), subject:kName(k),
-      code:b.dataset.code, mode:b.dataset.mode, topic:decodeURIComponent(b.dataset.topic||'') });
+      code:b.dataset.code, mode:b.dataset.mode, topic:decodeURIComponent(b.dataset.topic||''),
+      context: S.myContext[kLvl(k)+'::'+kName(k)+'::'+b.dataset.code] || '' });
     let ok = true;
     try { await navigator.clipboard.writeText(text); }
     catch(e){ ok = false; }

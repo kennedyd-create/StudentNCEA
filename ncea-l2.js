@@ -32,7 +32,7 @@ const SUBJECTS = {
   lens:'Geographic concepts at Level 2: environments, perspectives, processes, patterns, interaction, change, sustainability. The Level 2 verbs are demonstrate understanding, explain and apply — the step up from Level 1 is explanation, and the step up to Level 3 is analysis.',
   discipline:'Geography reasons from located evidence. Every claim needs a place, and most need a figure and a date. At Level 2 the single biggest grade lever is linking a fact to its situation rather than stating it.',
   standards:[
-  { code:'91240', ref:'2.1', credits:4, creditsUnverified:true, mode:'external', verified:true,
+  { code:'91240', ref:'2.1', credits:4, creditsUnverified:true, mode:'external', ownContext:true, verified:true,
     title:'Demonstrate geographic understanding of a large natural environment',
     bigIdea:'Take one large natural environment and explain what it is like, how its elements and processes interact, and how people fit into it.',
     format:'End-of-year examination on PRINTED PAPER. There will be ONE question with multiple parts, requiring written responses which may be supported by sketch maps and/or diagrams. You must use specific information and/or case studies to illustrate your answers. Bring coloured pencils, a calculator and a ruler: diagrams and maps should be in coloured pencil, with annotations in PEN.',
@@ -72,7 +72,7 @@ const SUBJECTS = {
       'Factors listed without being explicitly linked to the pattern.',
       'Maps included without annotation identifying the pattern.'] },
 
-  { code:'91242', ref:'2.3', credits:4, creditsUnverified:true, mode:'external', verified:true,
+  { code:'91242', ref:'2.3', credits:4, creditsUnverified:true, mode:'external', ownContext:true, verified:true,
     title:'Demonstrate geographic understanding of differences in development',
     bigIdea:'Why are some places more developed than others? Explain the differences and what causes them.',
     format:'End-of-year examination on printed paper. ONE question with multiple parts. You must complete written responses which may be supported by sketch maps and/or diagrams, AND include case studies referring to communities, areas or countries at different stages of development. Coloured pencils for diagrams, annotations in pen.',
@@ -272,7 +272,7 @@ const SUBJECTS = {
       'Positions unattributed and undated.',
       'Confusing the views of people at the time with those of later historians.'] },
 
-  { code:'91233', ref:'2.5', credits:5, creditsUnverified:true, mode:'external', verified:true,
+  { code:'91233', ref:'2.5', credits:5, creditsUnverified:true, mode:'external', ownContext:true, verified:true,
     title:'Examine causes and consequences of a significant historical event',
     bigIdea:'An essay on why an event happened and what followed from it.',
     format:'End-of-year examination essay on an event studied in class. There is no prescribed content, so you write about what your class covered.',
@@ -291,7 +291,7 @@ const SUBJECTS = {
       'Narrative drift, where the essay becomes the story of the event.',
       'Consequences skipped when the question asks for both.'] },
 
-  { code:'91234', ref:'2.6', credits:5, creditsUnverified:true, mode:'external', verified:true,
+  { code:'91234', ref:'2.6', credits:5, creditsUnverified:true, mode:'external', ownContext:true, verified:true,
     title:'Examine how a significant historical event affected New Zealand society',
     bigIdea:'Take an event and trace what it actually changed in New Zealand — and what stayed the same.',
     format:'End-of-year examination essay on an event studied in class, focused on its effects on New Zealand society.',
@@ -315,7 +315,7 @@ const SUBJECTS = {
   lens:'Level 2 themes: leadership and heroism, social and cultural traditions, influence on other cultures, and social relationships and the role of the individual. The Level 2 verb is EXAMINE — Level 3 asks you to ANALYSE the same material.',
   discipline:'Classical Studies argues from primary evidence about societies distant in time — literary, artistic and archaeological. Every claim needs a named ancient source, and the gap between what a source shows and what we infer stays visible.',
   standards:[
-  { code:'91200', ref:'2.1', credits:4, mode:'external', verified:true,
+  { code:'91200', ref:'2.1', credits:4, mode:'external', ownContext:true, verified:true,
     title:'Examine ideas and values of the classical world',
     bigIdea:'Work out what Greeks or Romans actually believed and valued, from their own evidence, and examine how those ideas worked in their society.',
     format:'End-of-year examination, available as an online digital examination or on printed paper. You select ONE question from a range and respond in extended paragraphs. A concise response of no more than 750–800 words (4–5 pages) is encouraged for each standard, and marking is based on quality rather than length. Information written in planning spaces is NOT marked. Elaboration of the specific contexts is in the Classical Studies Teaching and Learning Guide. You are expected to understand leadership and heroism, social and cultural traditions, influence on other cultures, and social relationships and the role of the individual — and questions may combine them.',
@@ -336,7 +336,7 @@ const SUBJECTS = {
       'Choosing a question too quickly rather than checking you can cover every part of it.',
       'Exceeding 750–800 words with material that does not answer the question.'] },
 
-  { code:'91201', ref:'2.2', credits:4, mode:'external', verified:true,
+  { code:'91201', ref:'2.2', credits:4, mode:'external', ownContext:true, verified:true,
     title:'Examine the significance of features of work(s) of art in the classical world',
     bigIdea:'Take a classical art work and examine why its features mattered — not simply what it looks like.',
     format:'End-of-year examination, digital or printed paper, ONE question from a range, 750–800 words encouraged. You draw on one or more art works of your own choice and are expected to understand the features of art works identified in Explanatory Note 5 of the standard. Questions may combine features.',
@@ -375,7 +375,7 @@ const SUBJECTS = {
       'No ancient sources named.',
       'Note: this is assessed work, so an AI must not draft or reword it.'] },
 
-  { code:'91203', ref:'2.4', credits:6, mode:'external', verified:true,
+  { code:'91203', ref:'2.4', credits:6, mode:'external', ownContext:true, verified:true,
     title:'Examine socio-political life in the classical world',
     bigIdea:'How did classical society actually run? Examine how power, status and daily life fitted together.',
     format:'End-of-year examination, digital or printed paper, and the largest Level 2 Classical Studies standard at 6 credits. ONE question selected from a range, 750–800 words encouraged.',
@@ -439,7 +439,7 @@ const SUBJECTS = {
       'The Key Concepts left out entirely.',
       'Departments described separately with no interaction shown.'] },
 
-  { code:'90844', ref:'2.2', credits:4, creditsUnverified:true, mode:'external', verified:true,
+  { code:'90844', ref:'2.2', credits:4, creditsUnverified:true, mode:'external', ownContext:true, verified:true,
     title:'Demonstrate understanding of how a large business responds to external factors',
     bigIdea:'Something outside the business changes — show what the business does about it and whether it works.',
     format:'End-of-year examination with a supplied business context, and an expectation that you refer to the large New Zealand business you studied.',
@@ -1023,7 +1023,7 @@ const SUBJECTS = {
       'Adaptations listed with no mechanism explained.',
       'Note: this is assessed work, so an AI must not draft or reword it.'] },
 
-  { code:'91191', ref:'2.5', credits:4, mode:'external', reference:true, verified:true,
+  { code:'91191', ref:'2.5', credits:4, mode:'external', ownContext:true, reference:true, verified:true,
     title:'Demonstrate understanding of the causes of extreme Earth events in New Zealand',
     bigIdea:'Why New Zealand gets the hazards it does — the processes behind our earthquakes, eruptions, storms and floods.',
     format:'End-of-year examination. Many schools offer a choice between this standard and AS91192 rather than both, so check which your course covers.',
@@ -1068,7 +1068,7 @@ const SUBJECTS = {
   lens:'Written, oral and visual language strands. The Level 2 verb is ANALYSE for the reading standards and CRAFT for the producing ones — a step up from Level 1\u2019s show understanding, and a step below Level 3\u2019s respond critically.',
   discipline:'English argues from the text. Every claim is anchored to a quotation, shot or moment, and the analysis explains how the author\u2019s choice produces the effect. The marks are in the "so what" — what the text does to a reader and why.',
   standards:[
-  { code:'91098', ref:'2.1', credits:4, mode:'external', verified:true,
+  { code:'91098', ref:'2.1', credits:4, mode:'external', ownContext:true, verified:true,
     title:'Analyse specified aspect(s) of studied written texts, supported by evidence',
     bigIdea:'An essay on a text you have studied, analysing a specific aspect the paper names.',
     format:'End-of-year ONLINE DIGITAL examination. You write an essay on at least one studied text. A range of questions covering all written text types is provided and you select ONE. A concise response of no more than 750–800 words (4–5 pages) is encouraged — assessment is based on QUALITY rather than length. All answers must be written in English, and information in planning spaces is not marked.',
@@ -1088,7 +1088,7 @@ const SUBJECTS = {
       'Quotations dropped in without being unpacked.',
       'Drifting off the specified aspect the question asked for.'] },
 
-  { code:'91099', ref:'2.2', credits:4, mode:'external', verified:true,
+  { code:'91099', ref:'2.2', credits:4, mode:'external', ownContext:true, verified:true,
     title:'Analyse specified aspect(s) of studied visual or oral texts, supported by evidence',
     bigIdea:'The same essay task on a film or oral text — and the evidence is what you see and hear.',
     format:'End-of-year online digital examination. Essay on at least one studied visual or oral text; a range of questions covering all visual and oral text types is provided and you select ONE. Concise response of no more than 750–800 words (4–5 pages) encouraged, assessed on quality not length. NZQA publishes annotated Achieved, Merit and Excellence exemplars worth reading side by side.',
@@ -1669,7 +1669,7 @@ Never translate, draft or reword any part of the student's assessed work, in eit
   discipline:'Media Studies argues from the text and from its audience. Every claim about meaning is anchored to a specific technique in a specific text, and every claim about effect is anchored to evidence about who is watching and why.',
   verifyNote:'Five of the eight Level 2 standards are loaded — the written and examined ones. The three production standards (AS91252 design and plan, AS91253 complete a media product, AS91255 write a media text to a brief) are excluded as creative production work.',
   standards:[
-  { code:'91248', ref:'2.1', credits:3, mode:'external', verified:true,
+  { code:'91248', ref:'2.1', credits:3, mode:'external', ownContext:true, verified:true,
     title:'Demonstrate understanding of the relationship between a media product and its audience',
     bigIdea:'Media products are built for somebody. Show who, how the product targets them, and what the audience does with it.',
     format:'End-of-year examination, written response on a media product studied in class.',
@@ -1728,7 +1728,7 @@ Never translate, draft or reword any part of the student's assessed work, in eit
       'No consideration of what is omitted, which often carries the argument.',
       'Note: this is assessed work, so an AI must not draft or reword it.'] },
 
-  { code:'91251', ref:'2.4', credits:5, creditsUnverified:true, mode:'external', verified:true,
+  { code:'91251', ref:'2.4', credits:5, creditsUnverified:true, mode:'external', ownContext:true, verified:true,
     title:'Demonstrate understanding of an aspect of a media genre',
     bigIdea:'What makes a genre a genre — and what happens when texts follow, bend or break its rules.',
     format:'End-of-year examination, written response on the genre studied in class.',
@@ -2067,7 +2067,7 @@ Do not attempt to counsel, diagnose, or advise on their personal situation. Your
 
 When the work is genuinely academic, treat these topics as the serious curriculum content they are: accurate, respectful, non-judgemental, and inclusive of the range of identities, families and experiences that exist in a New Zealand classroom.`,
   standards:[
-  { code:'91235', ref:'2.1', credits:5, mode:'external', reference:true, verified:true,
+  { code:'91235', ref:'2.1', credits:5, mode:'external', ownContext:true, reference:true, verified:true,
     title:'Analyse an adolescent health issue',
     bigIdea:'Take a real health issue affecting young people and analyse what drives it, what it does to well-being, and what would actually help.',
     format:'End-of-year examination. You are assessed on how comprehensively you can analyse an adolescent health issue — explaining the influences behind it, the consequences for well-being, and health-enhancing strategies to address it.',
@@ -2127,7 +2127,7 @@ When the work is genuinely academic, treat these topics as the serious curriculu
       'No stated aim, so there is nothing to evaluate against.',
       'Note: this is assessed work, so an AI must not draft or reword it.'] },
 
-  { code:'91238', ref:'2.4', credits:4, creditsUnverified:true, mode:'external', reference:true, verified:true,
+  { code:'91238', ref:'2.4', credits:4, creditsUnverified:true, mode:'external', ownContext:true, reference:true, verified:true,
     title:'Analyse an interpersonal issue(s) that places personal safety at risk',
     bigIdea:'Analyse situations where relationships put someone\u2019s safety at risk, and what actually keeps people safe.',
     format:'End-of-year examination. You analyse the issue, its influences and consequences, and strategies that would enhance personal safety.',
@@ -2173,7 +2173,7 @@ When the work is genuinely academic, treat these topics as the serious curriculu
   discipline:'Drama studies argues from what happens on stage. Every claim is anchored to a specific moment — a piece of blocking, a lighting state, a delivery choice — and connected to its effect on an audience. The subject has its own precise vocabulary, and using it accurately is a large part of the grade.',
   verifyNote:'Three of the seven Level 2 standards are loaded — the drama studies ones. The performance and devising standards (AS91213, AS91214, AS91216, AS91218) are excluded as practical work.',
   standards:[
-  { code:'91215', ref:'2.3', credits:4, mode:'external', verified:true,
+  { code:'91215', ref:'2.3', credits:4, mode:'external', ownContext:true, verified:true,
     title:'Discuss a drama or theatre form or period with reference to a text',
     bigIdea:'Show you understand a theatre form or period by applying it to a text you have studied.',
     format:'End-of-year examination on PRINTED PAPER. The paper consists of THREE questions. You must NAME and give details of the drama or theatre form. You may respond in any combination of written paragraphs and illustration — sketches and diagrams are assessed on the information they convey, NOT on artistic merit, so stick figures are fine, but you must ANNOTATE them. A GLOSSARY OF TERMS is included at the start of the paper, using the definitions from the standard\u2019s Explanatory Notes. You should be familiar with acting style, performance space, conventions, historical and social context, technologies, themes and ideas, and use of symbolism.',
@@ -2214,7 +2214,7 @@ When the work is genuinely academic, treat these topics as the serious curriculu
       'Ideas asserted without being located in specific texts.',
       'Note: this is assessed work, so an AI must not draft or reword it.'] },
 
-  { code:'91219', ref:'2.7', credits:4, mode:'external', verified:true,
+  { code:'91219', ref:'2.7', credits:4, mode:'external', ownContext:true, verified:true,
     title:'Discuss drama elements, techniques, conventions and technologies within live performance',
     bigIdea:'Write about a live production you actually attended — what the makers chose, and what it did to the audience.',
     format:'End-of-year examination on printed paper. You answer on TWO different things: a drama performance you VIEWED as an audience member during the 2026 calendar year (which may be a recorded live performance), AND a live drama performance in which you PARTICIPATED AS AN ACTOR in 2026. A glossary of terms is supplied at the start of the paper, using the Explanatory Note definitions of elements, conventions, techniques and technologies — but NZQA reports still note candidates being unfamiliar with this terminology. Sketches and diagrams are marked on information conveyed, not artistic merit; annotate them. You should be familiar with transformation of space as well as the four term groups.',
@@ -2262,7 +2262,7 @@ When the work is genuinely academic, treat these topics as the serious curriculu
       'Notation systems mixed inconsistently between Roman numerals and chord symbols.',
       'Describing what is written without explaining or applying it, which caps the grade.'] },
 
-  { code:'91277', ref:'2.7', credits:4, creditsUnverified:true, mode:'external', verified:true,
+  { code:'91277', ref:'2.7', credits:4, creditsUnverified:true, mode:'external', ownContext:true, verified:true,
     title:'Demonstrate understanding of two substantial contrasting music works',
     bigIdea:'Two works, deliberately different — show you understand each and what the contrast reveals.',
     format:'End-of-year examination. You prepare TWO substantial works that genuinely contrast, and are examined on your understanding of both.',

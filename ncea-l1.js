@@ -78,7 +78,7 @@ const SUBJECTS = {
       'Data presented but never interpreted.',
       'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
 
-  { code:'91934', ref:'1.3', credits:5, mode:'external', verified:true,
+  { code:'91934', ref:'1.3', credits:5, mode:'external', ownContext:true, verified:true,
     title:'Demonstrate understanding of how natural processes shape an environment',
     bigIdea:'Show how nature builds and changes a place — the processes at work, and what they produce.',
     format:'End-of-year examination. You study one environment shaped by natural processes and answer questions about it, often supported by resource material.',
@@ -100,7 +100,7 @@ const SUBJECTS = {
       'Diagrams drawn but not labelled or annotated.',
       'Writing everything known about the environment instead of answering the question asked.'] },
 
-  { code:'91935', ref:'1.4', credits:5, mode:'external', verified:true,
+  { code:'91935', ref:'1.4', credits:5, mode:'external', ownContext:true, verified:true,
     title:'Demonstrate understanding of decision-making in response to a geographic challenge in the wider Pacific region',
     bigIdea:'A real challenge in the Pacific, real people deciding what to do about it — show who decided, why, and what followed.',
     format:'End-of-year examination. The context is the wider Pacific region, and questions focus on the decision-making rather than only the challenge itself.',
@@ -187,7 +187,7 @@ const SUBJECTS = {
       'Concepts named but never applied to the actual context.',
       'Evidence dropped in without being connected to the point being made.'] },
 
-  { code:'92027', ref:'1.4', credits:5, mode:'external', verified:true,
+  { code:'92027', ref:'1.4', credits:5, mode:'external', ownContext:true, verified:true,
     title:'Demonstrate understanding of perspectives on a historical context',
     bigIdea:'People living through the same events saw them completely differently. Work out who saw what, and why.',
     format:'End-of-year examination. You write a structured explanation of differing perspectives on a historical context you have STUDIED — a place, event, person or group. There is no resource booklet for this standard, so the detail has to come from your own learning. Note that differing perspectives can mean opposing views between individuals or groups, OR differences of perspective WITHIN a single group. The wider historical context — the ideas, assumptions and historical factors of the time — is part of the explanation.',
@@ -254,7 +254,7 @@ const SUBJECTS = {
       'Approaches described generically with no link to the actual context.',
       'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
 
-  { code:'91922', ref:'1.3', credits:5, mode:'external', reference:true, verified:true,
+  { code:'91922', ref:'1.3', credits:5, mode:'external', ownContext:true, reference:true, verified:true,
     title:'Describe features of science that have contributed to the development of a science idea in a local context',
     bigIdea:'Science ideas do not appear fully formed. Show how one actually developed — the evidence, the arguments, the people.',
     format:'End-of-year examination. Submitted reports were removed as a method of external assessment at Level 1 from 2025, so this is examined.',
@@ -604,7 +604,7 @@ const SUBJECTS = {
       'Ideas introduced but never developed.',
       'Note: this is your own assessed writing. An AI must not draft or reword any part of it, and NZQA requires any use of generative AI to be acknowledged.'] },
 
-  { code:'91925', ref:'1.3', credits:5, mode:'external', verified:true,
+  { code:'91925', ref:'1.3', credits:5, mode:'external', ownContext:true, verified:true,
     title:'Demonstrate understanding of specific aspects of studied text',
     bigIdea:'A text you have studied all year, and one question that decides what you write about it.',
     format:'End-of-year online digital examination, paper by exception. You select ONE option from a range of questions and/or statements. All responses must be written in English, and information written in planning spaces is not marked. NZQA publishes annotated Achieved, Merit and Excellence exemplar scripts for this standard — reading all three side by side is the fastest way to see the difference.',
@@ -767,7 +767,7 @@ Never translate, draft, script or reword any part of the student's assessed work
       'Strategies named but never linked to the outcome.',
       'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
 
-  { code:'92018', ref:'1.3', credits:5, mode:'external', verified:true,
+  { code:'92018', ref:'1.3', credits:5, mode:'external', ownContext:true, verified:true,
     title:'Demonstrate understanding of the influence of personal movement experiences on hauora',
     bigIdea:'What moving has actually done for you — across all four dimensions of well-being, not just the physical one.',
     format:'End-of-year examination. You draw on your own movement experiences, so keep specific examples in mind through the year rather than trying to recall them in the exam.',
@@ -1061,7 +1061,7 @@ Remember these are Year 11 students, many of them fifteen. Keep the register age
       'Functions listed with no explanation of how theatre achieves them.',
       'Note: this is assessed work. NZQA requires any use of generative AI to be acknowledged, and your kaiako sets what use is acceptable — ask before you use it.'] },
 
-  { code:'91943', ref:'1.4', credits:5, mode:'external', verified:true,
+  { code:'91943', ref:'1.4', credits:5, mode:'external', ownContext:true, verified:true,
     title:'Respond to a drama performance',
     bigIdea:'Write about a live performance you actually saw — what the makers chose, and what it did to you and the audience around you.',
     format:'End-of-year examination about a drama performance you have seen. You cannot revise the questions, only the production, so detailed notes taken soon after seeing it are essential. NZQA publishes assessment specifications covering AS91942 and AS91943 together.',

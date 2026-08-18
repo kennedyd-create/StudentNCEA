@@ -22,7 +22,7 @@ subjects:{
   lens:'Geographic concepts to integrate: Environments, Perspectives, Processes, Patterns, Interaction, Change, Sustainability.',
   discipline:'Geography reasons from located evidence. Every claim needs a place, and most need a figure and a date. Physical and human processes are taught together, never in isolation.',
   standards:[
-  { code:'91426', ref:'3.1', credits:4, mode:'external', verified:true,
+  { code:'91426', ref:'3.1', credits:4, mode:'external', ownContext:true, verified:true,
     title:'Demonstrate understanding of how interacting natural processes shape a New Zealand geographic environment',
     bigIdea:'Pick one New Zealand natural environment and show how several natural processes work together — not separately — to make it the way it is.',
     format:'One exam question with multiple parts, written and visual. Annotated diagrams and maps are expected: diagrams in coloured pencil, annotations in pen.',
@@ -44,7 +44,7 @@ subjects:{
       'Diagrams left unlabelled or unannotated, when annotated diagrams earn marks here.',
       'Writing everything you know rather than answering the question actually asked.'] },
 
-  { code:'91427', ref:'3.2', credits:4, mode:'external', verified:true,
+  { code:'91427', ref:'3.2', credits:4, mode:'external', ownContext:true, verified:true,
     title:'Demonstrate understanding of how a cultural process shapes geographic environment(s)',
     bigIdea:'Take one human process — urbanisation, tourism, agricultural change — and show how it has physically and socially reshaped an environment.',
     format:'One exam question with multiple parts, written and visual. Annotated maps and diagrams expected.',
@@ -175,7 +175,7 @@ subjects:{
   lens:'Classical Studies themes to integrate: leadership, identity, relationships, ideology, conflict, and change.',
   discipline:'Classical Studies argues from primary evidence about societies distant in time — literary, artistic and archaeological. Every claim needs a named ancient source, and the gap between what a source shows and what we infer from it stays visible.',
   standards:[
-  { code:'91394', ref:'3.1', credits:4, mode:'external', verified:true,
+  { code:'91394', ref:'3.1', credits:4, mode:'external', ownContext:true, verified:true,
     title:'Analyse ideas and values of the classical world',
     bigIdea:'Reconstruct what Greeks or Romans actually believed and valued, from their own evidence, and analyse how those ideas worked in their society.',
     format:'Online digital examination. You select ONE question from a range and respond in extended paragraphs. A concise response of no more than 800–900 words (5–6 pages) is encouraged, and marking is based on quality rather than length. Anything written in the planning space is not marked. You are expected to understand leadership, identity, relationships and ideology, and questions may combine them.',
@@ -197,7 +197,7 @@ subjects:{
       'Leaving analysis to an evaluative conclusion instead of integrating it throughout.',
       'Choosing a question too quickly rather than using the planning page to check every aspect can be covered.'] },
 
-  { code:'91395', ref:'3.2', credits:4, mode:'external', verified:true,
+  { code:'91395', ref:'3.2', credits:4, mode:'external', ownContext:true, verified:true,
     title:'Analyse the significance of a work(s) of art in the classical world',
     bigIdea:'Take a classical art work and analyse why it mattered — to its makers, its viewers and its society — not simply what it looks like.',
     format:'Online digital examination. ONE question selected from a range, extended paragraphs, concise 800–900 words encouraged. You are expected to understand the contexts and features of art works set out in Explanatory Notes 3 and 4 of the standard, and questions may combine more than one aspect.',
@@ -218,7 +218,7 @@ subjects:{
       'Not addressing the specific angle the chosen question actually takes.',
       'Analysis held back until a concluding paragraph.'] },
 
-  { code:'91396', ref:'3.3', credits:6, mode:'external', verified:true,
+  { code:'91396', ref:'3.3', credits:6, mode:'external', ownContext:true, verified:true,
     title:'Analyse the impact of a significant historical figure on the classical world',
     bigIdea:'Take one classical figure and analyse what actually changed because of them — and how much of that change was really theirs.',
     format:'Online digital examination and the largest external in this subject at 6 credits. ONE question selected from a range, extended paragraphs, concise 800–900 words encouraged. You are expected to understand ideology, conflict, leadership and change, and questions may cover a combination of these themes.',
@@ -325,7 +325,7 @@ subjects:{
       'Viewpoints listed but never evaluated against the evidence.',
       'No named groups or sources behind the positions described.'] },
 
-  { code:'91603', ref:'3.3', credits:5, mode:'external', reference:true, verified:true,
+  { code:'91603', ref:'3.3', credits:5, mode:'external', ownContext:true, reference:true, verified:true,
     title:'Demonstrate understanding of the responses of plants and animals to their external environment',
     bigIdea:'Explain how plants and animals detect what is happening around them and change their behaviour or physiology in response.',
     format:'End-of-year examination on printed paper, with resource-based questions. Annotated diagrams may be used as evidence where appropriate. You should be comfortable reading graphical and tabulated data. The largest Biology external at 5 credits.',
@@ -367,7 +367,7 @@ subjects:{
       'Naming hormones without saying what they act on and what changes as a result.',
       'No link back to why the regulation matters for the animal.'] },
 
-  { code:'91605', ref:'3.5', credits:4, mode:'external', reference:true, verified:true,
+  { code:'91605', ref:'3.5', credits:4, mode:'external', ownContext:true, reference:true, verified:true,
     title:'Demonstrate understanding of evolutionary processes leading to speciation',
     bigIdea:'Explain how one population becomes two species — the isolation, the selection, and the genetic change that makes it permanent.',
     format:'End-of-year examination on printed paper, with resource-based questions and annotated diagrams permitted. You should be comfortable with graphical and tabulated data. Geological events that influence speciation include tectonic movement, glaciation, orogeny and sea level change.',
@@ -389,7 +389,7 @@ subjects:{
       'Teleological language — "the species evolved in order to".',
       'Phylogenetic trees misread, particularly which taxa share the most recent common ancestor.'] },
 
-  { code:'91606', ref:'3.6', credits:4, mode:'external', reference:true, verified:true,
+  { code:'91606', ref:'3.6', credits:4, mode:'external', ownContext:true, reference:true, verified:true,
     title:'Demonstrate understanding of trends in human evolution',
     bigIdea:'Trace what changed across hominin evolution — skeleton, brain, behaviour, culture — and explain the selection pressures behind each trend.',
     format:'End-of-year examination on printed paper. Trends are limited to early bipedal hominins onwards, and may involve comparison with living hominids. Dispersal covers the period up to 6,000 years ago. Cultural evolution covers the Earlier, Middle and Later Stone Age, the Middle and Upper Palaeolithic, the Neolithic, and Oldowan, Acheulean and Mousterian tool cultures. If you name a species, everything you say about it must be consistent with that species. All answers must be based on scientific evidence.',
@@ -1021,7 +1021,7 @@ subjects:{
   lens:'Written, oral and visual language strands. Level 3 rewards a controlled argument built on close, specific evidence from the text — not plot, not opinion, and not technique-spotting.',
   discipline:'English argues from the text. Every claim is anchored to a quotation, shot, or moment, and the analysis explains how the author\u2019s choice produces the effect. At Level 3 the marks are in the "so what" — what the text is doing to a reader and why that matters.',
   standards:[
-  { code:'91472', ref:'3.1', credits:4, mode:'external', verified:true,
+  { code:'91472', ref:'3.1', credits:4, mode:'external', ownContext:true, verified:true,
     title:'Respond critically to specified aspect(s) of studied written text(s), supported by evidence',
     bigIdea:'An essay on a text you have studied, built around a statement you choose — your argument, their prompt.',
     format:'End-of-year ONLINE DIGITAL examination (2026 is digital only — earlier years offered paper as an alternative). You write an essay on at least one studied written text. A range of questions covering all written text types is provided and you select ONE. A concise response of no more than 800–900 words (5–6 pages) is encouraged, and assessment is based on QUALITY rather than length. All answers must be written in English, and information in planning spaces is not marked.',
@@ -1043,7 +1043,7 @@ subjects:{
       'Retelling the plot instead of arguing.',
       'Quotations dropped in without being unpacked.'] },
 
-  { code:'91473', ref:'3.2', credits:4, mode:'external', verified:true,
+  { code:'91473', ref:'3.2', credits:4, mode:'external', ownContext:true, verified:true,
     title:'Respond critically to specified aspect(s) of studied visual or oral text(s), supported by evidence',
     bigIdea:'The same essay task, but on a film, documentary, or oral text — and the evidence is what you see and hear.',
     format:'End-of-year online digital examination. You write an essay on at least one studied visual or oral text; a range of questions covering visual and oral text types is provided and you select ONE. Concise response of no more than 800–900 words (5–6 pages) encouraged, assessed on quality rather than length. Planning spaces are not marked.',
@@ -1366,7 +1366,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
       'The wider connection to Te Ao Haka and its people left out, which is usually where Excellence sits.',
       'Note: this is assessed work about your own journey. An AI must not write or reword it — and it cannot know your journey anyway.'] },
 
-  { code:'91987', ref:'3.4', credits:5, mode:'external', verified:true,
+  { code:'91987', ref:'3.4', credits:5, mode:'external', ownContext:true, verified:true,
     title:'Demonstrate understanding of a key role within Te Ao Haka',
     bigIdea:'Take one role within Te Ao Haka and show you understand what it actually requires — its responsibilities, its skills, and why it matters to the whole.',
     format:'Externally assessed. The achievement standard was revised for 2026, so check you are working from the current version rather than an older one. Kaiako will confirm the submission format required this year.',
@@ -2045,7 +2045,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
   discipline:'Media Studies argues from the text and from the industry that made it. Every claim about meaning is anchored to a specific technique in a specific text, and every claim about influence is anchored to evidence about audiences, ownership or regulation.',
   verifyNote:'Five of the eight Level 3 standards are loaded — the written and examined ones. The three production standards (AS91494 design for a media product, AS91495 produce a media product, AS91497 write a media text to a brief) are deliberately excluded as creative production work.',
   standards:[
-  { code:'91490', ref:'3.1', credits:4, mode:'external', verified:true,
+  { code:'91490', ref:'3.1', credits:4, mode:'external', ownContext:true, verified:true,
     title:'Demonstrate understanding of an aspect of a media industry',
     bigIdea:'Look behind the media text at the industry that produced it — who owns it, who funds it, who regulates it, and what that does to what gets made.',
     format:'End-of-year examination, written response on a media industry aspect you have studied.',
@@ -2102,7 +2102,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
       'No consideration of what is omitted, which often carries the argument.',
       'Note: this is assessed work, so an AI must not draft or reword it.'] },
 
-  { code:'91493', ref:'3.4', credits:4, mode:'external', verified:true,
+  { code:'91493', ref:'3.4', credits:4, mode:'external', ownContext:true, verified:true,
     title:'Demonstrate understanding of a relationship between a media genre and society',
     bigIdea:'Genres change as societies change — analyse what that relationship reveals about both.',
     format:'End-of-year examination, written response on a genre studied in class.',
@@ -2210,7 +2210,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
   discipline:'Drama studies argues from what happens on stage. Every claim is anchored to a specific moment — a piece of blocking, a lighting state, a delivery choice — and connected to its effect on an audience.',
   verifyNote:'Three of the seven Level 3 standards are loaded — the drama studies ones. The performance and devising standards (AS91512, AS91513, AS91515, AS91517) are excluded as practical work.',
   standards:[
-  { code:'91514', ref:'3.3', credits:4, mode:'external', verified:true,
+  { code:'91514', ref:'3.3', credits:4, mode:'external', ownContext:true, verified:true,
     title:'Interpret a prescribed text to demonstrate knowledge of a theatre form or period',
     bigIdea:'Show you understand a theatre form or period by interpreting a set text through it.',
     format:'End-of-year examination, written response on the prescribed text and the theatre form or period studied. This standard carries both reading and writing literacy credits.',
@@ -2248,7 +2248,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
       'Techniques named with no explanation of what they were for.',
       'Note: this is assessed work, so an AI must not draft or reword it.'] },
 
-  { code:'91518', ref:'3.7', credits:4, mode:'external', verified:true,
+  { code:'91518', ref:'3.7', credits:4, mode:'external', ownContext:true, verified:true,
     title:'Demonstrate understanding of live drama performance',
     bigIdea:'Write about a live production you actually attended — what the makers chose, and what it did to you and the audience around you.',
     format:'End-of-year examination, written response about a live performance you have seen. This standard carries writing literacy credits. You cannot revise the questions, only the production — so detailed notes taken soon after seeing it are essential.',
@@ -2488,7 +2488,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
       'Assuming the contest has exactly two sides.'],
     pitfalls:['Treating perspective as simply "opinion" rather than something shaped by position, time and interest.','Presenting perspectives side by side without analysing why they differ.','Confusing the perspectives of people at the time with those of later historians.'] },
 
-  { code:'91438', ref:'3.5', credits:6, mode:'external', verified:true,
+  { code:'91438', ref:'3.5', credits:6, mode:'external', ownContext:true, verified:true,
     title:'Analyse the causes and consequences of a significant historical event',
     bigIdea:'A conventional essay on one significant event you have studied. One general question, no prescribed content — you choose a limited number of causes or consequences and go deep.',
     format:'Conventional essay in an online digital examination. One general question. You analyse a limited number of causes, or consequences, or both. There is no prescribed content, and a concise response of roughly 800–900 words is what the specifications encourage.',
@@ -2506,7 +2506,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
       'Thinking length signals quality, when a concise 800–900 words is what is encouraged.'],
     pitfalls:['Covering every cause thinly instead of a limited number in real depth.','Listing causes without weighing which mattered most — the usual Excellence gap.','Narrative drift: the essay becomes the story of the event.','A concise response of roughly 800–900 words is encouraged, so length is not the goal.'] },
 
-  { code:'91439', ref:'3.6', credits:6, mode:'external', verified:true,
+  { code:'91439', ref:'3.6', credits:6, mode:'external', ownContext:true, verified:true,
     title:'Analyse a significant historical trend and the force(s) that influenced it',
     bigIdea:'A conventional essay on one trend over time. You analyse either the trend and its effects, or the forces that shaped it.',
     format:'Conventional essay in an online digital examination. One general question. You analyse either a trend and its effects, or the forces that influenced it. No prescribed content, and roughly 800–900 words is encouraged.',
@@ -2610,7 +2610,7 @@ Your role is to help the student think, structure and reflect. The mātauranga i
       'No real examples of practice, or no outcome evidence.',
       'Note: this is assessed work, and NZQA requires any use of generative AI to be acknowledged.'] },
 
-  { code:'91876', ref:'3.5', credits:3, mode:'external', verified:true,
+  { code:'91876', ref:'3.5', credits:3, mode:'external', ownContext:true, verified:true,
     title:'Analyse a significant issue in psychological practice',
     bigIdea:'Psychology raises hard questions about how it is used. Analyse one properly, with evidence on every side.',
     format:'End-of-year examination, and the only externally assessed standard in Level 3 Psychology. At 3 credits it is also the smallest, so weight your revision accordingly. Check the 2026 assessment specification on the NZQA Psychology subject page for the paper structure.',
