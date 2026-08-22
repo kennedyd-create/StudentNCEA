@@ -20,6 +20,7 @@ const path = require('path');
 const ENGINE = 'index.html';                 // falls back to whs-ncea-engine.html
 const DATA   = ['ncea-l1.js', 'ncea-l2.js', 'ncea-l3.js', 'ncea-scholarship.js'];
 const EXAMS  = 'ncea-exams-2026.js';
+const DERIVED = 'whs-derived-2026.js';   // the school's own mock timetable
 const TT     = 'timetable.js';
 
 const REQUIRED_FIELDS = ['bigIdea','format','evidence','criteria','bandShift',
@@ -41,7 +42,7 @@ const engine = read(enginePath);
 if(!engine){ fail(`${ENGINE} (or whs-ncea-engine.html) is missing`); report(); }
 else pass(`${enginePath} present`);
 
-for(const f of [...DATA, EXAMS, TT]){
+for(const f of [...DATA, EXAMS, DERIVED, TT]){
   if(!fs.existsSync(f)){ fail(`${f} is missing`); continue; }
   try { new Function(read(f)); pass(`${f} parses`); }
   catch(e){ fail(`${f} has a syntax error: ${e.message}`); }
@@ -55,7 +56,7 @@ catch(e){ fail('engine inline script error: ' + e.message); }
 /* ---------- 2. load the data ---------- */
 global.window = {};
 try {
-  [EXAMS, ...DATA].forEach(f => { if(fs.existsSync(f)) new Function(read(f))(); });
+  [EXAMS, DERIVED, ...DATA].forEach(f => { if(fs.existsSync(f)) new Function(read(f))(); });
 } catch(e){ fail('could not load the data files: ' + e.message); report(); }
 
 const DATASETS = global.window.NCEA_DATA || {};
@@ -145,6 +146,34 @@ else {
   }
   if(missing.length) warn(`no exam date recorded: ${missing.join(', ')}`);
   if(!failures) pass(`${dated} subjects dated, all valid`);
+}
+
+/* ---------- 4b. the school's derived grade timetable ---------- */
+head('DERIVED GRADE EXAMS');
+
+const DGX = global.window.WHS_DERIVED;
+if(!DGX) warn('whs-derived-2026.js did not load — the mock timetable will be unavailable');
+else {
+  let count = 0;
+  for(const [lvl, table] of Object.entries(DGX.subjectDates)){
+    for(const [sub, info] of Object.entries(table)){
+      count++;
+      const where = `L${lvl} ${sub}`;
+      if(!DATASETS[lvl] || !DATASETS[lvl].subjects[sub])
+        fail(`${where} has a derived grade exam but is not in the subject data`);
+      const problem = DGX.checkDate(info.date);
+      if(problem) fail(`${where} derived grade date ${info.date}: ${problem}`);
+      if(!DGX.sessions.some(x => x.id === info.session))
+        fail(`${where} invalid derived grade session: ${info.session}`);
+      // Some derived grade sessions are practical workshops rather than
+      // written papers. A subject with nothing written to revise should not
+      // be scheduled at all — that was a real mistake once.
+      const subj = DATASETS[lvl] && DATASETS[lvl].subjects[sub];
+      if(subj && !subj.standards.some(x => x.mode === 'external'))
+        fail(`${where} has a derived grade exam but no written external — is it a workshop?`);
+    }
+  }
+  pass(`${count} derived grade entries, all valid`);
 }
 
 /* ---------- 5. every class used has a style ---------- */

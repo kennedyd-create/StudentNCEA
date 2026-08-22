@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 42 — Start again centred';
+const TT_BUILD = 'build 45 — workshop sessions excluded';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -69,6 +69,7 @@ const S = {
   shareOpen: false,         // the share panel is showing
   myContext: {},            // "level::Subject::code" -> the student's own text or case study
   askingContext: null,      // the standard whose context field is currently open
+  target: null,             // 'derived' | 'ncea' | 'both' — which exams this plan aims at
   examsConfirmed: false,    // student has checked the dates against NZQA
   pickerOpen: false,        // the days-off calendar
   pickerMonth: null,
@@ -86,7 +87,7 @@ function save(){
       standards: Object.fromEntries(Object.entries(S.standards).map(([k,v]) => [k, [...v]])),
       exams:S.exams, periods:S.periods, blackouts:S.blackouts,
       withTopics:S.withTopics, howMode:S.howMode, examsConfirmed:S.examsConfirmed,
-      myContext:S.myContext,
+      myContext:S.myContext, target:S.target,
       view:S.view, fullMode:S.fullMode, cursor:S.cursor,
       plan: S.plan ? S.plan.open.map(x => x.item
         ? { d:x.date, i:x.index, e:x.extra?1:0, s:x.item.subject, c:x.item.st.code, m:x.item.mode, t:x.item.topic||'' }
@@ -103,7 +104,7 @@ function load(){
       level:o.level||'3', faculty:o.faculty, subjects:o.subjects||[],
       exams:o.exams||{}, periods:o.periods||S.periods, blackouts:o.blackouts||[],
       withTopics: o.withTopics !== false, howMode:o.howMode||'ai', myContext:o.myContext||{},
-      examsConfirmed: !!o.examsConfirmed, view:o.view||'week',
+      examsConfirmed: !!o.examsConfirmed, target:o.target||null, view:o.view||'week',
       fullMode:o.fullMode||'subject', cursor:o.cursor||todayISO()
     });
     S.standards = {};
@@ -176,10 +177,24 @@ function daysBetween(a,b){ return Math.round((parse(b)-parse(a))/86400000); }
 function periodFor(date){ return S.periods.find(p => date >= p.start && date <= p.end) || null; }
 function isExamDay(date){
   // Portfolio submission days are not exam days — you can still work that day.
-  return S.subjects.some(sub => S.exams[sub] && !S.exams[sub].portfolio && S.exams[sub].date === date);
+  return S.subjects.some(k => deadlines(k).some(d =>
+    d.date === date && !d.portfolio));
 }
+/* The school is off timetable for derived grade week, so it behaves like a
+   short block of study leave rather than term-time — unless the student has
+   deliberately set that day to zero. */
+function inDerivedWeek(date){
+  const d = DG();
+  return !!d && S.target !== 'ncea' && date >= d.window.start && date <= d.window.end;
+}
+
 function hoursOn(date){
   if(S.blackouts.includes(date)) return 0;
+  if(inDerivedWeek(date) && !isExamDay(date)){
+    const p = periodFor(date);
+    const set = p ? (p.hours[wdIndex(date)] || 0) : 0;
+    return Math.max(set, 5);          // treat it as study leave
+  }
   // Exam days are for sitting exams. Nothing gets scheduled on them.
   if(isExamDay(date)) return 0;
   const p = periodFor(date);
@@ -191,14 +206,24 @@ function hueFor(sub){ return HUES[S.subjects.indexOf(sub) % HUES.length]; }
 /* ---------- selections ---------- */
 function externalSubjects(){
   if(!D()) return [];
+  const dg = DG();
   return Object.entries(D().subjects)
-    .filter(([,s]) => s.standards.some(x => x.mode === 'external'))
+    .filter(([n, s]) => {
+      // A derived grade exam can cover internal standards, so a subject
+      // sitting one qualifies even with no NCEA external — Level 2 Physical
+      // Education and Psychology, for instance.
+      if(S.target !== 'ncea' && dg && dg.has(S.level, n)) return true;
+      if(S.target === 'derived') return false;
+      return s.standards.some(x => x.mode === 'external');
+    })
     .map(([n]) => n).sort();
 }
 function externalStandards(k){
   const d = kData(k); if(!d) return [];
   const sub = d.subjects[kName(k)]; if(!sub) return [];
-  return sub.standards.filter(x => x.mode === 'external')
+  // A derived grade exam can cover internal standards as well.
+  const dgOnly = S.target === 'derived';
+  return sub.standards.filter(x => dgOnly || x.mode === 'external')
     .sort((a,b) => a.ref.localeCompare(b.ref, undefined, {numeric:true}));
 }
 // What to show on screen: "Biology" at one level, "Biology (Scholarship)" when mixed.
@@ -208,15 +233,31 @@ function label(k){
 }
 function chosenStandards(){
   const out = [];
-  S.subjects.forEach(k => externalStandards(k).forEach(st => {
-    if(S.standards[k] && S.standards[k].has(st.code))
-      out.push({ subject: k, st, exam: S.exams[k] });
-  }));
+  S.subjects.forEach(k => {
+    const dls = deadlines(k);
+    externalStandards(k).forEach(st => {
+      if(!(S.standards[k] && S.standards[k].has(st.code))) return;
+      if(!dls.length){ out.push({ subject:k, st, exam:null }); return; }
+      // One entry per deadline, so a subject sat in September AND November
+      // gets revision aimed at each rather than stopping at the first.
+      dls.forEach(d => out.push({ subject:k, st, exam:d, kind:d.kind }));
+    });
+  });
   return out;
 }
+
+/* How many standards the student is actually sitting, ignoring the fact that
+   one standard can have two deadlines — used for counts shown on screen. */
+function standardCount(){
+  const seen = new Set();
+  chosenStandards().forEach(i => seen.add(i.subject + '::' + i.st.code));
+  return seen.size;
+}
 function lastExamDate(){
-  const d = S.subjects.map(s => S.exams[s] && S.exams[s].date).filter(Boolean).sort();
-  return d.length ? d[d.length-1] : null;
+  const all = [];
+  S.subjects.forEach(k => deadlines(k).forEach(d => { if(d.date) all.push(d.date); }));
+  all.sort();
+  return all.length ? all[all.length-1] : null;
 }
 /* ============================================================
    THE ALLOCATOR
@@ -607,25 +648,39 @@ function dayCapacity(date){
 /* The exam itself, drawn in the subject colour so it reads as the deadline
    every block before it is working toward. */
 function examBanner(date, size){
-  const sitting = S.subjects.filter(s => S.exams[s] && S.exams[s].date === date);
-  const isPf = sub => S.exams[sub] && S.exams[sub].portfolio;
-  const eve     = S.subjects.filter(s => S.exams[s] && addDays(S.exams[s].date,-1) === date);
+  // A day can hold a derived grade exam, an NCEA exam, or both.
+  const on = [];
+  S.subjects.forEach(k => deadlines(k).forEach(d => {
+    if(d.date === date) on.push({ k, d });
+  }));
+  const sitting = on.map(x => x.k);
+  const kindOf  = sub => (on.find(x => x.k === sub) || {}).d || {};
+  const isPf = sub => !!kindOf(sub).portfolio;
+  const eve = S.subjects.filter(k =>
+    deadlines(k).some(d => addDays(d.date, -1) === date && !d.portfolio));
   if(!sitting.length && !eve.length) return '';
 
-  const time = sub => (E().sessions.find(x => x.id === S.exams[sub].session) || {}).start || '';
+  const time = sub => {
+    const d = kindOf(sub);
+    const src = d.kind === 'derived' ? DG().sessions : E().sessions;
+    return (src.find(x => x.id === d.session) || {}).start || '';
+  };
+  const tag = sub => kindOf(sub).kind === 'derived' ? 'DERIVED' : 'EXAM';
   const out = [];
 
   sitting.forEach(sub => {
-    const word = isPf(sub) ? 'DUE' : 'EXAM';
+    const word = isPf(sub) ? 'DUE' : tag(sub);
+    const dl = kindOf(sub);
+    const src = dl.kind === 'derived' ? DG().sessions : E().sessions;
     const when = isPf(sub) ? 'Portfolio submission'
-      : ((E().sessions.find(x=>x.id===S.exams[sub].session)||{}).label||'') + ' · ' + time(sub);
+      : ((src.find(x=>x.id===dl.session)||{}).label||'') + ' · ' + time(sub);
     if(size === 'xs') out.push(
       `<span class="tt-exam-xs" title="${label(sub)} — ${when}">${label(sub)}</span>`);
     else if(size === 'sm') out.push(
-      `<div class="tt-exambar tt-exam-sm"><strong>${label(sub)}</strong><span>${word}${isPf(sub)?'':' '+S.exams[sub].session+' '+time(sub)}</span></div>`);
+      `<div class="tt-exambar${kindOf(sub).kind==='derived'?' tt-derived':''} tt-exam-sm"><strong>${label(sub)}</strong><span>${word}${isPf(sub)?'':' '+kindOf(sub).session+' '+time(sub)}</span></div>`);
     else out.push(
-      `<div class="tt-exambar"><span class="tt-exampill">${word}</span><strong>${label(sub)}</strong>
-        ${sittingChip(sub,'sm')}<span class="tt-examwhen">${when}</span></div>`);
+      `<div class="tt-exambar${kindOf(sub).kind==='derived'?' tt-derived':''}"><span class="tt-exampill">${word}</span><strong>${label(sub)}</strong>
+        ${kindOf(sub).kind==='derived'?'':sittingChip(sub,'sm')}<span class="tt-examwhen">${when}</span></div>`);
   });
 
   // The night before is its own kind of day — same gold, quieter treatment,
@@ -686,6 +741,42 @@ function viewBar(){
 /* The student's own text or case study, remembered per STANDARD — Muriwai
    belongs to one Geography standard, not to Geography. Only offered where the
    material is genuinely candidate-chosen. */
+/* A subject can be sitting a derived grade exam in September AND its NCEA
+   exam in November. Which deadline applies depends on the plan's target. */
+const DG = () => window.WHS_DERIVED;
+
+function derivedFor(k){
+  const d = DG();
+  return d ? d.dateFor(kLvl(k), kName(k)) : null;
+}
+function nceaFor(k){
+  const info = E().dateFor(kLvl(k), kName(k));
+  return info && (info.date || info.portfolio) ? info : null;
+}
+/* Every deadline this subject faces within the plan's scope, earliest first. */
+function deadlines(k){
+  const out = [];
+  if(S.target !== 'ncea'){
+    const d = derivedFor(k);
+    if(d) out.push({ ...d, kind:'derived' });
+  }
+  if(S.target !== 'derived'){
+    const n = S.exams[k];
+    if(n && n.date) out.push({ ...n, kind:'ncea' });
+  }
+  return out.sort((a,b) => a.date.localeCompare(b.date));
+}
+
+/* In "both" mode a subject has two deadlines. Revision aims at the NEARER one
+   still ahead — the derived grade is sooner, and it is the safety net that
+   matters if November goes wrong — and rolls on to the later one after it. */
+function workingDeadline(k){
+  const list = deadlines(k);
+  if(!list.length) return null;
+  const today = todayISO();
+  return list.find(d => d.date >= today) || list[list.length - 1];
+}
+
 const ctxKey = it => kLvl(it.subject) + '::' + kName(it.subject) + '::' + it.st.code;
 const myCtx  = it => S.myContext[ctxKey(it)] || '';
 const wantsCtx = it => !!it.st.ownContext;
@@ -1252,7 +1343,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=42';
+    t.src = src + '?v=45';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
@@ -1260,6 +1351,7 @@ function render(){
   }
 
   if(S.savedPlan) rehydrate();
+  if(!S.target){ root.innerHTML = targetChooser(); bindReopen(); wire(); return; }
   root.innerHTML = topBar() + intro() + stepLevel() + stepSubjects() + stepStandards() + stepExams() +
                    stepPeriods() + stepGo() + (S.plan ? renderPlan() : '') +
                    `<p class="tt-build">${TT_BUILD}</p>`;
@@ -1269,11 +1361,43 @@ function render(){
 }
 
 /* Shown until a plan exists, so a first-time student knows what this is. */
+/* Which exams is this plan for? Asked first, because it decides the deadline
+   everything is scheduled backwards from. */
+function targetChooser(){
+  if(S.target) return '';
+  const d = DG();
+  const dgWindow = d ? d.pretty(d.window.start) + ' to ' + d.pretty(d.window.end) : '';
+  const opts = [
+    ['derived', d ? d.label : 'Derived grade exams', dgWindow,
+     'The school mocks. Your plan runs from now until that week, and treats it as study leave.'],
+    ['ncea', 'NCEA exams', E() ? E().pretty(E().window.start) + ' to ' + E().pretty(E().window.end) : '',
+     'The national exams in November. This is the long run — most of a term of revision.'],
+    ['both', 'Both', 'September and November',
+     'One continuous plan. It works toward each mock first, then keeps going to the real thing.']
+  ];
+  return `<div class="panel p-4 md:p-5">
+    <h3 class="sec-h mb-1"><span class="tt-step">1</span>Which exams are you planning for?</h3>
+    <p class="tt-why">The whole timetable is built backwards from a deadline, so this decides
+      everything else. You can change it later without losing your subjects.</p>
+    <div class="tt-targets">
+      ${opts.map(([k,name,when,why])=>`
+        <button class="tt-target" data-t="${k}">
+          <span class="tt-tname">${name}</span>
+          <span class="tt-twhen">${when}</span>
+          <span class="tt-twhy">${why}</span>
+        </button>`).join('')}
+    </div>
+  </div>`;
+}
+
 function topBar(){
   if(!S.subjects.length) return '';
-  const n = chosenStandards().length;
+  const n = standardCount();
   return `<div class="tt-topbar">
     <div class="tt-topsum">
+      <span class="tt-targetchip">${
+        S.target==='derived' ? (DG()?DG().short:'Derived grade')
+        : S.target==='ncea' ? 'NCEA exams' : 'Derived grade + NCEA'}<button id="tt-retarget" title="Change which exams this plan is for">change</button></span>
       <strong>${S.subjects.length}</strong> subject${S.subjects.length===1?'':'s'}
       ${n ? `· <strong>${n}</strong> standard${n===1?'':'s'}` : ''}
       ${S.plan ? `· <strong>${S.plan.used}</strong> study blocks` : ''}
@@ -1300,7 +1424,7 @@ function stepLevel(){
     [...new Set(S.subjects.map(kLvl))].map(l => l==='S' ? 'Scholarship' : 'Level '+l).join(' · ')
       || (S.level==='S' ? 'Scholarship' : 'Level '+S.level), '0');
   return `<div class="panel p-4 md:p-5">
-    <h3 class="sec-h mb-1"><span class="tt-step">1</span>What are you studying?</h3>
+    <h3 class="sec-h mb-1"><span class="tt-step">2</span>What are you studying?</h3>
     <p class="tt-why">Pick the level you are sitting. Doing Scholarship as well? Choose it here too —
       you can hold subjects from both in one plan.</p>
     <div class="flex flex-wrap gap-2">${[['1','Level 1'],['2','Level 2'],['3','Level 3'],['S','Scholarship']].map(([l,lab])=>
@@ -1329,7 +1453,7 @@ function stepSubjects(){
     if(i >= 0) S.faculty = i;
   }
   return `<div class="panel p-4 md:p-5">
-    <h3 class="sec-h mb-1"><span class="tt-step">2</span>Which subjects?</h3>
+    <h3 class="sec-h mb-1"><span class="tt-step">3</span>Which subjects?</h3>
     <p class="tt-why">Only subjects with an exam appear — internals have no fixed date to work
       backwards from. Choose up to ${MAX_SUBJECTS} — enough for a full Level 3 load plus Scholarship —
       and the plan splits your time between them by credits.</p>
@@ -1350,12 +1474,12 @@ function stepSubjects(){
 function stepStandards(){
   if(!S.subjects.length) return '';   // nothing to choose from yet
   if(S.plan && !S.open2) return doneBar('STANDARDS',
-    chosenStandards().length + ' standards selected', '2');
+    standardCount() + ' standards selected', '2');
 
   const anyContext = S.subjects.some(sub => externalStandards(sub).some(st => st.ownContext));
 
   return `<div class="panel p-4 md:p-5">
-    <h3 class="sec-h mb-1"><span class="tt-step">3</span>Which standards?</h3>
+    <h3 class="sec-h mb-1"><span class="tt-step">4</span>Which standards?</h3>
     <p class="tt-why">All ticked to start with. Untick anything your class is not doing —
       otherwise you will be given revision for standards you never sit.${anyContext
       ? ' Where a standard uses a text or case study you chose, name it on the right and every study block for it will say so.'
@@ -1421,11 +1545,12 @@ function ctxHint(st, subject){
 
 function stepExams(){
   if(!S.subjects.length) return '';
+  if(S.target === 'derived') return '';   // school dates, fixed and already known
   if(S.plan && !S.open4) return doneBar('EXAM DATES',
     S.subjects.map(k => label(k) + ' ' + (S.exams[k] && S.exams[k].date
       ? pretty(S.exams[k].date,{day:'numeric',month:'short'}) : '?')).join(' · '), '4');
   return `<div class="panel p-4 md:p-5">
-    <h3 class="sec-h mb-1"><span class="tt-step">4</span>When are your exams?</h3>
+    <h3 class="sec-h mb-1"><span class="tt-step">5</span>When are your exams?</h3>
     <p class="tt-why"><strong>This is the part that matters most.</strong> The whole plan is built
       backwards from these dates, so a wrong one puts your revision in the wrong place.</p>
     <p class="text-xs soft mb-3">Pre-filled from the ${E().year} timetable. Check yours on
@@ -1433,6 +1558,7 @@ function stepExams(){
       <strong>Digital exam</strong> or <strong>paper exam</strong> shows how you will sit each one —
       Waiheke enters students digitally wherever NZQA offers it. Ask your teacher if you would prefer paper.</p>
     ${S.subjects.map(sub=>{
+      const dg = S.target !== 'ncea' ? derivedFor(sub) : null;
       const ex = S.exams[sub]||{};
       // A portfolio subject has no sat examination — the school sets a
       // submission date, so any weekday is valid and there is no session.
@@ -1449,6 +1575,7 @@ function stepExams(){
         <select class="field tt-sess" data-sub="${sub}">${E().sessions.map(s=>
           `<option value="${s.id}" ${ex.session===s.id?'selected':''}>${s.label} ${s.start}</option>`).join('')}</select>
         ${sittingChip(sub)}
+        ${dg ? `<span class="tt-dgchip">Derived grade ${DG().pretty(dg.date)} ${dg.session}</span>` : ''}
         <span class="tt-warn">${prob||''}</span></div>`;
     }).join('')}
     ${clashNotes()}
@@ -1459,6 +1586,7 @@ function stepExams(){
 /* Wrong exam dates would quietly wreck the whole plan, so the student has to
    look at them once and say they are right before anything gets built. */
 function examConfirmBox(){
+  if(S.target === 'derived') return '';   // the school sets these; nothing to confirm
   const ok = sub => {
     const e = S.exams[sub];
     if(!e || !e.date) return false;
@@ -1492,7 +1620,7 @@ function stepPeriods(){
     S.periods.map(p => p.name).join(' · '), '3');
   const r = realism();
   return `<div class="panel p-4 md:p-5">
-    <h3 class="sec-h mb-1"><span class="tt-step">5</span>When can you actually study?</h3>
+    <h3 class="sec-h mb-1"><span class="tt-step">6</span>When can you actually study?</h3>
     <p class="tt-why">Be honest here rather than optimistic — a plan you cannot keep is worse than
       no plan. How much you can do changes across the year, so it is set per period: term-time is
       squeezed, study leave is not. Use <strong>Quick set</strong> for a typical pattern, then adjust
@@ -1572,10 +1700,11 @@ function offPicker(){
 
 function stepGo(){
   if(!S.subjects.length || !chosenStandards().length) return '';
-  const n = chosenStandards().length;
-  const dated = S.subjects.every(s => S.exams[s] && S.exams[s].date &&
+  const n = standardCount();
+  const dgOnly = S.target === 'derived';
+  const dated = dgOnly || S.subjects.every(s => S.exams[s] && S.exams[s].date &&
     (S.exams[s].portfolio || !E().checkDate(S.exams[s].date)));
-  const ready = n>0 && dated && S.examsConfirmed;
+  const ready = n>0 && dated && (dgOnly || S.examsConfirmed);
   return `<div class="panel p-4 md:p-5 flex flex-wrap items-center gap-3">
     <button id="tt-go" class="btn-1"${ready?'':' disabled style="opacity:.5;cursor:not-allowed"'}>
       ${S.plan?'Rebuild my timetable':'Create my study timetable'}</button>
@@ -1593,6 +1722,15 @@ function stepGo(){
 function wire(){
   const q = (s,fn) => R().querySelectorAll(s).forEach(fn);
   const one = s => R().querySelector(s);
+
+  // Which exams this plan is for. Chosen first, and changeable later.
+  q('.tt-target', b => b.onclick = () => {
+    S.target = b.dataset.t;
+    S.plan = null; S.stale = false;      // a new deadline means a new plan
+    render();
+  });
+  const rt = one('#tt-retarget');
+  if(rt) rt.onclick = () => { S.target = null; touch(); render(); };
 
   // Switching level only changes what you are BROWSING — chosen subjects stay,
   // so a Level 3 student can add a Scholarship subject to the same plan.
