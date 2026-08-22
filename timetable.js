@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 39 — Scholarship Biology PM';
+const TT_BUILD = 'build 41 — reset warning';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -1252,7 +1252,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=39';
+    t.src = src + '?v=41';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
@@ -1260,7 +1260,7 @@ function render(){
   }
 
   if(S.savedPlan) rehydrate();
-  root.innerHTML = intro() + stepLevel() + stepSubjects() + stepStandards() + stepExams() +
+  root.innerHTML = topBar() + intro() + stepLevel() + stepSubjects() + stepStandards() + stepExams() +
                    stepPeriods() + stepGo() + (S.plan ? renderPlan() : '') +
                    `<p class="tt-build">${TT_BUILD}</p>`;
   bindReopen();
@@ -1269,6 +1269,19 @@ function render(){
 }
 
 /* Shown until a plan exists, so a first-time student knows what this is. */
+function topBar(){
+  if(!S.subjects.length) return '';
+  const n = chosenStandards().length;
+  return `<div class="tt-topbar">
+    <div class="tt-topsum">
+      <strong>${S.subjects.length}</strong> subject${S.subjects.length===1?'':'s'}
+      ${n ? `· <strong>${n}</strong> standard${n===1?'':'s'}` : ''}
+      ${S.plan ? `· <strong>${S.plan.used}</strong> study blocks` : ''}
+    </div>
+    <button id="tt-reset" class="btn-reset">Start again</button>
+  </div>`;
+}
+
 function intro(){
   if(S.plan) return '';
   return `<div class="tt-intro">
@@ -1571,7 +1584,6 @@ function stepGo(){
       ready ? '' : n===0 ? ' — tick at least one standard above'
              : !dated ? ' — needs a valid exam date: ' + S.subjects.filter(x=>!(S.exams[x]&&S.exams[x].date&&(S.exams[x].portfolio||!E().checkDate(S.exams[x].date)))).map(label).join(', ')
              : ' — confirm your exam dates above first'}</span>
-    <button id="tt-reset" class="btn-3 ml-auto">Start again</button>
   </div>`;
 }
 
@@ -1741,8 +1753,27 @@ function wire(){
   if(tp) tp.onchange = () => { S.withTopics = tp.checked; touch(); render(); };
 
   const rs = one('#tt-reset');
+  /* The browser's own confirm() gives an OK / Cancel dialog. Cancel does
+     nothing at all, so a mis-click costs the student nothing. The message
+     lists what they will actually lose rather than a generic warning. */
   if(rs) rs.onclick = () => {
-    if(confirm('Clear your saved timetable and start again?')){ wipe(); render(); }
+    const bits = [];
+    if(S.subjects.length)
+      bits.push('\u2022 your ' + S.subjects.length + ' subject' + (S.subjects.length===1?'':'s') +
+                ' and the standards you ticked');
+    if(Object.keys(S.exams).length) bits.push('\u2022 any exam dates you changed');
+    if(Object.keys(S.myContext).length)
+      bits.push('\u2022 the case studies and texts you entered');
+    if(S.periods) bits.push('\u2022 your study hours and days off');
+    if(S.plan) bits.push('\u2022 your generated timetable (' + S.plan.used + ' study blocks)');
+
+    const msg =
+      'START AGAIN — this will reset everything you have entered.\n\n' +
+      'You will lose:\n' + bits.join('\n') +
+      '\n\nThis cannot be undone, and it clears what is saved on this device.\n\n' +
+      'Press OK to reset, or Cancel to keep your timetable.';
+
+    if(confirm(msg)){ wipe(); render(); }
   };
 
   const cf = one('#tt-confirm');
