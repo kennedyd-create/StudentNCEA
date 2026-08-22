@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=42"></script>
+<script src="ncea-exams-2026.js?v=46"></script>
+<script src="whs-derived-2026.js?v=46"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -277,6 +278,33 @@ body.dark-mode .filter-pill[aria-pressed="true"]{ color:#fff; }
    Restored in full — an earlier edit to the prompt layer
    accidentally removed this whole block.
    ============================================================ */
+
+/* --- choosing which exams the plan is for --- */
+.tt-targets{ display:grid; grid-template-columns:repeat(auto-fit,minmax(15rem,1fr)); gap:.6rem; }
+.tt-target{ display:flex; flex-direction:column; gap:.2rem; text-align:left; cursor:pointer;
+  padding:.9rem 1rem; border:2px solid var(--line-strong); border-radius:.6rem;
+  background:var(--surface); transition:border-color .15s ease, background .15s ease; }
+.tt-target:hover{ border-color:var(--fac-dark); background:var(--surface-2); }
+.tt-tname{ font-size:1rem; font-weight:900; color:var(--ink); }
+.tt-twhen{ font-size:.6875rem; font-weight:800; color:var(--fac-dark);
+  text-transform:uppercase; letter-spacing:.05em; }
+.tt-twhy{ font-size:.75rem; line-height:1.5; color:var(--ink-soft); margin-top:.2rem; }
+
+/* which exams this plan is for, shown in the top bar */
+.tt-targetchip{ display:inline-flex; align-items:center; gap:.4rem; font-size:.6875rem;
+  font-weight:900; background:var(--fac-dark); color:#fff; border-radius:9999px;
+  padding:.15rem .6rem; margin-right:.5rem; }
+.tt-targetchip button{ font-size:.5625rem; font-weight:800; text-transform:uppercase;
+  letter-spacing:.05em; opacity:.8; cursor:pointer; color:#fff; text-decoration:underline; }
+.tt-targetchip button:hover{ opacity:1; }
+
+/* a derived grade exam reads as a school deadline, not an NZQA one */
+.tt-exambar.tt-derived{ background:var(--fac-dark); color:#fff; }
+.tt-exambar.tt-derived .tt-exampill{ background:rgba(255,255,255,.25); color:#fff; }
+.tt-dgchip{ font-size:.5625rem; font-weight:900; text-transform:uppercase; letter-spacing:.05em;
+  background:color-mix(in srgb,var(--fac-dark) 18%,transparent); color:var(--fac-dark);
+  border:1px solid color-mix(in srgb,var(--fac-dark) 45%,transparent);
+  border-radius:9999px; padding:.15rem .5rem; white-space:nowrap; }
 
 /* --- top bar: what you have chosen, and the way out ---
    Deliberately outlined in red rather than quiet: a student who wants to
@@ -7072,7 +7100,7 @@ z
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 42 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 46 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7108,10 +7136,10 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=42' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=42' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=42' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=42' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=46' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=46' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=46' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=46' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7725,6 +7753,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=42"></script>
+<script src="timetable.js?v=46"></script>
 </body>
 </html>
