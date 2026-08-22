@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 45 — workshop sessions excluded';
+const TT_BUILD = 'build 46 — periods built per target';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -51,12 +51,7 @@ const S = {
      is stored as PERIODS rather than one weekly pattern. Defaults follow
      the Waiheke calendar: holidays 26 Sep to 11 Oct, last day of school
      5 Nov, study leave from the 6th. */
-  periods: [
-    { name:'Term-time',      start:'2026-08-11', end:'2026-09-25', hours:[1,1,1,1,1,2,0] },
-    { name:'Holidays',       start:'2026-09-26', end:'2026-10-11', hours:[3,3,3,0,3,3,0] },
-    { name:'Back at school', start:'2026-10-12', end:'2026-11-05', hours:[2,2,2,2,1,3,0] },
-    { name:'Study leave',    start:'2026-11-06', end:'2026-12-04', hours:[5,5,5,5,5,3,0] }
-  ],
+  periods: null,            // built from the chosen target — see buildPeriods()
   blackouts: [],
   plan: null,
   view: 'week',
@@ -146,8 +141,12 @@ function rehydrate(){
 }
 function wipe(){
   try { localStorage.removeItem(STORE); } catch(e){}
+  S.target=null;                       // back to the three exam options
   S.faculty=null; S.subjects=[]; S.standards={}; S.exams={}; S.blackouts=[];
-  S.plan=null; S.savedPlan=null; S.armed=null; S.cursor=todayISO();
+  S.myContext={}; S.periods=null;      // periods are rebuilt from the new target
+  S.plan=null; S.savedPlan=null; S.armed=null; S.stale=false;
+  S.open0=S.open1=S.open2=S.open3=S.open4=false;
+  S.cursor=todayISO();
 }
 
 /* ---------- dates ----------
@@ -200,8 +199,63 @@ function hoursOn(date){
   const p = periodFor(date);
   return p ? (p.hours[wdIndex(date)] || 0) : 0;
 }
-function planStart(){ return S.periods.length ? S.periods.map(p=>p.start).sort()[0] : todayISO(); }
+/* A plan that starts in the past is useless — the student cannot go back and
+   do those blocks. Whatever the periods say, the plan begins today. */
+function planStart(){
+  const earliest = S.periods.length ? S.periods.map(p => p.start).sort()[0] : todayISO();
+  const today = todayISO();
+  return earliest > today ? earliest : today;
+}
 function hueFor(sub){ return HUES[S.subjects.indexOf(sub) % HUES.length]; }
+
+/* ---------- availability ----------
+   The stretches of the year a student can study in depend entirely on which
+   exams they are working toward, so the periods are built from the target
+   rather than being fixed. Term dates come from the school calendar. ------ */
+const TERM = {
+  term3End:      '2026-09-25',   // last day of Term 3
+  holidayStart:  '2026-09-26',
+  holidayEnd:    '2026-10-11',
+  term4Start:    '2026-10-12',
+  lastDayOfSchool:'2026-11-05',  // seniors finish, study leave begins
+  studyLeaveEnd: '2026-12-04'
+};
+
+function buildPeriods(){
+  const today = todayISO();
+  const dg = DG();
+  const out = [];
+  const add = (name, start, end, hours) => {
+    if(!start || !end || start > end) return;
+    out.push({ name, start: start < today ? today : start, end, hours });
+  };
+
+  if(S.target !== 'ncea' && dg){
+    // Everything from now until the mocks, then the mock week itself.
+    add('Now until the mocks', today, addDays(dg.window.start, -1), [1,1,1,1,1,2,0]);
+    add('Derived grade week',  dg.window.start, dg.window.end,      [5,5,5,5,5,3,0]);
+  }
+
+  if(S.target !== 'derived'){
+    // After the mocks, the rest of the year to the NCEA exams.
+    const afterMocks = (S.target === 'both' && dg) ? addDays(dg.window.end, 1) : today;
+    add('Rest of Term 3',   afterMocks,          TERM.term3End,       [1,1,1,1,1,2,0]);
+    add('Holidays',         TERM.holidayStart,   TERM.holidayEnd,     [3,3,3,0,3,3,0]);
+    add('Term 4',           TERM.term4Start,     TERM.lastDayOfSchool,[2,2,2,2,1,3,0]);
+    add('Study leave',      addDays(TERM.lastDayOfSchool,1), TERM.studyLeaveEnd, [5,5,5,5,5,3,0]);
+  }
+
+  return out.filter(p => p.start <= p.end);
+}
+
+/* Periods are rebuilt whenever the target changes, but anything the student
+   has edited is kept — matching by name, since that is what they see. */
+function refreshPeriods(){
+  const fresh = buildPeriods();
+  if(!S.periods){ S.periods = fresh; return; }
+  const byName = Object.fromEntries(S.periods.map(p => [p.name, p]));
+  S.periods = fresh.map(p => byName[p.name] ? { ...p, hours: byName[p.name].hours } : p);
+}
 
 /* ---------- selections ---------- */
 function externalSubjects(){
@@ -221,9 +275,9 @@ function externalSubjects(){
 function externalStandards(k){
   const d = kData(k); if(!d) return [];
   const sub = d.subjects[kName(k)]; if(!sub) return [];
-  // A derived grade exam can cover internal standards as well.
-  const dgOnly = S.target === 'derived';
-  return sub.standards.filter(x => dgOnly || x.mode === 'external')
+  // Only written externals. A derived grade paper examines the same material
+  // as the November exam, and internals are not sat under exam conditions.
+  return sub.standards.filter(x => x.mode === 'external')
     .sort((a,b) => a.ref.localeCompare(b.ref, undefined, {numeric:true}));
 }
 // What to show on screen: "Biology" at one level, "Biology (Scholarship)" when mixed.
@@ -1343,15 +1397,16 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=45';
+    t.src = src + '?v=46';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
     return;
   }
 
+  if(!S.periods) refreshPeriods();
   if(S.savedPlan) rehydrate();
-  if(!S.target){ root.innerHTML = targetChooser(); bindReopen(); wire(); return; }
+  if(!S.target){ root.innerHTML = topBar() + targetChooser(); bindReopen(); wire(); return; }
   root.innerHTML = topBar() + intro() + stepLevel() + stepSubjects() + stepStandards() + stepExams() +
                    stepPeriods() + stepGo() + (S.plan ? renderPlan() : '') +
                    `<p class="tt-build">${TT_BUILD}</p>`;
@@ -1391,14 +1446,20 @@ function targetChooser(){
 }
 
 function topBar(){
-  if(!S.subjects.length) return '';
-  const n = standardCount();
+  // Always shown, even before anything is chosen — a student who picks the
+  // wrong exam type first should not have to hunt for the way back.
+  const chosen = S.subjects.length;
+  if(!S.target && !chosen) return `<div class="tt-topbar">
+    <div class="tt-topsum">Nothing chosen yet.</div>
+    <div class="tt-topmid"><button id="tt-reset" class="btn-reset">Start again</button></div>
+    <div class="tt-topsum tt-toprt"></div></div>`;
+  const n = chosen ? standardCount() : 0;
   return `<div class="tt-topbar">
     <div class="tt-topsum">
-      <span class="tt-targetchip">${
+      ${S.target ? `<span class="tt-targetchip">${
         S.target==='derived' ? (DG()?DG().short:'Derived grade')
-        : S.target==='ncea' ? 'NCEA exams' : 'Derived grade + NCEA'}<button id="tt-retarget" title="Change which exams this plan is for">change</button></span>
-      <strong>${S.subjects.length}</strong> subject${S.subjects.length===1?'':'s'}
+        : S.target==='ncea' ? 'NCEA exams' : 'Derived grade + NCEA'}</span>` : ''}
+      ${chosen ? `<strong>${chosen}</strong> subject${chosen===1?'':'s'}` : 'nothing chosen yet'}
       ${n ? `· <strong>${n}</strong> standard${n===1?'':'s'}` : ''}
       ${S.plan ? `· <strong>${S.plan.used}</strong> study blocks` : ''}
     </div>
@@ -1726,7 +1787,8 @@ function wire(){
   // Which exams this plan is for. Chosen first, and changeable later.
   q('.tt-target', b => b.onclick = () => {
     S.target = b.dataset.t;
-    S.plan = null; S.stale = false;      // a new deadline means a new plan
+    S.periods = null; refreshPeriods();  // the year looks different for each target
+    S.plan = null; S.stale = false;
     render();
   });
   const rt = one('#tt-retarget');
