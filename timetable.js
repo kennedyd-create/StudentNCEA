@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 41 — reset warning';
+const TT_BUILD = 'build 42 — Start again centred';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -1252,7 +1252,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=41';
+    t.src = src + '?v=42';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
@@ -1278,7 +1278,10 @@ function topBar(){
       ${n ? `· <strong>${n}</strong> standard${n===1?'':'s'}` : ''}
       ${S.plan ? `· <strong>${S.plan.used}</strong> study blocks` : ''}
     </div>
-    <button id="tt-reset" class="btn-reset">Start again</button>
+    <div class="tt-topmid">
+      <button id="tt-reset" class="btn-reset">Start again</button>
+    </div>
+    <div class="tt-topsum tt-toprt"></div>
   </div>`;
 }
 
