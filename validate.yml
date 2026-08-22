@@ -1,0 +1,33 @@
+# ============================================================
+# Runs validate.js on every push and pull request.
+#
+# A green tick means the data is intact, every standard is
+# complete, every exam date is a real weekday in the exam
+# period, no CSS has gone missing, and the build stamps agree.
+#
+# A red cross means something broke — GitHub emails you, and
+# the run log names exactly what.
+#
+# Put this file at:  .github/workflows/validate.yml
+# ============================================================
+name: Validate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:        # lets you run it by hand from the Actions tab
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the files
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run the validator
+        run: node validate.js
