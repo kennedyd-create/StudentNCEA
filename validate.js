@@ -165,15 +165,28 @@ else {
       if(problem) fail(`${where} derived grade date ${info.date}: ${problem}`);
       if(!DGX.sessions.some(x => x.id === info.session))
         fail(`${where} invalid derived grade session: ${info.session}`);
-      // Some derived grade sessions are practical workshops rather than
-      // written papers. A subject with nothing written to revise should not
-      // be scheduled at all — that was a real mistake once.
+      // A written derived grade paper must have something written behind it.
+      // Practical sessions belong in workshops{}, not here.
       const subj = DATASETS[lvl] && DATASETS[lvl].subjects[sub];
       if(subj && !subj.standards.some(x => x.mode === 'external'))
-        fail(`${where} has a derived grade exam but no written external — is it a workshop?`);
+        fail(`${where} is listed as a written exam but has no external standard — should it be a workshop?`);
     }
   }
-  pass(`${count} derived grade entries, all valid`);
+  // workshops: a name, a day and a session is all they need
+  let shops = 0;
+  for(const [lvl, table] of Object.entries(DGX.workshops || {})){
+    for(const [sub, info] of Object.entries(table)){
+      shops++;
+      const where = `L${lvl} ${sub} (workshop)`;
+      const problem = DGX.checkDate(info.date);
+      if(problem) fail(`${where} date ${info.date}: ${problem}`);
+      if(!DGX.sessions.some(x => x.id === info.session))
+        fail(`${where} invalid session: ${info.session}`);
+      if(DGX.dateFor(lvl, sub))
+        fail(`${where} is listed as both a written exam and a workshop`);
+    }
+  }
+  pass(`${count} written exams and ${shops} workshops, all valid`);
 }
 
 /* ---------- 5. every class used has a style ---------- */

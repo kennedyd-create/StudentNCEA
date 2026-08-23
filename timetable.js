@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 46 — periods built per target';
+const TT_BUILD = 'build 48 — workshops shown, no mock eve';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -176,8 +176,10 @@ function daysBetween(a,b){ return Math.round((parse(b)-parse(a))/86400000); }
 function periodFor(date){ return S.periods.find(p => date >= p.start && date <= p.end) || null; }
 function isExamDay(date){
   // Portfolio submission days are not exam days — you can still work that day.
-  return S.subjects.some(k => deadlines(k).some(d =>
-    d.date === date && !d.portfolio));
+  if(S.subjects.some(k => deadlines(k).some(d => d.date === date && !d.portfolio)))
+    return true;
+  // A practical assessment takes the day too, even though nothing is revised for it.
+  return S.subjects.some(k => { const w = workshopFor(k); return isWorkshop(k) && w && w.date === date; });
 }
 /* The school is off timetable for derived grade week, so it behaves like a
    short block of study leave rather than term-time — unless the student has
@@ -261,18 +263,38 @@ function refreshPeriods(){
 function externalSubjects(){
   if(!D()) return [];
   const dg = DG();
-  return Object.entries(D().subjects)
+  const out = Object.entries(D().subjects)
     .filter(([n, s]) => {
-      // A derived grade exam can cover internal standards, so a subject
-      // sitting one qualifies even with no NCEA external — Level 2 Physical
-      // Education and Psychology, for instance.
-      if(S.target !== 'ncea' && dg && dg.has(S.level, n)) return true;
-      if(S.target === 'derived') return false;
+      if(S.target === 'derived') return dg ? dg.has(S.level, n) : false;
       return s.standards.some(x => x.mode === 'external');
     })
-    .map(([n]) => n).sort();
+    .map(([n]) => n);
+
+  // In mock mode, show everything sat that week — including the practical
+  // subjects, which are a real commitment even with nothing to revise.
+  if(S.target !== 'ncea' && dg)
+    Object.keys(dg.workshops[S.level] || {}).forEach(n => out.push(n));
+
+  return [...new Set(out)].sort();
+}
+
+/* Workshop-only subjects consume no study time, so they do not count toward
+   the subject cap. */
+/* Practical subjects that belong to no faculty in the NCEA data — Product
+   Design, Sea Sports and so on. They still have to be pickable. */
+function extraShops(){
+  const dg = DG();
+  if(S.target === 'ncea' || !dg || !D()) return [];
+  const inFaculty = new Set(D().faculties.flatMap(f => f.subjects));
+  return Object.keys(dg.workshops[S.level] || {})
+    .filter(n => !inFaculty.has(n)).sort();
+}
+
+function studySubjectCount(){
+  return S.subjects.filter(k => !isWorkshop(k)).length;
 }
 function externalStandards(k){
+  if(isWorkshop(k)) return [];        // practical: nothing written to revise
   const d = kData(k); if(!d) return [];
   const sub = d.subjects[kName(k)]; if(!sub) return [];
   // Only written externals. A derived grade paper examines the same material
@@ -707,12 +729,18 @@ function examBanner(date, size){
   S.subjects.forEach(k => deadlines(k).forEach(d => {
     if(d.date === date) on.push({ k, d });
   }));
+  // practical sessions sit alongside the written papers
+  const shops = S.subjects.filter(k => { const w = workshopFor(k); return isWorkshop(k) && w && w.date === date; })
+    .map(k => ({ k, w: workshopFor(k) }));
   const sitting = on.map(x => x.k);
   const kindOf  = sub => (on.find(x => x.k === sub) || {}).d || {};
   const isPf = sub => !!kindOf(sub).portfolio;
-  const eve = S.subjects.filter(k =>
+  /* In a five-day block every night is the eve of something, so the marker
+     would fire constantly and mean nothing. It earns its place in November,
+     where exams are spread across a month. */
+  const eve = S.target === 'derived' ? [] : S.subjects.filter(k =>
     deadlines(k).some(d => addDays(d.date, -1) === date && !d.portfolio));
-  if(!sitting.length && !eve.length) return '';
+  if(!sitting.length && !eve.length && !shops.length) return '';
 
   const time = sub => {
     const d = kindOf(sub);
@@ -744,6 +772,19 @@ function examBanner(date, size){
     else if(size === 'sm') out.push(`<div class="tt-evebar tt-exam-sm"><strong>${label(sub)}</strong><span>EXAM TOMORROW</span></div>`);
     else out.push(`<div class="tt-evebar"><span class="tt-exampill">TOMORROW</span><strong>${label(sub)}</strong>
       <span class="tt-examwhen">Last chance to revise</span></div>`);
+  });
+
+  /* Practical assessments: shown so the student knows the half-day is taken,
+     in neutral grey because there is nothing to prepare for. */
+  shops.forEach(({ k, w }) => {
+    const sess = DG().sessions.find(x => x.id === w.session) || {};
+    if(size === 'xs') out.push(
+      `<span class="tt-shop-xs" title="${label(k)} — practical, ${sess.label||''}">${label(k)}</span>`);
+    else if(size === 'sm') out.push(
+      `<div class="tt-shopbar tt-exam-sm"><strong>${label(k)}</strong><span>WORKSHOP ${w.session}</span></div>`);
+    else out.push(
+      `<div class="tt-shopbar"><span class="tt-exampill">WORKSHOP</span><strong>${label(k)}</strong>
+        <span class="tt-examwhen">${sess.label||''} · ${sess.start||''}–${sess.end||''}</span></div>`);
   });
 
   return out.join('');
@@ -798,6 +839,18 @@ function viewBar(){
 /* A subject can be sitting a derived grade exam in September AND its NCEA
    exam in November. Which deadline applies depends on the plan's target. */
 const DG = () => window.WHS_DERIVED;
+
+/* A workshop is a practical assessment sat in the mock week: it occupies a
+   half-day, so nothing can be scheduled against it, but there is nothing to
+   revise for either. It appears on the plan and nowhere else. */
+function isWorkshop(k){
+  const d = DG();
+  return !!d && S.target !== 'ncea' && d.isWorkshop(kLvl(k), kName(k));
+}
+function workshopFor(k){
+  const d = DG();
+  return d ? d.workshopFor(kLvl(k), kName(k)) : null;
+}
 
 function derivedFor(k){
   const d = DG();
@@ -1096,12 +1149,20 @@ function printPlan(scope){
     const rows = days.map(date => {
       const blocks = weeks[wk].filter(x => x.date === date && x.item);
       const ex = examOn(date);
-      if(!blocks.length && !ex.length){
+      // A workshop day has no study blocks and no written exam, but it is
+      // still a commitment — printing it as "—" would hide it entirely.
+      const shopsToday = S.subjects.filter(k => {
+        const w = workshopFor(k); return isWorkshop(k) && w && w.date === date; });
+      if(!blocks.length && !ex.length && !shopsToday.length){
         return `<tr class="pl-off"><td class="pl-day">${pretty(date,{weekday:'short'})}
           <span>${pretty(date,{day:'numeric',month:'short'})}</span></td>
           <td colspan="3" class="pl-none">—</td></tr>`;
       }
       const lines = [];
+      shopsToday.forEach(k => { const w = workshopFor(k);
+          lines.push(`<tr class="pl-shop"><td class="pl-tick"></td>
+            <td colspan="3"><strong>WORKSHOP — ${label(k)}</strong>
+            ${(DG().sessions.find(x=>x.id===w.session)||{}).label||''} · nothing to revise</td></tr>`); });
       ex.forEach(sub => lines.push(
         `<tr class="pl-exam"><td class="pl-tick"></td>
            <td colspan="3"><strong>EXAM — ${label(sub)}</strong>
@@ -1186,6 +1247,8 @@ function printPlan(scope){
       .pl-none{ color:#999; font-style:italic; }
       .pl-off td{ background:#fafafa; }
       .pl-exam td{ background:#f0e2b8; font-size:11px; }
+      /* practical sessions: occupied, but nothing to revise */
+      .pl-shop td{ background:#eeeeee; color:#444; font-size:11px; font-style:italic; }
       .pl-foot{ margin-top:8px; font-size:9px; color:#555; border-top:1px solid #ccc; padding-top:4px; }
       @page{ margin:10mm; size:A4 portrait; }
       @media print{ body{ padding:0; } }
@@ -1397,7 +1460,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=46';
+    t.src = src + '?v=48';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
@@ -1449,6 +1512,7 @@ function topBar(){
   // Always shown, even before anything is chosen — a student who picks the
   // wrong exam type first should not have to hunt for the way back.
   const chosen = S.subjects.length;
+  const shops = S.subjects.filter(isWorkshop).length;
   if(!S.target && !chosen) return `<div class="tt-topbar">
     <div class="tt-topsum">Nothing chosen yet.</div>
     <div class="tt-topmid"><button id="tt-reset" class="btn-reset">Start again</button></div>
@@ -1459,7 +1523,8 @@ function topBar(){
       ${S.target ? `<span class="tt-targetchip">${
         S.target==='derived' ? (DG()?DG().short:'Derived grade')
         : S.target==='ncea' ? 'NCEA exams' : 'Derived grade + NCEA'}</span>` : ''}
-      ${chosen ? `<strong>${chosen}</strong> subject${chosen===1?'':'s'}` : 'nothing chosen yet'}
+      ${chosen ? `<strong>${chosen}</strong> subject${chosen===1?'':'s'}${
+        shops ? ` <span class="tt-shopcount">(${shops} practical)</span>` : ''}` : 'nothing chosen yet'}
       ${n ? `· <strong>${n}</strong> standard${n===1?'':'s'}` : ''}
       ${S.plan ? `· <strong>${S.plan.used}</strong> study blocks` : ''}
     </div>
@@ -1521,6 +1586,12 @@ function stepSubjects(){
     <div class="flex flex-wrap gap-2 mb-3">${facs.map((f,i)=>
       `<button class="fac-pill tt-fac" data-i="${i}" aria-pressed="${S.faculty===i}"
         style="--fac-dark:${f.dark};--fac-light:${f.light}">${f.name}</button>`).join('')}</div>
+    ${extraShops().length ? `<div class="tt-shoprow">
+      <p class="tt-shoplabel">Practical assessments that week — nothing to revise, but they take a half-day</p>
+      <div class="flex flex-wrap gap-2">${extraShops().map(n=>
+        `<button class="subj-pill tt-pick tt-shoppill" data-n="${n}"
+           aria-pressed="${S.subjects.includes(key(S.level,n))}">${n}</button>`).join('')}</div>
+    </div>` : ''}
     ${S.faculty!=null ? `<div class="flex flex-wrap gap-2 mb-3">${
       facs[S.faculty].subjects.filter(n=>all.includes(n)).map(n=>
       `<button class="subj-pill tt-pick" data-n="${n}" aria-pressed="${S.subjects.includes(key(S.level,n))}"
@@ -1549,6 +1620,8 @@ function stepStandards(){
       <span>Standard</span><span>Your text, case study or context</span></div>` : ''}
     ${S.subjects.map(sub=>`<div class="tt-stdgroup">
       <p class="tt-stdsub" style="color:${hueFor(sub)}">${label(sub)}</p>
+      ${isWorkshop(sub) ? `<p class="tt-wsnote">Practical assessment — nothing to revise for,
+        but it will appear on your timetable so you know the half-day is taken.</p>` : ''}
       ${externalStandards(sub).map(st=>{
         const on = S.standards[sub] && S.standards[sub].has(st.code);
         const k  = kLvl(sub) + '::' + kName(sub) + '::' + st.code;
@@ -1765,7 +1838,9 @@ function stepGo(){
   const dgOnly = S.target === 'derived';
   const dated = dgOnly || S.subjects.every(s => S.exams[s] && S.exams[s].date &&
     (S.exams[s].portfolio || !E().checkDate(S.exams[s].date)));
-  const ready = n>0 && dated && (dgOnly || S.examsConfirmed);
+  // A student sitting only practicals has a valid, if empty, plan.
+  const anyStudy = S.subjects.some(k => !isWorkshop(k));
+  const ready = (n>0 || (S.subjects.length && !anyStudy)) && dated && (dgOnly || S.examsConfirmed);
   return `<div class="panel p-4 md:p-5 flex flex-wrap items-center gap-3">
     <button id="tt-go" class="btn-1"${ready?'':' disabled style="opacity:.5;cursor:not-allowed"'}>
       ${S.plan?'Rebuild my timetable':'Create my study timetable'}</button>
@@ -1802,7 +1877,7 @@ function wire(){
   q('.tt-pick', b => b.onclick = () => {
     const k = key(S.level, b.dataset.n);
     if(S.subjects.includes(k)) S.subjects = S.subjects.filter(x=>x!==k);
-    else if(S.subjects.length < MAX_SUBJECTS){
+    else if(studySubjectCount() < MAX_SUBJECTS || DG() && DG().isWorkshop(S.level, b.dataset.n)){
       S.subjects.push(k);
       S.standards[k] = new Set(externalStandards(k).map(x=>x.code));
       const d = E().dateFor(S.level, b.dataset.n);

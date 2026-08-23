@@ -113,6 +113,58 @@ window.WHS_DERIVED = {
     }
   },
 
+
+  /* ---- WORKSHOP SESSIONS ----
+     Practical assessments sat during the same week. They occupy a half-day —
+     so nothing can be scheduled against them — but there is no written paper
+     to revise for, so they never appear in the study blocks leading up.
+
+     These subjects are mostly not carried in the NCEA data files at all,
+     which is fine: a name, a day and a session is everything needed. ---- */
+  workshops: {
+    '1': {
+      'Building, Construction and Allied Trades Skills': { date:'2026-09-07', session:'AM' },
+      'Product Design':                                  { date:'2026-09-07', session:'AM' },
+      'Food Technology':                                 { date:'2026-09-08', session:'AM' },
+      'Art':                                             { date:'2026-09-09', session:'AM' },
+      'Spatial Design':                                  { date:'2026-09-10', session:'AM' },
+      'Outdoor Education':                               { date:'2026-09-11', session:'AM' }
+    },
+    '2': {
+      'Building, Construction and Allied Trades Skills': { date:'2026-09-07', session:'AM' },
+      'Psychology':                                      { date:'2026-09-07', session:'PM' },
+      'Product Design':                                  { date:'2026-09-08', session:'AM' },
+      'Digital Art':                                     { date:'2026-09-08', session:'PM' },
+      'Physical Education':                              { date:'2026-09-08', session:'PM' },
+      'Food Technology':                                 { date:'2026-09-10', session:'AM' },
+      'Paint, Print and Textile Art':                    { date:'2026-09-10', session:'AM' },
+      'Spatial Design':                                  { date:'2026-09-10', session:'PM' },
+      'Sea Sports':                                      { date:'2026-09-11', session:'PM' }
+    },
+    '3': {
+      'Building, Construction and Allied Trades Skills': { date:'2026-09-07', session:'AM' },
+      'Paint, Print and Textile Art':                    { date:'2026-09-07', session:'AM' },
+      'Digital Art':                                     { date:'2026-09-08', session:'PM' },
+      'Physical Education':                              { date:'2026-09-09', session:'AM' },
+      'Sea Sports':                                      { date:'2026-09-09', session:'PM' },
+      'Spatial Design':                                  { date:'2026-09-11', session:'AM' }
+    }
+  },
+
+  // Every subject sat that week, exam or workshop, for the picker.
+  allSubjects(level){
+    const a = Object.keys(this.subjectDates[level] || {});
+    const b = Object.keys(this.workshops[level] || {});
+    return [...new Set([...a, ...b])].sort();
+  },
+  isWorkshop(level, subject){
+    return !!(this.workshops[level] && this.workshops[level][subject]);
+  },
+  workshopFor(level, subject){
+    const t = this.workshops[level];
+    return (t && t[subject]) ? t[subject] : null;
+  },
+
   /* ---- helpers, mirroring NCEA_EXAMS so the planner can use either ---- */
 
   parse(s){ const [y,m,d] = s.split('-').map(Number); return new Date(Date.UTC(y, m-1, d)); },
