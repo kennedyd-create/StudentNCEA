@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 48 — workshops shown, no mock eve';
+const TT_BUILD = 'build 49 — L1 sciences, blocks on exam days';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -666,10 +666,6 @@ function pickStandardFor(subject, slot){
    Tuesday should be able to have it, and the day shows it is over plan. */
 function addHourTo(date){
   if(!S.plan) return;
-  if(isExamDay(date)){
-    alert('You sit an exam that day — the plan keeps exam days clear.');
-    return;
-  }
   let last = -1, maxIdx = -1;
   S.plan.open.forEach((x,n) => { if(x.date === date){ last = n; maxIdx = Math.max(maxIdx, x.index); } });
   const slot = { date, index: maxIdx + 1, item: null, extra: true };
@@ -715,7 +711,11 @@ function dayCapacity(date){
   const on = S.plan.open.filter(x => x.date === date);
   const planned = hoursOn(date);
   const extra = on.filter(x => x.extra).length;
-  if(isExamDay(date)) return `<p class="tt-cap tt-over">Exam day — nothing scheduled.</p>`;
+  if(isExamDay(date)){
+    const on = S.plan ? S.plan.open.filter(x => x.date === date).length : 0;
+    return `<p class="tt-cap tt-over">Exam day — nothing scheduled automatically${
+      on ? `, and ${on} hour${on===1?'':'s'} you have added` : ''}.</p>`;
+  }
   if(!on.length && !planned) return '';
   return `<p class="tt-cap${extra?' tt-over':''}">${on.length} hour${on.length===1?'':'s'} on this day` +
     (extra ? ` — ${extra} more than you planned for` : planned ? '' : ' — a day you had set aside') + `</p>`;
@@ -952,7 +952,9 @@ function dayView(){
     </div>
     ${examBanner(d)}
     ${rows.length ? rows.map(x => x.s.item ? blockHTML(x.s, x.n) : emptyHTML(x.n)).join('')
-      : `<p class="tt-dayempty">A day off. Rest is part of the plan.</p>`}
+      : `<p class="tt-dayempty">${isExamDay(d)
+          ? 'Nothing scheduled — the plan keeps exam days clear. You can still add a block if you want to revise around it.'
+          : 'A day off. Rest is part of the plan.'}</p>`}
     ${dayCapacity(d)}
     <button class="tt-addhr" data-date="${d}">${S.armed ? '+ Add ' + label(S.armed) + ' here' : '+ Add another hour'}</button>
   </div>`;
@@ -1460,7 +1462,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=48';
+    t.src = src + '?v=49';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);

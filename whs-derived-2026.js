@@ -53,7 +53,12 @@ window.WHS_DERIVED = {
   subjectDates: {
 
     '1': {
-      'Science':                    { date:'2026-09-07', session:'PM' },
+      /* The school timetable says simply "Science", but Level 1 splits that
+         into three separate subjects — a student taking any of them sits
+         this session, so all three are listed. */
+      'Science':                          { date:'2026-09-07', session:'PM' },
+      'Chemistry and Biology':            { date:'2026-09-07', session:'PM' },
+      'Physics, Earth and Space Science': { date:'2026-09-07', session:'PM' },
       'Digital Technologies':       { date:'2026-09-08', session:'AM' },
       'Mathematics and Statistics': { date:'2026-09-08', session:'PM' },
       'English':                    { date:'2026-09-09', session:'PM' },
