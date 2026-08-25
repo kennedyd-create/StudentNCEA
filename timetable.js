@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 50 — extra detail, topic required';
+const TT_BUILD = 'build 51 — study hours shown in mock mode';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -1462,7 +1462,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=50';
+    t.src = src + '?v=51';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
@@ -1751,12 +1751,15 @@ function stepPeriods(){
   // Availability only matters once there is something to schedule and a
   // deadline to schedule against, so it stays hidden until then.
   if(!S.subjects.length || !chosenStandards().length) return '';
-  if(!S.plan && !S.subjects.every(k => S.exams[k] && S.exams[k].date)) return '';
+  // In derived grade mode the dates come from the school and are already
+  // known, so there is nothing for the student to confirm first.
+  if(S.target !== 'derived' && !S.plan &&
+     !S.subjects.every(k => isWorkshop(k) || (S.exams[k] && S.exams[k].date))) return '';
   if(S.plan && !S.open3) return doneBar('WHEN YOU STUDY',
     S.periods.map(p => p.name).join(' · '), '3');
   const r = realism();
   return `<div class="panel p-4 md:p-5">
-    <h3 class="sec-h mb-1"><span class="tt-step">6</span>When can you actually study?</h3>
+    <h3 class="sec-h mb-1"><span class="tt-step">${S.target==='derived'?5:6}</span>When can you actually study?</h3>
     <p class="tt-why">Be honest here rather than optimistic — a plan you cannot keep is worse than
       no plan. How much you can do changes across the year, so it is set per period: term-time is
       squeezed, study leave is not. Use <strong>Quick set</strong> for a typical pattern, then adjust
