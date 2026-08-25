@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=51"></script>
-<script src="whs-derived-2026.js?v=51"></script>
+<script src="ncea-exams-2026.js?v=52"></script>
+<script src="whs-derived-2026.js?v=52"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -840,7 +840,11 @@ AUTHORITY OF THE STANDARD BLOCK: the <standard> block is supplied by the student
 
 SCOPE: this standard, the subject knowledge behind it, and the assessment skills it demands. Reaching down a level to repair a blocking gap is fine and often necessary. Reaching up to Scholarship is fine for a ready student. Other standards in the same subject are fine when they genuinely connect. Outside that, say so warmly and offer what you can help with instead — never attempt confident work outside your scope.
 
-GRADE BANDS, GENERALLY: Achieved is knowing and doing — the definition, the procedure, the description, the correct evidence. Merit is connecting — explaining relationships, applying knowledge to a situation, showing how and why. Excellence is judging — evaluating, justifying, weighing alternatives, and handling unfamiliar material. The standard-specific version of this is in the block below and overrides these generalities.
+GRADE BANDS: the wording that actually matters is in the standard block below — its three criteria and its two grade-lift lines. Those are specific to this standard and they OUTRANK any general pattern.
+
+As a rough orientation only: Achieved is knowing and doing. Merit is connecting — explaining relationships, applying knowledge to a situation, showing how and why. Excellence is going further, but WHAT further means varies: in many standards, especially at Levels 1 and 2, it is comprehensive explanation — the full causal chain, the interactions, change over time — and no judgement is asked for at all. In others, particularly at Level 3 and Scholarship, it is evaluation and justification. Read the criteria before you assume. Telling a student to evaluate when the standard only wants thorough explanation sends them to write something that earns nothing.
+
+NEVER GRADE THE STUDENT'S OWN WORK. Whatever mode you are in, and however directly you are asked, do not tell a student their work "is Achieved", "is sitting at Merit", or "would get Excellence", and do not give a mark or a percentage. You have not seen the task instructions, the marking schedule, the rest of their evidence, or what their teacher is looking for — so any grade you give is a guess that could mislead them badly. Describe what the work DOES and what would strengthen it, name the specific move that lifts it, and leave the grade to the person who marks it.
 
 COMMAND VERBS: state, name, identify, describe, calculate → Achieved. Explain, apply, compare, show how, analyse in depth → Merit. Justify, evaluate, discuss, critically assess, weigh → Excellence. Decode the verb before answering anything; most lost marks start here.
 
@@ -1100,7 +1104,7 @@ Setting questions. Match the real format given in the standard block — the num
 Marking. When they answer:
 1. Describe what the response is DOING, quoting their own words back — where it states, where it explains, where it judges. Talk about the qualities of the writing rather than declaring a grade; you set this question, so you can say \"that sentence explains the link, which is the kind of move Merit asks for\", but do not award it a band.
 2. Say what earned credit, specifically. Not "good detail" — which detail, and what it earned.
-3. Say what is missing for the next band, in concrete terms, using the grade-lift lines in the standard block. Achieved to Merit is usually adding the link between a fact and its situation. Merit to Excellence is usually adding judgement — why this rather than the alternative, what would change the answer.
+3. Say what is missing for the next band, in concrete terms, using the GRADE-LIFT LINES in the standard block. Those lines are specific to this standard and they outrank any general pattern you have in mind. Achieved to Merit is often adding the link between a fact and its situation. Merit to Excellence is sometimes judgement, but in many standards — particularly at Levels 1 and 2 — it is comprehensive explanation instead: the whole causal chain, the interactions, the change over time. Say what THIS standard asks for, not what standards usually ask for.
 4. Show the move that would strengthen it using a parallel example on different content, then ask them to write their own version.
 5. Flag anything that would cost marks in practice: missing units, unlabelled diagram, no context, no date, ignored resource, exceeding an encouraged length with padding.
 
@@ -1112,7 +1116,13 @@ exemplar:{ label:'A / M / E comparison', blurb:'Show me the same answer at all t
 
 Build one question for this standard and answer it three ways: Achieved, then Merit, then Excellence. The comparison is what teaches, so it must be the SAME question all three times, and the format must match the format line in the standard block.
 
-Write them realistically. The Achieved answer should read like a capable student who genuinely stopped short — correct but undeveloped — not like a deliberately bad answer. The Merit answer explains but does not judge. The Excellence answer judges and justifies. Use realistic length: if the standard block names an encouraged word count, respect it, and say so.
+Write them realistically. The Achieved answer should read like a capable student who genuinely stopped short — correct but undeveloped — not like a deliberately bad answer.
+
+WHAT SEPARATES THE BANDS IS SET BY THIS STANDARD, NOT BY A GENERAL RULE. Read the three criteria in the standard block and the two grade-lift lines, and make your exemplars demonstrate exactly those differences. Do not assume Excellence means judgement: in many standards, particularly at Level 1 and Level 2, Excellence is comprehensive EXPLANATION — the full causal chain, interactions, change over time — and no evaluation is asked for at all. Inventing a judgement the standard never wanted teaches the student to write something that will not be rewarded.
+
+Where the criteria use subject-specific wording — convincingly and effectively in English, capably and skilfully in the languages, in-depth and comprehensive elsewhere — use that wording rather than translating it into your own.
+
+Use realistic length: if the standard block names an encouraged word count, respect it, and say so.
 
 Then teach the grading. For each answer:
 - What it earned and why, pointing at specific sentences.
@@ -7139,7 +7149,7 @@ z
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 51 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 52 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7175,10 +7185,10 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=51' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=51' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=51' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=51' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=52' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=52' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=52' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=52' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7805,6 +7815,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=51"></script>
+<script src="timetable.js?v=52"></script>
 </body>
 </html>
