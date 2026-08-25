@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=49"></script>
-<script src="whs-derived-2026.js?v=49"></script>
+<script src="ncea-exams-2026.js?v=50"></script>
+<script src="whs-derived-2026.js?v=50"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -189,6 +189,12 @@ body.dark-mode .sec-h{ color:var(--fac-dark); }
   backdrop-filter:blur(6px);
 }
 body.dark-mode #actionbar{ background:color-mix(in srgb,var(--fac-dark) 18%,var(--surface)); }
+
+.req{ font-weight:900; color:#DB2026; font-size:.5625rem; letter-spacing:.06em; }
+body.dark-mode .req{ color:#ff6b6f; }
+.topic-warn{ font-size:.6875rem; font-weight:800; color:#DB2026; margin-bottom:.4rem; }
+body.dark-mode .topic-warn{ color:#ff6b6f; }
+#extra{ font-size:.8125rem; line-height:1.5; resize:vertical; min-height:4rem; }
 
 /* Contour pattern across the banner. The source strokes are a pale blue that
    vanishes against navy, so they are overridden to white and held low —
@@ -7084,13 +7090,22 @@ z
   <section id="step3" class="panel p-4 md:p-5 step-dead">
     <div class="grid lg:grid-cols-5 gap-4 lg:gap-6">
       <div class="lg:col-span-2">
-        <h2 class="sec-h mb-2">Focus <span class="faint font-semibold text-xs">optional</span></h2>
-        <label for="topic" class="block text-[10px] font-black uppercase tracking-widest soft mb-1">Topic</label>
+        <h2 class="sec-h mb-2">Focus</h2>
+        <label for="topic" class="block text-[10px] font-black uppercase tracking-widest soft mb-1">
+          Topic <span class="req">required</span></label>
         <select id="topic" class="field w-full mb-1"></select>
         <input id="topic-own" type="text" placeholder="Type your topic" class="field w-full mb-2 hidden">
-        <label for="context" class="block text-[10px] font-black uppercase tracking-widest soft mb-1 mt-2">Case study / context</label>
+        <p id="topic-warn" class="topic-warn hidden">Choose a topic to build your prompt.</p>
+        <label for="context" class="block text-[10px] font-black uppercase tracking-widest soft mb-1 mt-2">
+          Case study / context <span class="faint">optional</span></label>
         <select id="context" class="field w-full"></select>
         <input id="context-own" type="text" placeholder="Type your case study" class="field w-full mt-1 hidden">
+        <label for="extra" class="block text-[10px] font-black uppercase tracking-widest soft mb-1 mt-3">
+          Anything else <span class="faint">optional</span></label>
+        <textarea id="extra" rows="3" class="field w-full"
+          placeholder="What you already tried, what your teacher said, what you find hard…"></textarea>
+        <p class="text-[10px] soft mt-1">Whatever you put here goes into the prompt, so the AI starts
+          where you actually are rather than from scratch.</p>
       </div>
       <div class="lg:col-span-3">
         <h2 class="sec-h mb-2">How do you want to study it?</h2>
@@ -7124,7 +7139,7 @@ z
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 49 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 50 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7160,10 +7175,10 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=49' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=49' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=49' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=49' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=50' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=50' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=50' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=50' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7250,6 +7265,7 @@ function init(){
   $('copy2').addEventListener('click', e => flashCopy(e.currentTarget));
   $('copy-link').addEventListener('click', e => copyShareLink(e.currentTarget));
   $('print-brief').addEventListener('click', printBriefing);
+  $('extra').addEventListener('input', () => { if(sel.std && sel.mode) build(); });
   $('search').addEventListener('input', runSearch);
   $('search').addEventListener('keydown', e => {
     if(e.key === 'Escape'){ $('search').value = ''; $('search-results').innerHTML = ''; }
@@ -7454,6 +7470,7 @@ function pickStd(code){
   });
   setStep(2, true, 'AS'+sel.std.code, `${sel.std.title}`);
   $('ab-label').textContent = `AS${sel.std.code} · ${sel.std.credits} cr · ${sel.std.mode}`;
+  $('extra').value = '';
   if(sel.mode === 'reference' && !sel.std.reference) sel.mode = null;
   renderModes();
   markModes();
@@ -7679,7 +7696,7 @@ function sittingLine(level, subject, st){
     : '\nHOW IT IS SAT: this is a PAPER examination at this school. Practice should be HANDWRITTEN under time. Where relevant, remind the student that diagrams, annotations, graphs and working are drawn by hand, that legibility affects the marker, and that writing stamina over two or three hours is itself something to train.';
 }
 
-function composePrompt({ level, subject, code, mode, topic, context }){
+function composePrompt({ level, subject, code, mode, topic, context, extra }){
   const d = window.NCEA_DATA && window.NCEA_DATA[level];
   if(!d) return '';
   const sub = d.subjects[subject];
@@ -7715,7 +7732,7 @@ Misconceptions to watch for in this student:
 ${s.misconceptions.map(x=>'  - '+x).join('\n')}
 
 Where students lose marks in this standard:
-${s.pitfalls.map(x=>'  - '+x).join('\n')}${topic ? '\n\nTopic focus: ' + topic : ''}${context ? '\nCase study / context: ' + context : ''}
+${s.pitfalls.map(x=>'  - '+x).join('\n')}${topic ? '\n\nTopic focus: ' + topic : ''}${context ? '\nCase study / context: ' + context : ''}${extra ? '\n\nWhat the student has told you about where they are:\n' + extra : ''}
 </standard>`;
 
   const parts = [CORE];
@@ -7733,10 +7750,21 @@ window.composePrompt = composePrompt;
 
 function build(){
   if(!sel.std || !sel.mode) return;
+  // A topic is required: without one the AI has to guess which part of a
+  // standard the student means, and guesses badly.
+  if(!pick('topic')){
+    $('topic-warn').classList.remove('hidden');
+    $('output').classList.add('step-dead');
+    $('actionbar').classList.add('hidden');
+    $('prompt').value = '';
+    return;
+  }
+  $('topic-warn').classList.add('hidden');
   const internal = sel.std.mode === 'internal';
   $('prompt').value = composePrompt({
     level: sel.level, subject: sel.subject, code: sel.std.code,
-    mode: sel.mode, topic: pick('topic'), context: pick('context')
+    mode: sel.mode, topic: pick('topic'), context: pick('context'),
+    extra: ($('extra').value || '').trim()
   });
 
   const g = $('guard-note');
@@ -7777,6 +7805,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=49"></script>
+<script src="timetable.js?v=50"></script>
 </body>
 </html>
