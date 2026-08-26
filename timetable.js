@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 52 — band accuracy, no grading';
+const TT_BUILD = 'build 54 — case study encouraged';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -1462,7 +1462,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=52';
+    t.src = src + '?v=54';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);

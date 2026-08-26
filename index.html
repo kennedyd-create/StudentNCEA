@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=52"></script>
-<script src="whs-derived-2026.js?v=52"></script>
+<script src="ncea-exams-2026.js?v=54"></script>
+<script src="whs-derived-2026.js?v=54"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -7107,9 +7107,11 @@ z
         <input id="topic-own" type="text" placeholder="Type your topic" class="field w-full mb-2 hidden">
         <p id="topic-warn" class="topic-warn hidden">Choose a topic to build your prompt.</p>
         <label for="context" class="block text-[10px] font-black uppercase tracking-widest soft mb-1 mt-2">
-          Case study / context <span class="faint">optional</span></label>
+          Case study / context <span class="req">worth doing</span></label>
         <select id="context" class="field w-full"></select>
         <input id="context-own" type="text" placeholder="Type your case study" class="field w-full mt-1 hidden">
+        <p class="text-[10px] soft mt-1">Naming your own case study or text makes everything that follows
+          about YOUR material. If the standard has none — most Maths standards, for instance — say so.</p>
         <label for="extra" class="block text-[10px] font-black uppercase tracking-widest soft mb-1 mt-3">
           Anything else <span class="faint">optional</span></label>
         <textarea id="extra" rows="3" class="field w-full"
@@ -7149,7 +7151,7 @@ z
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 52 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 54 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7185,10 +7187,10 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=52' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=52' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=52' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=52' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=54' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=54' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=54' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=54' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7426,8 +7428,12 @@ function pickStd(code){
   $('step3').classList.remove('step-dead');
 
   const own = `<option value="__own__">✏️ Type my own…</option>`;
-  $('topic').innerHTML   = `<option value="">Whole standard</option>` + sel.std.topics.map(t=>`<option>${t}</option>`).join('') + own;
-  $('context').innerHTML = `<option value="">Not decided yet</option>` + sel.std.contexts.map(c=>`<option>${c}</option>`).join('') + own;
+  $('topic').innerHTML   = `<option value="">Choose a topic…</option><option value="__all__">The whole standard</option>` + sel.std.topics.map(t=>`<option>${t}</option>`).join('') + own;
+  $('context').innerHTML = `<option value="">Choose one…</option>`
+    + sel.std.contexts.map(c=>`<option>${c}</option>`).join('')
+    + own
+    + `<option value="__none__">This standard has no case study</option>`
+    + `<option value="__undecided__">Not decided yet</option>`;
   $('topic-own').classList.add('hidden'); $('context-own').classList.add('hidden');
   $('topic-own').value=''; $('context-own').value='';
   $('std-detail').innerHTML = `
@@ -7544,7 +7550,16 @@ function showBrief(open){
 
 function pick(id){
   const v = $(id).value;
-  return v === '__own__' ? $(id+'-own').value.trim() : v;
+  if(v === '__own__') return $(id+'-own').value.trim();
+  // "The whole standard" is a deliberate choice, not an empty one — it means
+  // cover everything rather than narrowing to one part.
+  if(v === '__all__') return 'The whole standard — cover all of it, not one part';
+  // Two honest ways to answer "no case study": some standards genuinely have
+  // none, and a student may not have chosen theirs yet. They mean different
+  // things to the tutor, so they are kept apart.
+  if(v === '__none__') return 'This standard is not built on a case study — use any context that suits the teaching';
+  if(v === '__undecided__') return 'The student has not chosen a case study yet — help them pick one, or teach without leaning on a specific one';
+  return v;
 }
 
 /* ---- Shareable links ----------------------------------------------------
@@ -7558,8 +7573,11 @@ function syncURL(){
   if(sel.mode)    p.set('mode', sel.mode);
   if(sel.std){
     const t = pick('topic'), c = pick('context');
-    if(t) p.set('topic', t);
-    if(c) p.set('context', c);
+    if(t) p.set('topic', $('topic').value === '__all__' ? '__all__' : t);
+    if(c){
+      const raw = $('context').value;
+      p.set('context', (raw === '__none__' || raw === '__undecided__') ? raw : c);
+    }
   }
   const q = p.toString();
   history.replaceState(null, '', q ? '?' + q : location.pathname);
@@ -7596,8 +7614,15 @@ async function applyURL(){
   if(!code || !stds().some(x => x.code === code)) return;
   pickStd(code);
 
-  if(p.get('topic'))   setChoice('topic', p.get('topic'));
-  if(p.get('context')) setChoice('context', p.get('context'));
+  if(p.get('topic')){
+    if(p.get('topic') === '__all__') $('topic').value = '__all__';
+    else setChoice('topic', p.get('topic'));
+  }
+  if(p.get('context')){
+    const cv = p.get('context');
+    if(cv === '__none__' || cv === '__undecided__') $('context').value = cv;
+    else setChoice('context', cv);
+  }
 
   const m = p.get('mode');
   if(m && MODES[m] && (m !== 'reference' || sel.std.reference)){ sel.mode = m; markModes(); }
@@ -7815,6 +7840,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=52"></script>
+<script src="timetable.js?v=54"></script>
 </body>
 </html>
