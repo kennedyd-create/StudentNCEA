@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=54"></script>
-<script src="whs-derived-2026.js?v=54"></script>
+<script src="ncea-exams-2026.js?v=56"></script>
+<script src="whs-derived-2026.js?v=56"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -192,6 +192,10 @@ body.dark-mode #actionbar{ background:color-mix(in srgb,var(--fac-dark) 18%,var(
 
 .req{ font-weight:900; color:#DB2026; font-size:.5625rem; letter-spacing:.06em; }
 body.dark-mode .req{ color:#ff6b6f; }
+.ctx-guide{ font-size:.6875rem; line-height:1.5; color:var(--ink-soft);
+  background:var(--surface-3); border-left:3px solid var(--line-strong);
+  border-radius:.3rem; padding:.35rem .5rem; margin-bottom:.35rem; }
+.ctx-guide strong{ color:var(--ink); }
 .topic-warn{ font-size:.6875rem; font-weight:800; color:#DB2026; margin-bottom:.4rem; }
 body.dark-mode .topic-warn{ color:#ff6b6f; }
 #extra{ font-size:.8125rem; line-height:1.5; resize:vertical; min-height:4rem; }
@@ -7108,6 +7112,7 @@ z
         <p id="topic-warn" class="topic-warn hidden">Choose a topic to build your prompt.</p>
         <label for="context" class="block text-[10px] font-black uppercase tracking-widest soft mb-1 mt-2">
           Case study / context <span class="req">worth doing</span></label>
+        <p id="context-guide" class="ctx-guide hidden"></p>
         <select id="context" class="field w-full"></select>
         <input id="context-own" type="text" placeholder="Type your case study" class="field w-full mt-1 hidden">
         <p class="text-[10px] soft mt-1">Naming your own case study or text makes everything that follows
@@ -7151,7 +7156,7 @@ z
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 54 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 56 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7187,10 +7192,10 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=54' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=54' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=54' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=54' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=56' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=56' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=56' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=56' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7429,12 +7434,34 @@ function pickStd(code){
 
   const own = `<option value="__own__">✏️ Type my own…</option>`;
   $('topic').innerHTML   = `<option value="">Choose a topic…</option><option value="__all__">The whole standard</option>` + sel.std.topics.map(t=>`<option>${t}</option>`).join('') + own;
+  /* Most standards do not offer a LIST of case studies — they describe what
+     kind of thing the student should supply ("the text you studied in class").
+     Offering that as a selectable option is a trap: a student picks it,
+     believes they have answered, and the tutor learns nothing. So a
+     description becomes guidance above the field and the student types their
+     own; only genuinely named contexts appear as options. */
+  const named = sel.std.contexts.filter(c => !isDescription(c));
+  const guide = sel.std.contexts.filter(c => isDescription(c));
+  $('context-guide').innerHTML = guide.length
+    ? `<strong>What to name here:</strong> ${guide.join(' &nbsp;·&nbsp; ')}`
+    : '';
+  $('context-guide').classList.toggle('hidden', !guide.length);
   $('context').innerHTML = `<option value="">Choose one…</option>`
-    + sel.std.contexts.map(c=>`<option>${c}</option>`).join('')
+    + named.map(c=>`<option>${c}</option>`).join('')
     + own
     + `<option value="__none__">This standard has no case study</option>`
     + `<option value="__undecided__">Not decided yet</option>`;
+  // With nothing named to pick from, typing is the only real answer — so open
+  // that field straight away rather than making them find it.
   $('topic-own').classList.add('hidden'); $('context-own').classList.add('hidden');
+  $('topic-own').value = ''; $('context-own').value = '';
+  // With nothing named to pick from, typing is the only real answer — so open
+  // that field rather than making the student find it. Must come AFTER the
+  // reset above, or it is hidden again immediately.
+  if(!named.length){
+    $('context').value = '__own__';
+    $('context-own').classList.remove('hidden');
+  }
   $('topic-own').value=''; $('context-own').value='';
   $('std-detail').innerHTML = `
     <div class="brief">
@@ -7546,6 +7573,13 @@ function showBrief(open){
   $('brief-toggle-label').textContent = open
     ? '▾ Hide the standard briefing'
     : '▸ Show me what this standard actually needs';
+}
+
+/* Does this context name a thing (Muriwai coastal environment) or describe
+   what the student should bring (the text you studied in class)? */
+function isDescription(c){
+  return c.length > 60 ||
+    /you (studied|have studied|attended|read|choose|chose)|studied in class|any appropriate|agreed with|supplied in|commonly|for example|e\.g\.|prescribed|of your own|selected|no prescribed|during the year|your own/i.test(c);
 }
 
 function pick(id){
@@ -7840,6 +7874,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=54"></script>
+<script src="timetable.js?v=56"></script>
 </body>
 </html>

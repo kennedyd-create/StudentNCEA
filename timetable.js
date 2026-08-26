@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 54 — case study encouraged';
+const TT_BUILD = 'build 56 — context field fit for every subject';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -1462,7 +1462,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=54';
+    t.src = src + '?v=56';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
