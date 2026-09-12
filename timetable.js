@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 57 — subject tools';
+const TT_BUILD = 'build 58 — tools listed with the modes';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -1462,7 +1462,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=57';
+    t.src = src + '?v=58';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
