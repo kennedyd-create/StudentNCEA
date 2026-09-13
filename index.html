@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=58"></script>
-<script src="whs-derived-2026.js?v=58"></script>
+<script src="ncea-exams-2026.js?v=59"></script>
+<script src="whs-derived-2026.js?v=59"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -7186,7 +7186,7 @@ z
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 58 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 59 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7232,16 +7232,21 @@ const SUBJECT_TOOLS = {
     { name:'ChemDash',
       url:'https://kennedyd-create.github.io/ChemDash/',
       blurb:'Drill the reactions, structures and calculations this subject keeps asking for.' }
+  ],
+  '3::Calculus': [
+    { name:'Calculus Count',
+      url:'https://kennedyd-create.github.io/CalulusCount/',
+      blurb:'Practise the techniques until they are automatic, so the exam is about the thinking rather than the algebra.' }
   ]
 };
 
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=58' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=58' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=58' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=58' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=59' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=59' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=59' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=59' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7953,6 +7958,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=58"></script>
+<script src="timetable.js?v=59"></script>
 </body>
 </html>
