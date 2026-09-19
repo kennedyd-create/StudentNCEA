@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=59"></script>
-<script src="whs-derived-2026.js?v=59"></script>
+<script src="ncea-exams-2026.js?v=60"></script>
+<script src="whs-derived-2026.js?v=60"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -227,6 +227,21 @@ body.dark-mode .tool-card:hover{ background:color-mix(in srgb,var(--fac-dark) 18
 .topic-warn{ font-size:.6875rem; font-weight:800; color:#DB2026; margin-bottom:.4rem; }
 body.dark-mode .topic-warn{ color:#ff6b6f; }
 #extra{ font-size:.8125rem; line-height:1.5; resize:vertical; min-height:4rem; }
+
+.evidence{ max-width:46rem; margin:0 auto 1rem; font-size:.75rem; }
+.evidence summary{ cursor:pointer; font-weight:800; color:var(--ink-soft);
+  text-align:center; padding:.4rem; list-style:none; }
+.evidence summary::-webkit-details-marker{ display:none; }
+.evidence summary:hover{ color:var(--ink); }
+.evidence summary::after{ content:' \25BE'; }
+.evidence[open] summary::after{ content:' \25B4'; }
+.evidence-body{ border:1px solid var(--line); border-radius:.5rem;
+  padding:.8rem 1rem; background:var(--surface-2); }
+.evidence-body p{ line-height:1.65; color:var(--ink-soft); margin-bottom:.6rem; }
+.evidence-body p:last-child{ margin-bottom:0; }
+.evidence-body strong{ color:var(--ink); }
+.evidence-body a{ color:var(--fac-dark); font-weight:700; text-decoration:underline; white-space:nowrap; }
+.evidence-caveat{ border-left:3px solid var(--gold); padding-left:.7rem; }
 
 /* Contour pattern across the banner. The source strokes are a pale blue that
    vanishes against navy, so they are overridden to white and held low —
@@ -7186,7 +7201,35 @@ z
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 59 · 
+  <details class="evidence">
+    <summary>Does using an AI tutor actually help?</summary>
+    <div class="evidence-body">
+      <p>Two randomised controlled trials say yes, with conditions attached.</p>
+
+      <p><strong>Fischer, Rau &amp; Rilke (2025)</strong> gave 334 university students an AI tutor while
+      revising for a real, incentivised exam. Test scores rose by <strong>0.23 standard deviations</strong>
+      against a control group, and students did <em>not</em> read less as a result — they read for
+      several minutes first, then brought questions to the tutor. Unrestricted access beat
+      forced-reading-first by 0.21 SD.
+      <a href="https://docs.iza.org/dp18338.pdf" target="_blank" rel="noopener">IZA Discussion Paper 18338 &#8599;</a></p>
+
+      <p><strong>Kestin et al. (2025)</strong>, at Harvard, ran 194 undergraduates through the same
+      physics content twice: once in a well-run active-learning class, once with a purpose-built AI
+      tutor. They <strong>learned more, in less time</strong>, with the tutor, and reported feeling more
+      engaged.
+      <a href="https://www.nature.com/articles/s41598-025-97652-6" target="_blank" rel="noopener">Scientific Reports 15, 17458 &#8599;</a></p>
+
+      <p class="evidence-caveat"><strong>The conditions matter, and they are why this site works the way
+      it does.</strong> In the first study the gains went to students with lower starting knowledge who
+      could still regulate themselves; students who were easily distracted gained nothing. In the
+      second, the tutor was <em>purpose-built around the teaching</em> rather than being a general
+      chatbot — which is what a prompt carrying the actual standard is for. Other research finds the
+      opposite result where AI is used unsupervised to produce answers rather than to learn. The tool
+      is worth using as a tutor; it is not worth using as a shortcut.</p>
+    </div>
+  </details>
+
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 60 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7243,10 +7286,10 @@ const SUBJECT_TOOLS = {
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=59' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=59' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=59' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=59' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=60' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=60' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=60' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=60' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7958,6 +8001,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=59"></script>
+<script src="timetable.js?v=60"></script>
 </body>
 </html>
