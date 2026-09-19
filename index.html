@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=60"></script>
-<script src="whs-derived-2026.js?v=60"></script>
+<script src="ncea-exams-2026.js?v=63"></script>
+<script src="whs-derived-2026.js?v=63"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -228,6 +228,21 @@ body.dark-mode .tool-card:hover{ background:color-mix(in srgb,var(--fac-dark) 18
 body.dark-mode .topic-warn{ color:#ff6b6f; }
 #extra{ font-size:.8125rem; line-height:1.5; resize:vertical; min-height:4rem; }
 
+.evidence-tab{ margin-left:auto; align-self:center; font-size:.6875rem; font-weight:800;
+  padding:.35rem .8rem; border-radius:9999px; cursor:pointer; white-space:nowrap;
+  background:rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.35); }
+.evidence-tab:hover{ background:rgba(255,255,255,.26); }
+@media (max-width:560px){ .evidence-tab{ font-size:.625rem; padding:.3rem .6rem; } }
+
+.ev-back{ position:fixed; inset:0; z-index:10000; background:rgba(15,23,42,.55);
+  display:flex; align-items:center; justify-content:center; padding:1rem; }
+.ev-card{ position:relative; max-width:42rem; max-height:86vh; overflow:auto;
+  background:var(--surface); border-radius:.8rem; padding:1.4rem 1.5rem;
+  box-shadow:0 20px 50px -12px rgba(0,0,0,.5); }
+.ev-h{ font-size:1.05rem; font-weight:900; color:var(--ink); margin-bottom:.7rem; padding-right:1.5rem; }
+.ev-x{ position:absolute; top:.5rem; right:.7rem; font-size:1.5rem; line-height:1;
+  color:var(--ink-faint); cursor:pointer; background:none; border:0; }
+.ev-x:hover{ color:var(--ink); }
 .evidence{ max-width:46rem; margin:0 auto 1rem; font-size:.75rem; }
 .evidence summary{ cursor:pointer; font-weight:800; color:var(--ink-soft);
   text-align:center; padding:.4rem; list-style:none; }
@@ -237,11 +252,17 @@ body.dark-mode .topic-warn{ color:#ff6b6f; }
 .evidence[open] summary::after{ content:' \25B4'; }
 .evidence-body{ border:1px solid var(--line); border-radius:.5rem;
   padding:.8rem 1rem; background:var(--surface-2); }
-.evidence-body p{ line-height:1.65; color:var(--ink-soft); margin-bottom:.6rem; }
+.evidence-body p{ line-height:1.7; color:var(--ink); margin-bottom:.7rem; font-size:.8125rem; }
 .evidence-body p:last-child{ margin-bottom:0; }
 .evidence-body strong{ color:var(--ink); }
-.evidence-body a{ color:var(--fac-dark); font-weight:700; text-decoration:underline; white-space:nowrap; }
-.evidence-caveat{ border-left:3px solid var(--gold); padding-left:.7rem; }
+.evidence-body a{ color:#0b3a8f; font-weight:800; text-decoration:underline; white-space:nowrap; }
+body.dark-mode .evidence-body a{ color:#93c5fd; }
+/* The caveat is the most important paragraph, so it gets a tinted panel
+   rather than a hairline that disappears against white. */
+.evidence-caveat{ border-left:4px solid var(--gold); padding:.6rem .8rem;
+  background:color-mix(in srgb, var(--gold) 12%, var(--surface));
+  border-radius:.3rem; }
+body.dark-mode .evidence-caveat{ background:color-mix(in srgb, var(--gold) 16%, var(--surface-2)); }
 
 /* Contour pattern across the banner. The source strokes are a pale blue that
    vanishes against navy, so they are overridden to white and held low —
@@ -338,6 +359,15 @@ body.dark-mode .filter-pill[aria-pressed="true"]{ color:#fff; }
   padding:.9rem 1rem; border:2px solid var(--line-strong); border-radius:.6rem;
   background:var(--surface); transition:border-color .15s ease, background .15s ease; }
 .tt-target:hover{ border-color:var(--fac-dark); background:var(--surface-2); }
+/* Past options stay on screen so the sequence still makes sense, but read as
+   history rather than as something to click. */
+.tt-target.is-past{ opacity:.5; cursor:default; border-style:dashed;
+  background:var(--surface-2); }
+.tt-target.is-past:hover{ border-color:var(--line-strong); background:var(--surface-2); }
+.tt-target.is-past .tt-tname, .tt-target.is-past .tt-twhen{ color:var(--ink-faint); }
+.tt-past{ font-size:.5625rem; font-weight:900; text-transform:uppercase; letter-spacing:.06em;
+  background:var(--ink-faint); color:var(--surface); border-radius:9999px;
+  padding:.1rem .45rem; margin-left:.35rem; vertical-align:middle; }
 .tt-tname{ font-size:1rem; font-weight:900; color:var(--ink); }
 .tt-twhen{ font-size:.6875rem; font-weight:800; color:var(--fac-dark);
   text-transform:uppercase; letter-spacing:.05em; }
@@ -7104,6 +7134,52 @@ z
   <div id="modetabs" class="flex gap-2 items-end">
     <button class="mode-tab mode-tab-main" data-view="builder" aria-pressed="true">Ultimate Study Guide</button>
     <button class="mode-tab mode-tab-alt" data-view="timetable" aria-pressed="false">Study Timetable</button>
+    <button id="evidence-open" class="evidence-tab"
+            title="The research behind using an AI tutor">Does this actually work?</button>
+  </div>
+</div>
+
+<div id="evidence-modal" class="ev-back hidden">
+  <div class="ev-card" role="dialog" aria-modal="true" aria-label="The research behind AI tutoring">
+    <button id="evidence-close" class="ev-x" aria-label="Close">&times;</button>
+    <h2 class="ev-h">Does using an AI tutor actually help?</h2>
+    <div class="evidence-body">
+      <p>Three pieces of research, strongest first. All are peer-reviewed or formally published,
+      and each is linked in full so you can check it yourself.</p>
+
+      <p><strong>1. A systematic review of AI tutoring in schools.</strong>
+      Létourneau and colleagues pooled <strong>28 studies covering 4,597 school students</strong>,
+      published in <em>npj Science of Learning</em>, a Nature journal. Where an AI tutor was compared
+      with ordinary classroom teaching, <strong>seven of the eight studies found a significant
+      benefit</strong>, with medium to large effects. Gains were largest for the students who started
+      furthest behind.
+      <a href="https://www.nature.com/articles/s41539-025-00320-7" target="_blank" rel="noopener">npj Science of Learning 10, 29 (2025) &#8599;</a></p>
+
+      <p><strong>2. A randomised trial against genuinely good teaching.</strong>
+      Kestin and colleagues at Harvard taught 194 undergraduates the same physics twice — once in a
+      well-run active-learning class, once with a purpose-built AI tutor. Students
+      <strong>learned more, in less time</strong>, with the tutor, and reported being more engaged.
+      <a href="https://www.nature.com/articles/s41598-025-97652-6" target="_blank" rel="noopener">Scientific Reports 15, 17458 (2025) &#8599;</a></p>
+
+      <p><strong>3. A trial on exam revision specifically.</strong>
+      334 students revising for a real, incentivised exam were given an AI tutor. Scores rose
+      <strong>0.23 standard deviations</strong> against a control group and — the finding that matters
+      most here — <strong>they did not read less</strong>. They read first, then brought questions to
+      the tutor.
+      <a href="https://docs.iza.org/dp18338.pdf" target="_blank" rel="noopener">IZA Discussion Paper 18338 (2025) &#8599;</a></p>
+
+      <p class="evidence-caveat"><strong>What the same research says about getting it wrong.</strong>
+      The benefit is not automatic. In the review, an AI tutor beat ordinary teaching but was
+      <em>no better than a well-made non-AI tutoring system</em> — the structure does much of the work,
+      not the intelligence. In the revision trial, students who could not regulate themselves gained
+      nothing at all. And separate research on unsupervised use, where students generate answers
+      rather than work through them, finds knowledge going <em>backwards</em>. Every study that
+      worked used a tutor built around the actual teaching — which is what a prompt carrying the real
+      standard, its criteria and its examiner traps is for. Used as a tutor it helps; used as a
+      shortcut it does harm. As the authors of one study put it, this enhances teaching rather than
+      replacing it.</p>
+    </div>
+  
   </div>
 </div>
 
@@ -7201,35 +7277,7 @@ z
     <p class="text-xs soft mt-2">Copy, then paste into any AI chat. The standard's criteria travel with the prompt.</p>
   </section>
 
-  <details class="evidence">
-    <summary>Does using an AI tutor actually help?</summary>
-    <div class="evidence-body">
-      <p>Two randomised controlled trials say yes, with conditions attached.</p>
-
-      <p><strong>Fischer, Rau &amp; Rilke (2025)</strong> gave 334 university students an AI tutor while
-      revising for a real, incentivised exam. Test scores rose by <strong>0.23 standard deviations</strong>
-      against a control group, and students did <em>not</em> read less as a result — they read for
-      several minutes first, then brought questions to the tutor. Unrestricted access beat
-      forced-reading-first by 0.21 SD.
-      <a href="https://docs.iza.org/dp18338.pdf" target="_blank" rel="noopener">IZA Discussion Paper 18338 &#8599;</a></p>
-
-      <p><strong>Kestin et al. (2025)</strong>, at Harvard, ran 194 undergraduates through the same
-      physics content twice: once in a well-run active-learning class, once with a purpose-built AI
-      tutor. They <strong>learned more, in less time</strong>, with the tutor, and reported feeling more
-      engaged.
-      <a href="https://www.nature.com/articles/s41598-025-97652-6" target="_blank" rel="noopener">Scientific Reports 15, 17458 &#8599;</a></p>
-
-      <p class="evidence-caveat"><strong>The conditions matter, and they are why this site works the way
-      it does.</strong> In the first study the gains went to students with lower starting knowledge who
-      could still regulate themselves; students who were easily distracted gained nothing. In the
-      second, the tutor was <em>purpose-built around the teaching</em> rather than being a general
-      chatbot — which is what a prompt carrying the actual standard is for. Other research finds the
-      opposite result where AI is used unsupervised to produce answers rather than to learn. The tool
-      is worth using as a tutor; it is not worth using as a shortcut.</p>
-    </div>
-  </details>
-
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 60 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 63 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7286,10 +7334,10 @@ const SUBJECT_TOOLS = {
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=60' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=60' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=60' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=60' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=63' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=63' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=63' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=63' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7376,6 +7424,14 @@ function init(){
   $('copy2').addEventListener('click', e => flashCopy(e.currentTarget));
   $('copy-link').addEventListener('click', e => copyShareLink(e.currentTarget));
   $('print-brief').addEventListener('click', printBriefing);
+  const evOpen = () => $('evidence-modal').classList.remove('hidden');
+  const evShut = () => $('evidence-modal').classList.add('hidden');
+  $('evidence-open').addEventListener('click', evOpen);
+  $('evidence-close').addEventListener('click', evShut);
+  $('evidence-modal').addEventListener('click', e => {
+    if(e.target.id === 'evidence-modal') evShut();      // click the backdrop to close
+  });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') evShut(); });
   $('extra').addEventListener('input', () => { if(sel.std && sel.mode) build(); });
   $('search').addEventListener('input', runSearch);
   $('search').addEventListener('keydown', e => {
@@ -8001,6 +8057,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=60"></script>
+<script src="timetable.js?v=63"></script>
 </body>
 </html>

@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 60 — research evidence panel';
+const TT_BUILD = 'build 63 — stronger research evidence';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -1462,7 +1462,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=60';
+    t.src = src + '?v=63';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
@@ -1483,26 +1483,41 @@ function render(){
 /* Shown until a plan exists, so a first-time student knows what this is. */
 /* Which exams is this plan for? Asked first, because it decides the deadline
    everything is scheduled backwards from. */
+/* Once the mock week has passed there is nothing left to plan toward, so those
+   options stay visible — a student should still see that they existed — but
+   are inactive rather than silently vanishing. Date-driven, so it happens on
+   its own next year too. */
+function derivedIsOver(){
+  const d = DG();
+  return !!d && todayISO() > d.window.end;
+}
+
 function targetChooser(){
   if(S.target) return '';
   const d = DG();
+  const over = derivedIsOver();
   const dgWindow = d ? d.pretty(d.window.start) + ' to ' + d.pretty(d.window.end) : '';
   const opts = [
     ['derived', d ? d.label : 'Derived grade exams', dgWindow,
-     'The school mocks. Your plan runs from now until that week, and treats it as study leave.'],
+     over ? 'These have now finished, so there is nothing left to plan toward.'
+          : 'The school mocks. Your plan runs from now until that week, and treats it as study leave.',
+     over],
     ['ncea', 'NCEA exams', E() ? E().pretty(E().window.start) + ' to ' + E().pretty(E().window.end) : '',
-     'The national exams in November. This is the long run — most of a term of revision.'],
+     'The national exams in November. This is the long run — most of a term of revision.',
+     false],
     ['both', 'Both', 'September and November',
-     'One continuous plan. It works toward each mock first, then keeps going to the real thing.']
+     over ? 'The mock week has passed, so this is the same as choosing NCEA exams.'
+          : 'One continuous plan. It works toward each mock first, then keeps going to the real thing.',
+     over]
   ];
   return `<div class="panel p-4 md:p-5">
     <h3 class="sec-h mb-1"><span class="tt-step">1</span>Which exams are you planning for?</h3>
     <p class="tt-why">The whole timetable is built backwards from a deadline, so this decides
       everything else. You can change it later without losing your subjects.</p>
     <div class="tt-targets">
-      ${opts.map(([k,name,when,why])=>`
-        <button class="tt-target" data-t="${k}">
-          <span class="tt-tname">${name}</span>
+      ${opts.map(([k,name,when,why,done])=>`
+        <button class="tt-target${done?' is-past':''}" data-t="${k}" ${done?'disabled':''}>
+          <span class="tt-tname">${name}${done?' <span class="tt-past">finished</span>':''}</span>
           <span class="tt-twhen">${when}</span>
           <span class="tt-twhy">${why}</span>
         </button>`).join('')}
@@ -1866,6 +1881,7 @@ function wire(){
 
   // Which exams this plan is for. Chosen first, and changeable later.
   q('.tt-target', b => b.onclick = () => {
+    if(b.disabled) return;
     S.target = b.dataset.t;
     S.periods = null; refreshPeriods();  // the year looks different for each target
     S.plan = null; S.stale = false;
