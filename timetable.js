@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 63 — stronger research evidence';
+const TT_BUILD = 'build 64 — credits and IP notice';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -1462,7 +1462,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=63';
+    t.src = src + '?v=64';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
