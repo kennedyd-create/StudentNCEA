@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=68"></script>
-<script src="whs-derived-2026.js?v=68"></script>
+<script src="ncea-exams-2026.js?v=69"></script>
+<script src="whs-derived-2026.js?v=69"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -109,6 +109,12 @@ body.dark-mode .fac-pill[aria-pressed="true"], body.dark-mode .subj-pill[aria-pr
 .tile-accent{ border-style:dashed; }
 .tile-accent .hd{ color:var(--fac-dark); }
 .tile-accent[aria-pressed="true"]{ border-style:solid; }
+.tile-banner{ position:relative; padding-top:1.4rem!important; overflow:hidden; }
+.mode-banner{ position:absolute; top:0; left:0; right:0;
+  background:#DB2026; color:#fff; font-size:.5625rem; font-weight:900;
+  text-transform:uppercase; letter-spacing:.1em; text-align:center; padding:.2rem 0; }
+body.dark-mode .mode-banner{ background:#ef4444; }
+
 .mode-badge{
   font-size:.5625rem; font-weight:900; text-transform:uppercase; letter-spacing:.08em;
   padding:.1rem .4rem; border-radius:9999px; vertical-align:middle; margin-left:.25rem;
@@ -1126,7 +1132,7 @@ Bring earlier ideas back with short recall questions before moving on. Open a ne
 const MODES = {
 
 foundations:{ label:'Start from the beginning', blurb:'Break it right down for me, one small step at a time',
-  accent:'#0d9488', badge:'Start here',
+  accent:'#0d9488', badge:'Start with the basics',
   blocks:['nofoothold','misconception','pressure','retrieval','parallel'],
   body:`YOUR TASK — SCAFFOLDED STEP-BY-STEP TEACHING
 
@@ -1168,7 +1174,7 @@ If they want to stop, let them, warmly. Then list exactly what they can now do t
 
 Begin now with Step 1. Do not ask what they already know first — that question is exactly what a struggling student cannot answer.`},
 
-explainer:{ label:'Full explainer', blurb:'Teach me this whole standard from scratch',
+explainer:{ label:'Full explainer', blurb:'Teach me this whole standard from scratch', banner:'Highly recommended',
   blocks:['nofoothold','misconception','technique','retrieval','parallel'],
   body:`YOUR TASK — FULL EXPLAINER
 
@@ -7355,7 +7361,7 @@ z
     </div>
   </details>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 68 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 69 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7412,10 +7418,10 @@ const SUBJECT_TOOLS = {
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=68' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=68' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=68' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=68' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=69' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=69' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=69' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=69' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7667,12 +7673,13 @@ function renderModeTools(){
   const box = $('mode-tools');
   const list = SUBJECT_TOOLS[sel.level + '::' + sel.subject] || [];
   if(!list.length || !sel.std){ box.classList.add('hidden'); box.innerHTML = ''; return; }
-  box.innerHTML = `<p class="mtools-h">Not a prompt — these open an interactive site</p>
-    ${list.map(t => `<a class="tile mtool" href="${t.url}" target="_blank" rel="noopener">
-      <p class="font-bold text-[13px] leading-tight mtool-name">${t.name}
-        <span class="mode-badge mtool-badge">Interactive</span></p>
-      <p class="text-[11px] soft leading-snug mt-0.5">${t.blurb}</p>
-      <span class="mtool-go">Opens in a new tab &#8599;</span></a>`).join('')}`;
+  // Same look as the High Standards link below it: both leave the page rather
+  // than build a prompt, so they should read as one family.
+  box.innerHTML = list.map(t => `<a class="ext-site" href="${t.url}" target="_blank" rel="noopener">
+      <span class="ext-tag">Interactive site</span>
+      <span class="ext-name">${t.name}</span>
+      <span class="ext-note">${t.blurb} Not a prompt generator — opens a Waiheke-made site in a new tab &#8599;</span>
+    </a>`).join('');
   box.classList.remove('hidden');
 }
 
@@ -7815,8 +7822,9 @@ function renderModes(){
   const usable = Object.entries(MODES).filter(([k]) =>
     k !== 'reference' || (sel.std && sel.std.reference));
   $('modes').innerHTML = usable.map(([k,m])=>`
-    <button class="tile text-left px-3 py-2.5${m.accent?' tile-accent':''}" aria-pressed="false" data-k="${k}"
+    <button class="tile text-left px-3 py-2.5${m.accent?' tile-accent':''}${m.banner?' tile-banner':''}" aria-pressed="false" data-k="${k}"
             ${m.accent?`style="--fac-dark:${m.accent}"`:''}>
+      ${m.banner?`<span class="mode-banner">${m.banner}</span>`:''}
       <p class="font-bold hd text-[13px] leading-tight">${m.label}${m.badge?` <span class="mode-badge">${m.badge}</span>`:''}</p>
       <p class="text-[11px] soft leading-snug mt-0.5">${m.blurb}</p>
     </button>`).join('');
@@ -8162,6 +8170,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=68"></script>
+<script src="timetable.js?v=69"></script>
 </body>
 </html>
