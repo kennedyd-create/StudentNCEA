@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=73"></script>
-<script src="whs-derived-2026.js?v=73"></script>
+<script src="ncea-exams-2026.js?v=75"></script>
+<script src="whs-derived-2026.js?v=75"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -235,6 +235,9 @@ body.dark-mode .off-tag{ background:#fcd34d!important; color:#3b2a06!important; 
 .off-high{ border-left-color:#15803d; }
 .off-mod{ border-left-color:#b45309; }
 .off-low{ border-left-color:#b91c1c; }
+.off-where{ border-left-color:#0f766e; }
+.off-where .off-rankh{ color:#0f766e; }
+body.dark-mode .off-where .off-rankh{ color:#5eead4; }
 .off-rankh{ font-size:.75rem; font-weight:900; text-transform:uppercase; letter-spacing:.06em; }
 .off-high .off-rankh{ color:#15803d; }
 .off-mod  .off-rankh{ color:#b45309; }
@@ -251,6 +254,9 @@ body.dark-mode .off-low  .off-rankh{ color:#fca5a5; }
 .off-m summary::after{ content:' \25BE'; float:right; color:var(--ink-faint); font-size:.6875rem; }
 .off-m[open] summary::after{ content:' \25B4'; }
 .off-m summary:hover{ background:var(--surface-3); }
+.off-ico{ display:inline-block; width:1.4rem; font-size:.9375rem;
+  line-height:1; margin-right:.15rem; text-align:center; }
+.off-mwhat{ padding-left:1.55rem; }
 .off-mname{ display:block; font-size:.8125rem; font-weight:800; color:var(--ink); }
 .off-mwhat{ display:block; font-size:.6875rem; color:var(--ink-soft); margin-top:.1rem; padding-right:1rem; }
 .off-mbody{ padding:.1rem .6rem .6rem; border-top:1px solid var(--line); }
@@ -7455,7 +7461,7 @@ z
     </div>
   </details>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 73 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 75 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7512,10 +7518,10 @@ const SUBJECT_TOOLS = {
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=73' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=73' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=73' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=73' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=75' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=75' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=75' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=75' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7816,37 +7822,52 @@ function hsLink(){
 const METHOD_GUIDE = [
   { rank:'high', label:'Strong evidence', note:'These two work across ages, subjects and abilities. If you only change one thing, change to these.',
     items:[
-      { name:'Practice testing', what:'Testing yourself on the material instead of reviewing it.',
+      { icon:'📝', name:'Practice testing', what:'Testing yourself on the material instead of reviewing it.',
         how:'Close the book and write what you know. Do past paper questions before you feel ready. Make questions out of your notes and answer them days later. Getting it wrong is not wasted — the retrieval is what builds the memory.',
         eg:'Instead of rereading your notes on rates of reaction, shut them and write down every factor that affects rate and why. Then open the notes and find what you missed.' },
-      { name:'Distributed practice', what:'Spreading study over time rather than massing it.',
+      { icon:'📅', name:'Distributed practice', what:'Spreading study over time rather than massing it.',
         how:'Four half-hours across a fortnight beats one two-hour session, even though the two-hour session feels more productive. Come back to a topic after you have half-forgotten it — that is when the return is greatest.',
         eg:'Study electrolysis today, again in three days, again next week. Your timetable already does this for you if you let it.' }
     ]},
   { rank:'mod', label:'Worth using', note:'Useful, but the evidence is narrower — they work in some subjects and conditions more than others.',
     items:[
-      { name:'Elaborative interrogation', what:'Asking "why is this true?" about every fact.',
+      { icon:'❓', name:'Elaborative interrogation', what:'Asking "why is this true?" about every fact.',
         how:'Do not accept a statement as something to memorise. Ask why it is the case, and answer it. This turns a list into something connected, which is what Merit and Excellence reward.',
         eg:'"Transpiration increases on a hot day." Why? Because the stomata… and then what follows from that?' },
-      { name:'Self-explanation', what:'Explaining each step to yourself as you work.',
+      { icon:'💬', name:'Self-explanation', what:'Explaining each step to yourself as you work.',
         how:'While solving a problem, say aloud what you are doing and why you chose it. It is slow, and it exposes the steps you have been doing by pattern rather than by understanding.',
         eg:'Doing a differentiation question, say why the chain rule applies here rather than the product rule.' },
-      { name:'Interleaved practice', what:'Mixing different problem types in one session.',
+      { icon:'🔀', name:'Interleaved practice', what:'Mixing different problem types in one session.',
         how:'Rather than twenty questions of the same type, mix types so you have to work out which method applies. It feels harder and the results are worse in the session — and better in the exam, where the question does not tell you which method to use.',
         eg:'Mix integration, differentiation and limits in one set instead of doing each separately.' }
     ]},
+  { rank:'where', label:'Where and how you study', note:'Not about technique — about the conditions. Separate research, and worth knowing.',
+    items:[
+      { icon:'📱', name:'Your phone', what:'It costs you even when you are not touching it.',
+        how:'Students scored worse on memory and reasoning tasks with their phone face-down on the desk than with it in another room. They did not notice any difference themselves. Silent and out of sight is not enough — another room is.',
+        eg:'Leave it outside the room for the hour. Check it between blocks, not during one.' },
+      { icon:'🎧', name:'Music with lyrics', what:'Words compete with the words you are working on.',
+        how:'Anything with lyrics uses the same machinery you need for reading and writing, so it makes verbal work harder. Instrumental music is roughly neutral — it will not help you learn, but it is not doing much harm. No music makes you learn better.',
+        eg:'Writing an essay or reading a text: no lyrics. Working through equations: it matters less.' },
+      { icon:'🛏️', name:'Working in bed', what:'A sleep problem more than a study problem.',
+        how:'Using your bed as a desk weakens the link between bed and sleep, and sleep is when what you studied gets consolidated. Sit upright somewhere else — a desk, a table, the library.',
+        eg:'The hour you gain studying in bed can cost you more in the sleep that follows it.' },
+      { icon:'😴', name:'Sleep', what:'Part of studying, not time taken from it.',
+        how:'Memory is consolidated during sleep. A late night before an exam costs you more than the extra hour gains.',
+        eg:'Finish, sleep, and review in the morning. That is not slacking — it is the mechanism.' }
+    ]},
   { rank:'low', label:'Feels productive, does little', note:'These are the methods most students use most. They are not useless, but they are a poor use of the hours you have — usually because they let you recognise the material without being able to produce it.',
     items:[
-      { name:'Rereading', what:'Going over your notes or textbook again.',
+      { icon:'🔁', name:'Rereading', what:'Going over your notes or textbook again.',
         how:'The most common study method there is, and one of the weakest. Rereading builds familiarity, and familiarity feels like knowledge right up until you are asked to write something down. If you reread, do it once and then test yourself.',
         eg:'Reading the chapter on plate boundaries four times will not tell you whether you can draw one labelled. Drawing it will.' },
-      { name:'Highlighting and underlining', what:'Marking the important parts.',
+      { icon:'🖍️', name:'Highlighting and underlining', what:'Marking the important parts.',
         how:'Almost no benefit on its own, partly because deciding what to highlight is easy and remembering it is not. If you highlight, treat it as step one — then turn what you marked into questions.',
         eg:'A highlighted page looks like work. Cover it and see whether you can say what was under the colour.' },
-      { name:'Summarisation', what:'Writing a shorter version of the material.',
+      { icon:'✂️', name:'Summarisation', what:'Writing a shorter version of the material.',
         how:'Moderate benefit for students who are already good at summarising, little for everyone else. It improves sharply if you write the summary from memory rather than while looking.',
         eg:'Summarising with the book open is copying. Summarising with it closed is practice testing — which is in the top group.' },
-      { name:'Keyword mnemonics and imagery', what:'Memory tricks and mental pictures.',
+      { icon:'🔤', name:'Keyword mnemonics and imagery', what:'Memory tricks and mental pictures.',
         how:'Genuinely useful for vocabulary and short lists, and of little help for the explanation and analysis NCEA actually asks for. Worth the time for a defined set of terms, not for a topic.',
         eg:'A mnemonic will hold the order of the reactivity series. It will not help you explain why the order is what it is.' }
     ]}
@@ -7872,7 +7893,7 @@ function renderOffline(){
       <p class="off-rankh">${g.label}</p>
       <p class="off-ranknote">${g.note}</p>
       ${g.items.map(m => `<details class="off-m">
-        <summary><span class="off-mname">${m.name}</span>
+        <summary><span class="off-mname"><span class="off-ico" aria-hidden="true">${m.icon||''}</span>${m.name}</span>
           <span class="off-mwhat">${m.what}</span></summary>
         <div class="off-mbody">
           <p>${m.how}</p>
@@ -8368,6 +8389,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=73"></script>
+<script src="timetable.js?v=75"></script>
 </body>
 </html>
