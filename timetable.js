@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 72 — study without AI';
+const TT_BUILD = 'build 73 — methods ranked by evidence';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -1494,7 +1494,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=72';
+    t.src = src + '?v=73';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);

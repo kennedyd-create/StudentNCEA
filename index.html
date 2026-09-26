@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=72"></script>
-<script src="whs-derived-2026.js?v=72"></script>
+<script src="ncea-exams-2026.js?v=73"></script>
+<script src="whs-derived-2026.js?v=73"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -228,6 +228,39 @@ body.dark-mode .offline-tab:hover{ background:#fcd34d; color:#3b2a06; }
 .off-tag{ background:#b45309!important; }
 body.dark-mode .off-card .ext-name{ color:#fcd34d; }
 body.dark-mode .off-tag{ background:#fcd34d!important; color:#3b2a06!important; }
+
+/* Ranked groups: green for the evidence-backed, amber for the useful, red for
+   the ones students actually use most. The colour carries the message. */
+.off-rank{ border-left:4px solid var(--line-strong); padding-left:.7rem; margin-bottom:1.1rem; }
+.off-high{ border-left-color:#15803d; }
+.off-mod{ border-left-color:#b45309; }
+.off-low{ border-left-color:#b91c1c; }
+.off-rankh{ font-size:.75rem; font-weight:900; text-transform:uppercase; letter-spacing:.06em; }
+.off-high .off-rankh{ color:#15803d; }
+.off-mod  .off-rankh{ color:#b45309; }
+.off-low  .off-rankh{ color:#b91c1c; }
+body.dark-mode .off-high .off-rankh{ color:#4ade80; }
+body.dark-mode .off-mod  .off-rankh{ color:#fcd34d; }
+body.dark-mode .off-low  .off-rankh{ color:#fca5a5; }
+.off-ranknote{ font-size:.6875rem; line-height:1.55; color:var(--ink-soft); margin:.15rem 0 .5rem; }
+
+.off-m{ border:1px solid var(--line); border-radius:.35rem; margin-bottom:.35rem;
+  background:var(--surface-2); }
+.off-m summary{ cursor:pointer; padding:.4rem .6rem; list-style:none; }
+.off-m summary::-webkit-details-marker{ display:none; }
+.off-m summary::after{ content:' \25BE'; float:right; color:var(--ink-faint); font-size:.6875rem; }
+.off-m[open] summary::after{ content:' \25B4'; }
+.off-m summary:hover{ background:var(--surface-3); }
+.off-mname{ display:block; font-size:.8125rem; font-weight:800; color:var(--ink); }
+.off-mwhat{ display:block; font-size:.6875rem; color:var(--ink-soft); margin-top:.1rem; padding-right:1rem; }
+.off-mbody{ padding:.1rem .6rem .6rem; border-top:1px solid var(--line); }
+.off-mbody p{ font-size:.75rem; line-height:1.6; color:var(--ink); margin-top:.5rem; }
+.off-eg{ background:var(--surface-3); border-radius:.3rem; padding:.45rem .6rem; }
+
+.off-specific{ border:2px solid var(--fac-dark); border-radius:.5rem;
+  padding:.7rem .8rem; margin-bottom:1.1rem; }
+.off-specifich{ font-size:.75rem; font-weight:900; color:var(--fac-dark);
+  text-transform:uppercase; letter-spacing:.05em; margin-bottom:.45rem; }
 
 .off-lead{ font-size:.8125rem; color:var(--ink); margin-bottom:.8rem; }
 .off-group{ margin-bottom:1rem; }
@@ -7352,7 +7385,7 @@ z
         <button id="offline-card" class="ext-site off-card">
           <span class="ext-tag off-tag">No screen</span>
           <span class="ext-name">Study this without AI</span>
-          <span class="ext-note">Twelve ways to work on this standard with nothing but your notes, a pen and a past paper.</span>
+          <span class="ext-note">Ways to work on this standard with nothing but your notes, a pen and a past paper — plus which study methods the evidence actually backs.</span>
         </button>
         <a id="hsnz" href="#" target="_blank" rel="noopener" class="ext-site hidden">
           <span class="ext-tag">External site</span>
@@ -7422,7 +7455,7 @@ z
     </div>
   </details>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 72 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 73 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7479,10 +7512,10 @@ const SUBJECT_TOOLS = {
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=72' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=72' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=72' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=72' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=73' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=73' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=73' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=73' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7775,6 +7808,50 @@ function hsLink(){
   a.classList.remove('hidden');
 }
 
+/* Ranked by Dunlosky, Rawson, Marsh, Nathan & Willingham (2013), the largest
+   review of study techniques there is: ten methods, each rated for how well the
+   evidence supports it. The ratings are theirs; the NCEA examples are ours.
+   The low-utility group matters as much as the high one — those are the
+   methods most students actually use. */
+const METHOD_GUIDE = [
+  { rank:'high', label:'Strong evidence', note:'These two work across ages, subjects and abilities. If you only change one thing, change to these.',
+    items:[
+      { name:'Practice testing', what:'Testing yourself on the material instead of reviewing it.',
+        how:'Close the book and write what you know. Do past paper questions before you feel ready. Make questions out of your notes and answer them days later. Getting it wrong is not wasted — the retrieval is what builds the memory.',
+        eg:'Instead of rereading your notes on rates of reaction, shut them and write down every factor that affects rate and why. Then open the notes and find what you missed.' },
+      { name:'Distributed practice', what:'Spreading study over time rather than massing it.',
+        how:'Four half-hours across a fortnight beats one two-hour session, even though the two-hour session feels more productive. Come back to a topic after you have half-forgotten it — that is when the return is greatest.',
+        eg:'Study electrolysis today, again in three days, again next week. Your timetable already does this for you if you let it.' }
+    ]},
+  { rank:'mod', label:'Worth using', note:'Useful, but the evidence is narrower — they work in some subjects and conditions more than others.',
+    items:[
+      { name:'Elaborative interrogation', what:'Asking "why is this true?" about every fact.',
+        how:'Do not accept a statement as something to memorise. Ask why it is the case, and answer it. This turns a list into something connected, which is what Merit and Excellence reward.',
+        eg:'"Transpiration increases on a hot day." Why? Because the stomata… and then what follows from that?' },
+      { name:'Self-explanation', what:'Explaining each step to yourself as you work.',
+        how:'While solving a problem, say aloud what you are doing and why you chose it. It is slow, and it exposes the steps you have been doing by pattern rather than by understanding.',
+        eg:'Doing a differentiation question, say why the chain rule applies here rather than the product rule.' },
+      { name:'Interleaved practice', what:'Mixing different problem types in one session.',
+        how:'Rather than twenty questions of the same type, mix types so you have to work out which method applies. It feels harder and the results are worse in the session — and better in the exam, where the question does not tell you which method to use.',
+        eg:'Mix integration, differentiation and limits in one set instead of doing each separately.' }
+    ]},
+  { rank:'low', label:'Feels productive, does little', note:'These are the methods most students use most. They are not useless, but they are a poor use of the hours you have — usually because they let you recognise the material without being able to produce it.',
+    items:[
+      { name:'Rereading', what:'Going over your notes or textbook again.',
+        how:'The most common study method there is, and one of the weakest. Rereading builds familiarity, and familiarity feels like knowledge right up until you are asked to write something down. If you reread, do it once and then test yourself.',
+        eg:'Reading the chapter on plate boundaries four times will not tell you whether you can draw one labelled. Drawing it will.' },
+      { name:'Highlighting and underlining', what:'Marking the important parts.',
+        how:'Almost no benefit on its own, partly because deciding what to highlight is easy and remembering it is not. If you highlight, treat it as step one — then turn what you marked into questions.',
+        eg:'A highlighted page looks like work. Cover it and see whether you can say what was under the colour.' },
+      { name:'Summarisation', what:'Writing a shorter version of the material.',
+        how:'Moderate benefit for students who are already good at summarising, little for everyone else. It improves sharply if you write the summary from memory rather than while looking.',
+        eg:'Summarising with the book open is copying. Summarising with it closed is practice testing — which is in the top group.' },
+      { name:'Keyword mnemonics and imagery', what:'Memory tricks and mental pictures.',
+        how:'Genuinely useful for vocabulary and short lists, and of little help for the explanation and analysis NCEA actually asks for. Worth the time for a defined set of terms, not for a topic.',
+        eg:'A mnemonic will hold the order of the reactivity series. It will not help you explain why the order is what it is.' }
+    ]}
+];
+
 /* The same non-AI methods the timetable uses, offered here for a student who
    wants to work without a screen. Chosen by subject type, grouped by what they
    are for, so it reads as a menu rather than a list. */
@@ -7787,22 +7864,45 @@ const OFF_PHASE = [
 function renderOffline(){
   const lib = window.STUDY_METHODS;
   const lead = $('offline-lead'), box = $('offline-list');
-  if(!lib){ lead.textContent = 'The method library could not be loaded.'; box.innerHTML = ''; return; }
-  if(!sel.std){
-    lead.textContent = 'Choose a subject and standard first, and these will be tailored to it.';
-    box.innerHTML = ''; return;
-  }
-  lead.innerHTML = `Ways to study <strong>AS${sel.std.code}</strong> — ${sel.subject} — with no screen at all.`;
-  const type = lib.typeOf(sel.subject);
-  box.innerHTML = OFF_PHASE.map(([phase, title, when]) => {
-    const list = (lib.methods[phase] || {})[type] || lib.methods[phase].evidence || [];
-    return `<div class="off-group">
-      <p class="off-h">${title}</p>
-      <p class="off-when">${when}</p>
-      <ul class="off-list">${list.map(m => `<li>${m}</li>`).join('')}</ul>
+
+  // The ranked guide is always shown — a student should be able to open this
+  // cold, before choosing anything, and get something useful.
+  const guide = METHOD_GUIDE.map(g => `
+    <div class="off-rank off-${g.rank}">
+      <p class="off-rankh">${g.label}</p>
+      <p class="off-ranknote">${g.note}</p>
+      ${g.items.map(m => `<details class="off-m">
+        <summary><span class="off-mname">${m.name}</span>
+          <span class="off-mwhat">${m.what}</span></summary>
+        <div class="off-mbody">
+          <p>${m.how}</p>
+          <p class="off-eg"><strong>For example:</strong> ${m.eg}</p>
+        </div>
+      </details>`).join('')}
+    </div>`).join('');
+
+  // Once a standard is chosen, the subject-specific set goes on top.
+  let specific = '';
+  if(sel.std && lib){
+    const type = lib.typeOf(sel.subject);
+    specific = `<div class="off-specific">
+      <p class="off-specifich">Made for AS${sel.std.code} — ${sel.subject}</p>
+      ${OFF_PHASE.map(([phase, title, when]) => {
+        const list = (lib.methods[phase] || {})[type] || lib.methods[phase].evidence || [];
+        return `<details class="off-m">
+          <summary><span class="off-mname">${title}</span>
+            <span class="off-mwhat">${when}</span></summary>
+          <div class="off-mbody"><ul class="off-list">${list.map(m => `<li>${m}</li>`).join('')}</ul></div>
+        </details>`;
+      }).join('')}
     </div>`;
-  }).join('') + `<div class="off-group"><p class="off-h">However you study</p>
-      <ul class="off-list">${(lib.reflect || []).slice(0,3).map(m => `<li>${m}</li>`).join('')}</ul></div>`;
+    lead.innerHTML = `Everything below works without a screen. The first group is made for
+      <strong>AS${sel.std.code}</strong>; the rest applies to any subject.`;
+  } else {
+    lead.innerHTML = `How to study without AI, ranked by how well the evidence actually supports each
+      method. Pick a subject and standard and this page will also give you ways made for it.`;
+  }
+  box.innerHTML = specific + guide;
 }
 
 function renderSubjectTools(){
@@ -8268,6 +8368,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=72"></script>
+<script src="timetable.js?v=73"></script>
 </body>
 </html>
