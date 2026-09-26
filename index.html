@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=71"></script>
-<script src="whs-derived-2026.js?v=71"></script>
+<script src="ncea-exams-2026.js?v=72"></script>
+<script src="whs-derived-2026.js?v=72"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -212,6 +212,36 @@ body.dark-mode .req{ color:#ff6b6f; }
 /* An outside site sits with the study options because that is where a student
    chooses how to work — but it is smaller, a different colour, and says
    plainly that it is neither a prompt nor ours. */
+.offline-tab{ align-self:center; font-size:.6875rem; font-weight:800;
+  padding:.4rem .9rem; border-radius:9999px; cursor:pointer; white-space:nowrap;
+  margin-left:auto; background:var(--surface); color:#b45309; border:1px solid #b45309; }
+.offline-tab:hover{ background:#b45309; color:#fff; }
+.evidence-tab{ margin-left:.4rem!important; }
+body.dark-mode .offline-tab{ background:transparent; color:#fcd34d; border-color:#fcd34d; }
+body.dark-mode .offline-tab:hover{ background:#fcd34d; color:#3b2a06; }
+
+/* the "no screen" card matches the other two, in its own colour */
+.off-card{ width:100%; text-align:left; border-color:#b45309!important;
+  background:color-mix(in srgb,#b45309 7%,var(--surface))!important; }
+.off-card:hover{ background:color-mix(in srgb,#b45309 16%,var(--surface))!important; }
+.off-card .ext-name{ color:#b45309; }
+.off-tag{ background:#b45309!important; }
+body.dark-mode .off-card .ext-name{ color:#fcd34d; }
+body.dark-mode .off-tag{ background:#fcd34d!important; color:#3b2a06!important; }
+
+.off-lead{ font-size:.8125rem; color:var(--ink); margin-bottom:.8rem; }
+.off-group{ margin-bottom:1rem; }
+.off-h{ font-size:.8125rem; font-weight:900; color:var(--ink); }
+.off-when{ font-size:.6875rem; color:var(--ink-soft); margin-bottom:.35rem; }
+.off-list{ list-style:none; margin:0; padding:0; }
+.off-list li{ font-size:.75rem; line-height:1.55; color:var(--ink);
+  border-left:3px solid var(--line-strong); padding:.3rem .6rem; margin-bottom:.3rem;
+  background:var(--surface-2); border-radius:.25rem; }
+.off-foot{ font-size:.6875rem; line-height:1.6; color:var(--ink-soft);
+  border-top:1px solid var(--line); padding-top:.6rem; }
+.off-foot a{ color:#0b3a8f; font-weight:700; text-decoration:underline; }
+body.dark-mode .off-foot a{ color:#93c5fd; }
+
 .ext-site{ display:block; text-decoration:none; margin-top:.6rem;
   padding:.45rem .65rem; border-radius:.45rem;
   border:1px dashed #0f766e; background:color-mix(in srgb,#0d9488 7%,var(--surface)); }
@@ -7189,8 +7219,24 @@ z
   <div id="modetabs" class="flex gap-2 items-end">
     <button class="mode-tab mode-tab-main" data-view="builder" aria-pressed="true">Ultimate Study Guide</button>
     <button class="mode-tab mode-tab-alt" data-view="timetable" aria-pressed="false">Study Timetable</button>
+    <button id="offline-open" class="offline-tab"
+            title="Ways to study this standard with no screen at all">Study without AI</button>
     <button id="evidence-open" class="evidence-tab"
-            title="The research behind using an AI tutor">Does this actually work?</button>
+            title="The research behind using an AI tutor">Does AI tutoring work?</button>
+  </div>
+</div>
+
+<div id="offline-modal" class="ev-back hidden">
+  <div class="ev-card" role="dialog" aria-modal="true" aria-label="Studying without AI">
+    <button id="offline-close" class="ev-x" aria-label="Close">&times;</button>
+    <h2 class="ev-h">Studying without AI</h2>
+    <p class="off-lead" id="offline-lead"></p>
+    <div id="offline-list"></div>
+    <p class="off-foot">These work because they make you <strong>produce</strong> the answer rather
+    than recognise it, and because they show you what you cannot yet do while there is still time to
+    fix it. Practice testing and spaced practice are the two techniques with the strongest evidence
+    behind them of anything students actually use
+    (<a href="https://journals.sagepub.com/doi/10.1177/1529100612453266" target="_blank" rel="noopener">Dunlosky et al., 2013</a>).</p>
   </div>
 </div>
 
@@ -7303,6 +7349,11 @@ z
         <h2 class="sec-h mb-2">How do you want to study it?</h2>
         <div id="modes" class="grid sm:grid-cols-2 gap-2"></div>
         <div id="mode-tools" class="hidden"></div>
+        <button id="offline-card" class="ext-site off-card">
+          <span class="ext-tag off-tag">No screen</span>
+          <span class="ext-name">Study this without AI</span>
+          <span class="ext-note">Twelve ways to work on this standard with nothing but your notes, a pen and a past paper.</span>
+        </button>
         <a id="hsnz" href="#" target="_blank" rel="noopener" class="ext-site hidden">
           <span class="ext-tag">External site</span>
           <span class="ext-name">High Standards NZ — written notes &amp; worked examples</span>
@@ -7371,7 +7422,7 @@ z
     </div>
   </details>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 71 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 72 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7428,10 +7479,10 @@ const SUBJECT_TOOLS = {
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=71' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=71' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=71' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=71' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=72' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=72' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=72' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=72' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7521,11 +7572,18 @@ function init(){
   const evOpen = () => $('evidence-modal').classList.remove('hidden');
   const evShut = () => $('evidence-modal').classList.add('hidden');
   $('evidence-open').addEventListener('click', evOpen);
+  const offShut = () => $('offline-modal').classList.add('hidden');
+  $('offline-open').addEventListener('click', () => { renderOffline(); $('offline-modal').classList.remove('hidden'); });
+  $('offline-card').addEventListener('click', () => { renderOffline(); $('offline-modal').classList.remove('hidden'); });
+  $('offline-close').addEventListener('click', offShut);
+  $('offline-modal').addEventListener('click', e => { if(e.target.id === 'offline-modal') offShut(); });
   $('evidence-close').addEventListener('click', evShut);
   $('evidence-modal').addEventListener('click', e => {
     if(e.target.id === 'evidence-modal') evShut();      // click the backdrop to close
   });
-  document.addEventListener('keydown', e => { if(e.key === 'Escape') evShut(); });
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape'){ evShut(); $('offline-modal').classList.add('hidden'); }
+  });
   $('extra').addEventListener('input', () => { if(sel.std && sel.mode) build(); });
   $('search').addEventListener('input', runSearch);
   $('search').addEventListener('keydown', e => {
@@ -7715,6 +7773,36 @@ function hsLink(){
     ? `High Standards NZ — notes &amp; worked examples for AS${sel.std.code}`
     : `High Standards NZ — written notes &amp; worked examples`;
   a.classList.remove('hidden');
+}
+
+/* The same non-AI methods the timetable uses, offered here for a student who
+   wants to work without a screen. Chosen by subject type, grouped by what they
+   are for, so it reads as a menu rather than a list. */
+const OFF_PHASE = [
+  ['explainer', 'Getting it into your head', 'Use these when the material is still new.'],
+  ['exam',      'Practising under pressure',  'Use these once you roughly know it.'],
+  ['recall',    'Keeping it there',           'Use these in the last weeks before the exam.']
+];
+
+function renderOffline(){
+  const lib = window.STUDY_METHODS;
+  const lead = $('offline-lead'), box = $('offline-list');
+  if(!lib){ lead.textContent = 'The method library could not be loaded.'; box.innerHTML = ''; return; }
+  if(!sel.std){
+    lead.textContent = 'Choose a subject and standard first, and these will be tailored to it.';
+    box.innerHTML = ''; return;
+  }
+  lead.innerHTML = `Ways to study <strong>AS${sel.std.code}</strong> — ${sel.subject} — with no screen at all.`;
+  const type = lib.typeOf(sel.subject);
+  box.innerHTML = OFF_PHASE.map(([phase, title, when]) => {
+    const list = (lib.methods[phase] || {})[type] || lib.methods[phase].evidence || [];
+    return `<div class="off-group">
+      <p class="off-h">${title}</p>
+      <p class="off-when">${when}</p>
+      <ul class="off-list">${list.map(m => `<li>${m}</li>`).join('')}</ul>
+    </div>`;
+  }).join('') + `<div class="off-group"><p class="off-h">However you study</p>
+      <ul class="off-list">${(lib.reflect || []).slice(0,3).map(m => `<li>${m}</li>`).join('')}</ul></div>`;
 }
 
 function renderSubjectTools(){
@@ -8180,6 +8268,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=71"></script>
+<script src="timetable.js?v=72"></script>
 </body>
 </html>

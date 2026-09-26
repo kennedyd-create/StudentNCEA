@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 71 — a closing question on every block';
+const TT_BUILD = 'build 72 — study without AI';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -1393,6 +1393,10 @@ function bindReopen(){
   });
 }
 
+/* The non-AI methods are useful outside the timetable too — a student in the
+   prompt builder may simply want to study without a screen. */
+window.STUDY_METHODS = { methods: METHODS, typeOf, reflect: REFLECT };
+
 window.Timetable = { open: render, state: S, generate, realism, toICS, reset: wipe,
                      fromCode: planFromCode };
 
@@ -1490,7 +1494,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=71';
+    t.src = src + '?v=72';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
