@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 70 — badge fits one line';
+const TT_BUILD = 'build 71 — a closing question on every block';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -576,6 +576,26 @@ const METHODS = {
   }
 };
 
+/* ---------- closing the loop ----------
+   A block tells a student what to do. Nothing has ever asked how it went — and
+   reflection is exactly what separates the students who gain from a study tool
+   from the ones who do not. Dunlosky et al. (2013) rate practice testing and
+   distributed practice as the highest-utility techniques there are, and both
+   depend on the student noticing what they could NOT recall and moving it
+   forward. One line, attached to the study rather than instead of it. */
+const REFLECT = [
+  'Before you stop: what could you not recall without looking? Put that at the front of tomorrow.',
+  'Before you stop: write the one sentence you would struggle to produce in the exam. That is tomorrow\'s starting point.',
+  'Before you stop: which part did you get right only because your notes were open? Mark it to redo.',
+  'Before you stop: if this came up tomorrow, what would you still be guessing at? Note it down.',
+  'Before you stop: name one thing you understand better than an hour ago, and one you do not yet.'
+];
+
+function reflectFor(item, slotIndex){
+  // Stable per block, and varied across a plan so it does not become wallpaper.
+  return REFLECT[(item.st.code.charCodeAt(4) + slotIndex) % REFLECT.length];
+}
+
 function methodFor(item, slotIndex){
   const pool = (METHODS[item.mode] || METHODS.explainer)[typeOf(item.subject)] ||
                METHODS[item.mode].evidence;
@@ -910,6 +930,11 @@ function blockHTML(slot, n){
          </div>`
       : `<div class="tt-how">${methodFor(it, n)}</div>`;
 
+  // Attached to every block regardless of mode — an AI session needs the same
+  // closing question as an offline one.
+  const reflect = S.howMode === 'none' ? ''
+    : `<div class="tt-reflect">${reflectFor(it, n)}</div>`;
+
   return `<div class="tt-block${showsMethod?' tt-offline':''}${slot.extra?' tt-extra':''}" style="--hue:${hueFor(it.subject)}">
     <button class="tt-del" data-slot="${n}" title="Clear this block">&times;</button>
     <div class="tt-bmeta"><strong>${label(it.subject)}</strong> · ${it.st.credits?'AS':''}${it.st.code}
@@ -924,7 +949,8 @@ function blockHTML(slot, n){
            <button class="btn-3 tt-ctxcancel">Cancel</button>
          </div>`
       : `<button class="tt-ctxadd" data-k="${ctxKey(it)}">${myCtx(it) ? 'Change' : '+ Add your case study'}</button>`) : ''}
-    ${actions}</div>`;
+    ${actions}
+    ${reflect}</div>`;
 }
 
 /* An unused slot is a place the student can drop a subject into. */
@@ -1207,7 +1233,9 @@ function printPlan(scope){
           <th class="pl-sub">Subject</th><th class="pl-what">What to do</th><th class="pl-notes">Notes</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
-      <footer class="pl-foot">Tick each block as you finish it. If you miss one, move it — do not just drop it.</footer>
+      <footer class="pl-foot">Tick each block as you finish it. If you miss one, move it — do not just drop it.
+        <strong>At the end of every session, write in Notes the one thing you could not recall without
+        looking. That is where tomorrow starts.</strong></footer>
     </section>`;
   }).join('');
 
@@ -1462,7 +1490,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=70';
+    t.src = src + '?v=71';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
