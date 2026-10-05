@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 75 — icons on the study methods';
+const TT_BUILD = 'build 76 — subject-only mode, clearer switches';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -55,9 +55,9 @@ const S = {
   blackouts: [],
   plan: null,
   view: 'week',
-  fullMode: 'subject',      // 'subject' matrix or 'calendar' months
+  fullMode: 'calendar',     // 'calendar' months or 'subject' matrix
   withTopics: true,         // allocate specific topics inside each standard
-  howMode: 'ai',            // 'ai' | 'mix' | 'offline' | 'none'
+  howMode: 'ai',            // 'ai' | 'mix' | 'offline' | 'none' | 'subject'
   armed: null,              // subject picked from the tab bar, ready to place
   justBuilt: false,         // true for one render after generating, so print pulses briefly
   stale: false,             // settings changed since the plan was built
@@ -256,7 +256,15 @@ function refreshPeriods(){
   const fresh = buildPeriods();
   if(!S.periods){ S.periods = fresh; return; }
   const byName = Object.fromEntries(S.periods.map(p => [p.name, p]));
-  S.periods = fresh.map(p => byName[p.name] ? { ...p, hours: byName[p.name].hours } : p);
+  S.periods = fresh.map(p => {
+    const kept = byName[p.name];
+    if(!kept) return p;
+    // A period saved from an older build — or edited down to nothing — would
+    // leave the student staring at an empty grid with no plan possible. Keep
+    // their edits, but fall back to the default rather than to zero.
+    const total = (kept.hours || []).reduce((a, b) => a + (+b || 0), 0);
+    return total > 0 ? { ...p, hours: kept.hours } : p;
+  });
 }
 
 /* ---------- selections ---------- */
@@ -839,8 +847,11 @@ function viewBar(){
               : S.view==='month' ? pretty(S.cursor,{month:'long',year:'numeric'})
               : 'Whole plan';
   return `<div class="tt-viewbar">
-    <div class="seg">${views.map(([v,l])=>
+    <div class="tt-viewgroup">
+      <p class="tt-switchh tt-switchh-view">View timetable by</p>
+      <div class="seg">${views.map(([v,l])=>
       `<button data-v="${v}" aria-pressed="${S.view===v}">${l}</button>`).join('')}</div>
+    </div>
     <button id="tt-regen" class="btn-3" title="Build the plan again from scratch">Regenerate</button>
     ${S.view!=='full' ? `<div class="tt-nav">
       <button class="btn-2" data-step="-1">&lsaquo;</button>
@@ -920,7 +931,11 @@ function blockHTML(slot, n){
     (S.howMode === 'mix' && (n + it.st.code.charCodeAt(4)) % 2 === 0);
   const showsMethod = S.howMode === 'offline' || (S.howMode === 'mix' && !aiTurn);
 
-  const actions = S.howMode === 'none' ? ''
+  // "Just the subject" is the plainest possible plan: a name and nothing else.
+  // Some students want a shape for the week, not instructions.
+  const bare = S.howMode === 'subject';
+
+  const actions = (S.howMode === 'none' || bare) ? ''
     : aiTurn
       ? `<div class="tt-acts">
            <a class="btn-2 tt-open" href="${q}" title="Open this in the prompt builder">Open &#8599;</a>
@@ -932,15 +947,15 @@ function blockHTML(slot, n){
 
   // Attached to every block regardless of mode — an AI session needs the same
   // closing question as an offline one.
-  const reflect = S.howMode === 'none' ? ''
+  const reflect = (S.howMode === 'none' || bare) ? ''
     : `<div class="tt-reflect">${reflectFor(it, n)}</div>`;
 
   return `<div class="tt-block${showsMethod?' tt-offline':''}${slot.extra?' tt-extra':''}" style="--hue:${hueFor(it.subject)}">
     <button class="tt-del" data-slot="${n}" title="Clear this block">&times;</button>
-    <div class="tt-bmeta"><strong>${label(it.subject)}</strong> · ${it.st.credits?'AS':''}${it.st.code}
-      <span class="tt-mode">${modeLabel(it.mode)}</span></div>
-    <div class="tt-btitle">${myCtx(it) ? `<strong class="tt-mine">${myCtx(it)}</strong> — ` : ''}${it.topic ? it.topic : it.st.title}</div>
-    ${wantsCtx(it) ? (S.askingContext === ctxKey(it)
+    <div class="tt-bmeta"><strong>${label(it.subject)}</strong>${bare ? '' :
+      ` · ${it.st.credits?'AS':''}${it.st.code}<span class="tt-mode">${modeLabel(it.mode)}</span>`}</div>
+    ${bare ? '' : `<div class="tt-btitle">${myCtx(it) ? `<strong class="tt-mine">${myCtx(it)}</strong> — ` : ''}${it.topic ? it.topic : it.st.title}</div>`}
+    ${bare ? '' : wantsCtx(it) ? (S.askingContext === ctxKey(it)
       ? `<div class="tt-ctxbox">
            <label>Your text or case study for AS${it.st.code}</label>
            <input class="field tt-ctxin" data-k="${ctxKey(it)}" value="${myCtx(it)}"
@@ -1082,9 +1097,10 @@ function renderPlan(){
   return `<div class="panel p-4 md:p-5 tt-plan${S.justBuilt?' tt-fresh':''}">
     <div class="tt-planhead mb-3">
       <div class="tt-ph-left">
+        <p class="tt-switchh">Choose type of study</p>
         <div class="seg" role="group" aria-label="How to study each block"
              title="Choose what each block tells you to do: an AI prompt, an off-screen study method, both, or nothing">
-          ${[['ai','With AI'],['mix','Mix'],['offline','Without AI'],['none','None']].map(([k,l])=>
+          ${[['ai','With AI'],['mix','Mix'],['offline','Without AI'],['none','Standard only'],['subject','Just the subject']].map(([k,l])=>
             `<button data-h="${k}" aria-pressed="${S.howMode===k}">${l}</button>`).join('')}
         </div>
         <span class="text-xs soft">${p.used} blocks</span>
@@ -1494,7 +1510,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=75';
+    t.src = src + '?v=76';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);

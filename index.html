@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=75"></script>
-<script src="whs-derived-2026.js?v=75"></script>
+<script src="ncea-exams-2026.js?v=76"></script>
+<script src="whs-derived-2026.js?v=76"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -787,6 +787,16 @@ body.dark-mode .tt-sit-paper, body.dark-mode .sit-paper{ color:#d6d3d1; }
   50%    { box-shadow:0 0 0 6px rgba(219,32,38,0); }
 }
 @media (prefers-reduced-motion:reduce){ .tt-fresh .btn-print{ animation:none; } }
+
+/* Headings over the two switch groups — students were not seeing what the
+   segmented controls were for. Bright enough to read as a label, not a title. */
+.tt-switchh{ font-size:.625rem; font-weight:900; text-transform:uppercase;
+  letter-spacing:.09em; color:#DB2026; margin-bottom:.2rem; }
+body.dark-mode .tt-switchh{ color:#ff6b6f; }
+.tt-switchh-view{ color:var(--fac-dark); }
+body.dark-mode .tt-switchh-view{ color:#93c5fd; }
+.tt-ph-left{ align-items:flex-start!important; }
+.tt-viewgroup{ display:flex; flex-direction:column; }
 
 /* --- plan header --- */
 .tt-planhead{ display:flex; flex-wrap:wrap; align-items:center; gap:.6rem; }
@@ -7461,7 +7471,7 @@ z
     </div>
   </details>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 75 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 76 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7518,10 +7528,10 @@ const SUBJECT_TOOLS = {
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=75' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=75' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=75' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=75' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=76' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=76' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=76' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=76' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -8389,6 +8399,6 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=75"></script>
+<script src="timetable.js?v=76"></script>
 </body>
 </html>
