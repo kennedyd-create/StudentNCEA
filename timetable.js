@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 76 — subject-only mode, clearer switches';
+const TT_BUILD = 'build 78 — empty topic column when bare';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -852,7 +852,7 @@ function viewBar(){
       <div class="seg">${views.map(([v,l])=>
       `<button data-v="${v}" aria-pressed="${S.view===v}">${l}</button>`).join('')}</div>
     </div>
-    <button id="tt-regen" class="btn-3" title="Build the plan again from scratch">Regenerate</button>
+    <button id="tt-regen" class="tt-regenbtn" title="Build the plan again from scratch">Regenerate</button>
     ${S.view!=='full' ? `<div class="tt-nav">
       <button class="btn-2" data-step="-1">&lsaquo;</button>
       <span class="tt-navlabel">${heading}</span>
@@ -1169,6 +1169,9 @@ function toICS(){
 function printPlan(scope){
   const p = S.plan;
   if(!p) return;
+  // "Just the subject" prints as a bare shape for the week: subject and topic,
+  // no standard codes and no study methods.
+  const bare = S.howMode === 'subject';
 
   const today = todayISO();
   const weeks = {};
@@ -1218,10 +1221,11 @@ function printPlan(scope){
         lines.push(`<tr>
           <td class="pl-tick">&#9744;</td>
           <td class="pl-sub" style="--hue:${hueFor(it.subject)}">
-            <span class="pl-swatch"></span>${label(it.subject)}<span class="pl-code">${it.st.credits?'AS':''}${it.st.code}</span></td>
-          <td class="pl-what">
-            <strong>${myCtx(it) ? myCtx(it) + ' — ' : ''}${it.topic || it.st.title}</strong>
-            <span>${methodFor(it, p.open.indexOf(slot))}</span>
+            <span class="pl-swatch"></span>${label(it.subject)}${bare ? '' :
+              `<span class="pl-code">${it.st.credits?'AS':''}${it.st.code}</span>`}</td>
+          <td class="pl-what">${bare ? ''
+            : `<strong>${myCtx(it) ? myCtx(it) + ' — ' : ''}${it.topic || it.st.title}</strong>
+               <span>${methodFor(it, p.open.indexOf(slot))}</span>`}
           </td>
           <td class="pl-notes"></td></tr>`);
       });
@@ -1246,12 +1250,12 @@ function printPlan(scope){
       </header>
       <table class="pl-table">
         <thead><tr><th class="pl-day">Day</th><th class="pl-tick">Done</th>
-          <th class="pl-sub">Subject</th><th class="pl-what">What to do</th><th class="pl-notes">Notes</th></tr></thead>
+          <th class="pl-sub">Subject</th><th class="pl-what">${bare ? 'Topic' : 'What to do'}</th><th class="pl-notes">Notes</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
-      <footer class="pl-foot">Tick each block as you finish it. If you miss one, move it — do not just drop it.
-        <strong>At the end of every session, write in Notes the one thing you could not recall without
-        looking. That is where tomorrow starts.</strong></footer>
+      <footer class="pl-foot">Tick each block as you finish it. If you miss one, move it — do not just drop it.${bare ? ''
+        : ` <strong>At the end of every session, write in Notes the one thing you could not recall without
+        looking. That is where tomorrow starts.</strong>`}</footer>
     </section>`;
   }).join('');
 
@@ -1510,7 +1514,7 @@ function render(){
     }
 
     const t = document.createElement('script');
-    t.src = src + '?v=76';
+    t.src = src + '?v=78';
     t.onload  = () => finish(true);
     t.onerror = () => finish(false);
     document.head.appendChild(t);
