@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=78"></script>
-<script src="whs-derived-2026.js?v=78"></script>
+<script src="ncea-exams-2026.js?v=79"></script>
+<script src="whs-derived-2026.js?v=79"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -1026,6 +1026,153 @@ body.dark-mode .tt-switchh-view{ color:#93c5fd; }
 :focus-visible{outline:3px solid var(--gold);outline-offset:2px;}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 textarea{color:var(--ink);}
+
+/* ============================================================
+   BIBLIOGRAPHY MAKER
+   A form, not a prompt. Everything is sized for reading and
+   typing rather than scanning, because students will sit in
+   here filling fields in from a source on the desk beside them.
+   ============================================================ */
+.bib-h{ font-size:1.15rem; font-weight:900; letter-spacing:-.01em; color:var(--fac-dark);
+  margin:0 0 .5rem; }
+body.dark-mode .bib-h{ color:var(--brand-ink); }
+.bib-h3{ font-size:.9375rem; font-weight:900; color:var(--fac-dark); margin:0 0 .5rem;
+  display:flex; align-items:center; gap:.45rem; }
+body.dark-mode .bib-h3{ color:var(--brand-ink); }
+.bib-h4{ font-size:.8125rem; font-weight:900; color:var(--ink); margin:0 0 .3rem; }
+.bib-lead{ font-size:.8125rem; line-height:1.6; color:var(--ink); margin:0 0 .6rem; }
+.bib-note{ font-size:.75rem; line-height:1.6; color:var(--ink-soft); margin:.7rem 0 0; }
+.bib-build{ font-size:.6875rem; text-align:center; margin:.2rem 0 0;
+  color:color-mix(in srgb, var(--ink-faint) 40%, var(--ink)); }
+
+/* The integrity notice. This is the one thing on the page that must not be
+   skimmed past, so it gets the red the main tab uses. */
+.bib-warn{ font-size:.8125rem; line-height:1.6; color:var(--ink); margin:.8rem 0 0;
+  padding:.75rem .9rem; border-radius:.6rem; border:1px solid rgba(219,32,38,.45);
+  border-left:4px solid #DB2026;
+  background:color-mix(in srgb, #DB2026 7%, var(--surface)); }
+body.dark-mode .bib-warn{ background:color-mix(in srgb, #DB2026 20%, var(--surface));
+  border-color:rgba(255,107,111,.5); border-left-color:#ff6b6f; }
+
+/* ---- empty state ---- */
+.bib-empty{ border-left-color:#c5a059; }
+.bib-emptyh{ font-size:.9375rem; font-weight:900; color:var(--ink); margin:0 0 .4rem; }
+.bib-newrow{ display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.8rem; }
+.bib-newrow .bib-in{ flex:1 1 15rem; }
+
+/* ---- which list you are in ---- */
+.bib-projbar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center;
+  justify-content:space-between; }
+.bib-tabs{ display:flex; flex-wrap:wrap; gap:.4rem; }
+.bib-projacts{ display:flex; gap:.4rem; }
+.bib-ptab{ font-size:.75rem; font-weight:800; padding:.45rem .85rem; cursor:pointer;
+  border-radius:.55rem; border:1.5px solid var(--line-strong); color:var(--ink-soft);
+  background:var(--surface); display:inline-flex; align-items:center; gap:.4rem;
+  transition:all .15s ease; }
+.bib-ptab:hover{ border-color:var(--fac-dark); color:var(--fac-dark); }
+.bib-ptab[aria-pressed="true"]{ background:var(--fac-dark); border-color:var(--fac-dark);
+  color:#fff; }
+body.dark-mode .bib-ptab[aria-pressed="true"]{ color:#fff; }
+.bib-padd{ border-style:dashed; }
+.bib-count{ font-size:.625rem; font-weight:900; padding:.08rem .35rem; border-radius:9999px;
+  background:color-mix(in srgb, var(--fac-dark) 14%, var(--surface-3)); color:var(--ink-soft); }
+.bib-ptab[aria-pressed="true"] .bib-count{ background:rgba(255,255,255,.22); color:#fff; }
+.bib-h3 .bib-count{ margin-left:.15rem; }
+
+/* ---- source type picker ---- */
+.bib-types{ display:grid; gap:.5rem; grid-template-columns:repeat(auto-fill,minmax(10.5rem,1fr)); }
+.bib-type{ display:flex; align-items:center; gap:.5rem; text-align:left; cursor:pointer;
+  font-size:.8125rem; font-weight:700; padding:.65rem .75rem; border-radius:.6rem;
+  border:1.5px solid var(--line-strong); background:var(--surface); color:var(--ink);
+  transition:all .15s ease; }
+.bib-type:hover{ border-color:var(--fac-dark); background:var(--surface-3);
+  transform:translateY(-1px); }
+.bib-type span{ font-size:1.05rem; line-height:1; }
+
+/* ---- the form ---- */
+.bib-form{ border-left-color:#c5a059; }
+.bib-tnote{ font-size:.75rem; line-height:1.55; color:var(--ink); margin:0 0 .8rem;
+  padding:.55rem .7rem; border-radius:.5rem;
+  background:color-mix(in srgb, var(--gold) 16%, var(--surface));
+  border:1px solid color-mix(in srgb, var(--gold) 45%, transparent); }
+.bib-grid{ display:grid; gap:.85rem; grid-template-columns:repeat(auto-fill,minmax(13rem,1fr)); }
+.bib-field{ display:flex; flex-direction:column; gap:.25rem; min-width:0; }
+.bib-wide{ grid-column:1 / -1; }
+.bib-short{ max-width:11rem; }
+.bib-field label{ font-size:.6875rem; font-weight:900; text-transform:uppercase;
+  letter-spacing:.05em; color:var(--ink-soft); }
+.bib-req{ font-size:.5625rem; font-weight:900; text-transform:uppercase; letter-spacing:.04em;
+  color:#92400e; background:rgba(245,158,11,.18); padding:.05rem .3rem; border-radius:.25rem; }
+body.dark-mode .bib-req{ color:#fcd34d; }
+.bib-in{ font-size:.8125rem; font-family:inherit; padding:.5rem .6rem; border-radius:.5rem;
+  border:1.5px solid var(--line-strong); background:var(--surface); color:var(--ink);
+  width:100%; min-width:0; }
+.bib-in:focus{ border-color:var(--fac-dark); outline:none;
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--fac-dark) 18%, transparent); }
+.bib-area{ resize:vertical; line-height:1.5; }
+.bib-hint{ font-size:.6875rem; line-height:1.5; margin:0;
+  color:color-mix(in srgb, var(--ink-soft) 55%, var(--ink)); }
+.bib-checkrow label{ display:flex; align-items:center; gap:.45rem; text-transform:none;
+  font-size:.75rem; letter-spacing:0; color:var(--ink); cursor:pointer; }
+.bib-formacts{ display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.9rem; }
+
+/* ---- live preview ---- */
+.bib-preview{ margin-top:.9rem; padding:.75rem .9rem; border-radius:.6rem;
+  background:var(--surface-3); border:1px dashed var(--line-strong); }
+.bib-plabel{ font-size:.625rem; font-weight:900; text-transform:uppercase; letter-spacing:.07em;
+  color:color-mix(in srgb, var(--ink-faint) 40%, var(--ink)); margin:0 0 .35rem; }
+.bib-ref{ font-family:Georgia,'Times New Roman',serif; font-size:.875rem; line-height:1.65;
+  color:var(--ink); margin:0; padding-left:1.6rem; text-indent:-1.6rem; }
+.bib-intext{ font-size:.6875rem; color:var(--ink-soft); margin:.4rem 0 0; }
+.bib-intext code{ font-family:'JetBrains Mono',monospace; font-size:.6875rem; font-weight:700;
+  background:color-mix(in srgb, var(--fac-dark) 10%, var(--surface));
+  padding:.1rem .35rem; border-radius:.25rem; color:var(--ink); }
+
+/* ---- the list ---- */
+.bib-listhead{ display:flex; flex-wrap:wrap; gap:.6rem; align-items:center;
+  justify-content:space-between; }
+.bib-toggle{ font-size:.6875rem; font-weight:700; color:var(--ink-soft);
+  display:inline-flex; align-items:center; gap:.35rem; cursor:pointer; }
+.bib-list{ list-style:none; margin:.4rem 0 0; padding:0; }
+.bib-item{ display:flex; gap:.8rem; align-items:flex-start; padding:.8rem 0;
+  border-top:1px solid var(--line); }
+.bib-item:first-child{ border-top:0; }
+.bib-itemmain{ flex:1 1 auto; min-width:0; }
+.bib-itemacts{ display:flex; flex-direction:column; gap:.3rem; flex:0 0 auto; }
+.bib-used{ font-size:.75rem; line-height:1.55; color:var(--ink); margin:.35rem 0 0;
+  padding-left:.65rem; border-left:3px solid var(--gold); }
+.bib-flags{ list-style:none; margin:.45rem 0 0; padding:0; display:flex;
+  flex-direction:column; gap:.25rem; }
+.bib-flags li{ font-size:.6875rem; line-height:1.5; color:var(--int-ink);
+  background:var(--int-bg); padding:.3rem .5rem; border-radius:.4rem; }
+.bib-comms{ margin-top:1.1rem; padding-top:.8rem; border-top:2px solid var(--line-strong); }
+
+/* ---- buttons ---- */
+.bib-btn{ font-size:.75rem; font-weight:900; padding:.55rem 1rem; border-radius:.55rem;
+  cursor:pointer; border:1.5px solid transparent; transition:all .15s ease; }
+.bib-go{ background:#15803d; border-color:#15803d; color:#fff; }
+.bib-go:hover{ background:#166534; border-color:#166534; }
+.bib-alt{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
+.bib-alt:hover{ filter:brightness(1.15); }
+.bib-ghost{ background:var(--surface); border-color:var(--line-strong); color:var(--ink-soft); }
+.bib-ghost:hover{ border-color:var(--fac-dark); color:var(--fac-dark); }
+.bib-danger{ color:#b91c1c; border-color:rgba(185,28,28,.4); }
+.bib-danger:hover{ background:rgba(185,28,28,.1); border-color:#b91c1c; color:#b91c1c; }
+body.dark-mode .bib-danger{ color:#fca5a5; border-color:rgba(252,165,165,.4); }
+body.dark-mode .bib-danger:hover{ color:#fecaca; border-color:#fca5a5; }
+.bib-mini{ font-size:.625rem; font-weight:900; padding:.3rem .55rem; border-radius:.4rem;
+  cursor:pointer; border:1px solid var(--line-strong); background:var(--surface);
+  color:var(--ink-soft); transition:all .15s ease; }
+.bib-mini:hover{ border-color:var(--fac-dark); color:var(--fac-dark); }
+.bib-acts{ display:flex; flex-wrap:wrap; gap:.5rem; }
+.bib-check{ border-left-color:#0369a1; }
+
+@media (max-width:640px){
+  .bib-grid{ grid-template-columns:1fr; }
+  .bib-short{ max-width:none; }
+  .bib-item{ flex-direction:column; gap:.5rem; }
+  .bib-itemacts{ flex-direction:row; }
+}
 </style>
 </head>
 <body>
@@ -7279,6 +7426,7 @@ z
   <div id="modetabs" class="flex gap-2 items-end">
     <button class="mode-tab mode-tab-main" data-view="builder" aria-pressed="true">Ultimate Study Guide</button>
     <button class="mode-tab mode-tab-alt" data-view="timetable" aria-pressed="false">Study Timetable</button>
+    <button class="mode-tab mode-tab-alt" data-view="bib" aria-pressed="false">Bibliography</button>
     <button id="offline-open" class="offline-tab"
             title="Ways to study this standard with no screen at all">Study without AI</button>
     <button id="evidence-open" class="evidence-tab"
@@ -7345,6 +7493,7 @@ z
 </div>
 
 <div id="tt-root" class="max-w-6xl mx-auto px-5 py-5 space-y-4 pb-32 hidden"></div>
+<div id="bib-root" class="max-w-6xl mx-auto px-5 py-5 space-y-4 pb-32 hidden"></div>
 
 <main class="max-w-6xl mx-auto px-5 py-5 space-y-4 pb-32">
 
@@ -7469,6 +7618,13 @@ z
       and 3 and Scholarship. It is their work, not ours, and we are not affiliated with them.
       No Brain Too Small and StudyTime NZ are also worth your time.</p>
 
+      <p><strong>Referencing.</strong> The bibliography maker follows the
+      <a href="https://apastyle.apa.org/style-grammar-guidelines/references" target="_blank" rel="noopener">American
+      Psychological Association's 7th edition</a> rules. NZQA does not set a citation style, so
+      follow whatever your subject teacher asks for — if they want MLA or Chicago, this is the
+      wrong tool. Nothing in it is fetched from the internet or supplied by an AI: every reference
+      is built from what the student typed off the source itself.</p>
+
       <p><strong>Research.</strong> The evidence behind AI tutoring is set out under
       <em>Does this actually work?</em> at the top of the page, with full links.</p>
 
@@ -7482,7 +7638,7 @@ z
     </div>
   </details>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 78 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 79 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7539,10 +7695,10 @@ const SUBJECT_TOOLS = {
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=78' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=78' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=78' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=78' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=79' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=79' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=79' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=79' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7600,7 +7756,20 @@ function init(){
     document.querySelectorAll('.mode-tab').forEach(x=>x.setAttribute('aria-pressed', x.dataset.view===v));
     document.querySelector('main').classList.toggle('hidden', v!=='builder');
     $('tt-root').classList.toggle('hidden', v!=='timetable');
+    $('bib-root').classList.toggle('hidden', v!=='bib');
     $('actionbar').classList.toggle('hidden', v!=='builder' || !$('prompt').value);
+    if(v === 'bib'){
+      if(window.Bibliography) window.Bibliography.open();
+      else $('bib-root').innerHTML = `<div class="panel p-5">
+        <p class="text-sm"><strong>The bibliography maker could not start.</strong></p>
+        <p class="text-xs soft mt-2">Its file, <code>bib.js</code>, did not load. That happens
+        when the page is opened on its own — in a preview pane, from an email attachment, or by
+        double-clicking the HTML file — because it needs its companion files alongside it.</p>
+        <p class="text-xs soft mt-2">Open the site from its real web address, where all the
+        files sit in the same folder. If you are already doing that, the file may be missing from
+        the server, or a hard refresh (Ctrl+Shift+R, or Cmd+Shift+R on a Mac) may be needed.</p>
+        </div>`;
+    }
     if(v === 'timetable'){
       if(darkBeforeTimetable === null)
         darkBeforeTimetable = document.body.classList.contains('dark-mode');
@@ -8410,6 +8579,7 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=78"></script>
+<script src="timetable.js?v=79"></script>
+<script src="bib.js?v=79"></script>
 </body>
 </html>

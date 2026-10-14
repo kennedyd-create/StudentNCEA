@@ -22,6 +22,7 @@ const DATA   = ['ncea-l1.js', 'ncea-l2.js', 'ncea-l3.js', 'ncea-scholarship.js']
 const EXAMS  = 'ncea-exams-2026.js';
 const DERIVED = 'whs-derived-2026.js';   // the school's own mock timetable
 const TT     = 'timetable.js';
+const BIB    = 'bib.js';                 // the APA reference list builder
 
 const REQUIRED_FIELDS = ['bigIdea','format','evidence','criteria','bandShift',
                          'verbs','topics','contexts','misconceptions','pitfalls'];
@@ -42,7 +43,7 @@ const engine = read(enginePath);
 if(!engine){ fail(`${ENGINE} (or whs-ncea-engine.html) is missing`); report(); }
 else pass(`${enginePath} present`);
 
-for(const f of [...DATA, EXAMS, DERIVED, TT]){
+for(const f of [...DATA, EXAMS, DERIVED, TT, BIB]){
   if(!fs.existsSync(f)){ fail(`${f} is missing`); continue; }
   try { new Function(read(f)); pass(`${f} parses`); }
   catch(e){ fail(`${f} has a syntax error: ${e.message}`); }
@@ -192,13 +193,14 @@ else {
 /* ---------- 5. every class used has a style ---------- */
 head('STYLES');
 
-const ttSrc = read(TT) || '';
+const ttSrc  = read(TT)  || '';
+const bibSrc = read(BIB) || '';
 const classesUsed = new Set();
-for(const src of [ttSrc, ...inline]){
+for(const src of [ttSrc, bibSrc, ...inline]){
   for(const m of src.matchAll(/class="([^"]*)"/g)){
     for(const tok of m[1].split(/[\s${}?:'"()+]+/)){
       // a class ending in '-' is a built prefix like tt-sit-${v}; skip it
-      if(/^(tt-|btn-|seg$|crumb|sit-|pl-|whs-contour|brief)/.test(tok) && tok.length > 2)
+      if(/^(tt-|bib-|btn-|seg$|crumb|sit-|pl-|whs-contour|brief)/.test(tok) && tok.length > 2)
         classesUsed.add(tok);
     }
   }
@@ -230,11 +232,14 @@ head('BUILD STAMPS');
 
 const engineBuild = (engine.match(/Engine build (\d+)/) || [])[1];
 const ttBuild     = (ttSrc.match(/build (\d+) —/) || [])[1];
+const bibBuild    = (bibSrc.match(/build (\d+) —/) || [])[1];
 const versionTags = [...new Set([...engine.matchAll(/\.js\?v=(\d+)/g)].map(m => m[1]))];
 
 if(!engineBuild) fail('the engine has no build stamp');
 else if(engineBuild !== ttBuild)
   fail(`build mismatch: engine says ${engineBuild}, timetable says ${ttBuild}`);
+else if(engineBuild !== bibBuild)
+  fail(`build mismatch: engine says ${engineBuild}, bib.js says ${bibBuild}`);
 else if(versionTags.length !== 1 || versionTags[0] !== engineBuild)
   fail(`cache tags (?v=${versionTags.join(',')}) do not match build ${engineBuild}`);
 else pass(`build ${engineBuild}, all files and cache tags agree`);
@@ -251,6 +256,82 @@ for(const f of wanted){
   if(!fs.existsSync(f)){ fail(`the engine loads "${f}", which is not in this folder`); bad++; }
 }
 if(!bad) pass(`${wanted.size} referenced files all present`);
+
+/* ---------- 8. the bibliography builds correct APA, and cannot invent a source ---------- */
+head('BIBLIOGRAPHY');
+
+try {
+  new Function(read(BIB))();                 // defines window.Bibliography
+  const B = global.window.Bibliography;
+  if(!B || typeof B.format !== 'function') throw new Error('window.Bibliography did not appear');
+
+  /* A handful of references whose correct APA 7 form is not in dispute. If a
+     change to the formatter breaks one of these, it has broken real citations. */
+  const CASES = [
+    [{ type:'book', authors:'Jared Diamond', year:'2005', title:'Collapse', publisher:'Penguin' },
+     'Diamond, J. (2005). Collapse. Penguin.'],
+    [{ type:'book', authors:'Smith, Jane\nAlan Jones', year:'2019', title:'Coasts',
+       edition:'2nd', publisher:'Otago University Press' },
+     'Smith, J., & Jones, A. (2019). Coasts (2nd ed.). Otago University Press.'],
+    [{ type:'web', authors:'', fulldate:'2023-06-01', title:'Census 2023 results',
+       site:'Stats NZ', url:'https://www.stats.govt.nz/c' },
+     'Stats NZ. (2023, June 1). Census 2023 results. https://www.stats.govt.nz/c'],
+    [{ type:'news', authors:'Simon Wilson', fulldate:'2025-02-10', title:'The ferry problem',
+       paper:'The New Zealand Herald', url:'https://nzherald.co.nz/f' },
+     'Wilson, S. (2025, February 10). The ferry problem. The New Zealand Herald. https://nzherald.co.nz/f'],
+    [{ type:'journal', authors:'Kestin, G.\nMiller, K.', year:'2025', title:'AI tutoring',
+       journal:'Scientific Reports', volume:'15', issue:'1', pages:'17458',
+       doi:'10.1038/s41598-025-97652-6' },
+     'Kestin, G., & Miller, K. (2025). AI tutoring. Scientific Reports, 15(1), 17458. https://doi.org/10.1038/s41598-025-97652-6'],
+    [{ type:'chapter', authors:'Jane Smith', year:'2018', title:'Erosion',
+       editors:'Alan Brown\nMary Green', booktitle:'New Zealand coastlines', pages:'112-130',
+       publisher:'Canterbury University Press' },
+     'Smith, J. (2018). Erosion. In A. Brown & M. Green (Eds.), New Zealand coastlines (pp. 112–130). Canterbury University Press.'],
+    [{ type:'report', authors:'Ministry of Education', org:true, year:'2023',
+       title:'Attendance', publisher:'Ministry of Education', url:'https://e.govt.nz/a' },
+     'Ministry of Education. (2023). Attendance. https://e.govt.nz/a'],
+    [{ type:'interview', authors:'Jane Smith', fulldate:'2026-03-04' },
+     '(J. Smith, personal communication, March 4, 2026)']
+  ];
+  let wrong = 0;
+  for(const [input, want] of CASES){
+    const got = B.format(input);
+    if(got !== want){ fail(`APA ${input.type}: got "${got}"`); wrong++; }
+  }
+  if(!wrong) pass(`${CASES.length} APA 7 reference forms correct`);
+
+  const INTEXT = [
+    [{ type:'book', authors:'Jared Diamond', year:'2005' }, '(Diamond, 2005)'],
+    [{ type:'book', authors:'Smith, Jane\nAlan Jones', year:'2019' }, '(Smith & Jones, 2019)'],
+    [{ type:'book', authors:'A Brown\nB Green\nC White', year:'2020' }, '(Brown et al., 2020)'],
+    [{ type:'web', authors:'', site:'Stats NZ', fulldate:'2023-06-01' }, '(Stats NZ, 2023)']
+  ];
+  let badCite = 0;
+  for(const [input, want] of INTEXT){
+    const got = B.inText(input);
+    if(got !== want){ fail(`in-text citation: got "${got}", wanted "${want}"`); badCite++; }
+  }
+  if(!badCite) pass(`${INTEXT.length} in-text citation forms correct`);
+
+  /* The whole design rests on this module being unable to produce a source
+     nobody read. Any network call here would break that promise. */
+  const src = read(BIB) || '';
+  const leaks = [
+    [/\bfetch\s*\(/, 'calls fetch()'],
+    [/XMLHttpRequest/, 'uses XMLHttpRequest'],
+    [/createElement\(\s*['"](script|img|iframe)/, 'injects a remote element'],
+    [/import\s*\(/, 'uses a dynamic import']
+  ].filter(([re]) => re.test(src)).map(([, m]) => m);
+  if(leaks.length) fail(`bib.js ${leaks.join(' and ')} — it must never fetch a source`);
+  else pass('bib.js makes no network calls of any kind');
+
+  if(!/do not add, suggest, supply, or invent any source/.test(src))
+    fail('the AI checking prompt no longer forbids adding sources');
+  else pass('the AI checking prompt still forbids adding sources');
+
+} catch(e){
+  fail('the bibliography module would not load: ' + e.message);
+}
 
 /* ---------- result ---------- */
 function report(){

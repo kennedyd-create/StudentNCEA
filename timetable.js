@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 78 — empty topic column when bare';
+const TT_BUILD = 'build 79 — reference list builder';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
