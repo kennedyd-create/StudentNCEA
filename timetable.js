@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 79 — reference list builder';
+const TT_BUILD = 'build 87 — duplicate no-screen card removed';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;

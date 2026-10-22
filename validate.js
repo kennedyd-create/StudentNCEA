@@ -200,7 +200,7 @@ for(const src of [ttSrc, bibSrc, ...inline]){
   for(const m of src.matchAll(/class="([^"]*)"/g)){
     for(const tok of m[1].split(/[\s${}?:'"()+]+/)){
       // a class ending in '-' is a built prefix like tt-sit-${v}; skip it
-      if(/^(tt-|bib-|btn-|seg$|crumb|sit-|pl-|whs-contour|brief)/.test(tok) && tok.length > 2)
+      if(/^(tt-|bib-|mgroup|mode-|btn-|seg$|crumb|sit-|pl-|whs-contour|brief)/.test(tok) && tok.length > 2)
         classesUsed.add(tok);
     }
   }
@@ -216,7 +216,10 @@ const JS_ONLY = new Set(['tt-dayview','tt-fac','tt-lvl','tt-pick','tt-open','tt-
                          'tt-ctxcancel','tt-ctxin','tt-preset','tt-prem','tt-offx',
                          'tt-ctxadd','tt-del','tt-mdel','tt-plan','tt-fresh','tt-extra',
                          'tt-offline','tt-mine','tt-sit','tt-mslot','tt-addsm',
-                         'tt-ph','tt-zero','tt-ctxfield','tt-stdctx']);
+                         'tt-ph','tt-zero','tt-ctxfield','tt-stdctx',
+                         /* a selector hook for the grouped mode tiles; its children carry
+                            the styling and it needs none of its own */
+                         'mgroup']);
 const unstyled = [...classesUsed].filter(c => {
   if(JS_ONLY.has(c)) return false;
   if(c.endsWith('-')) return false;                 // a built prefix like tt-sit-${v}
@@ -226,6 +229,98 @@ const unstyled = [...classesUsed].filter(c => {
 });
 if(unstyled.length) fail(`classes used but never styled: ${unstyled.join(', ')}`);
 else pass(`${classesUsed.size} classes checked, all styled`);
+
+/* ---------- 5b. nothing depends on Tailwind arriving ---------- */
+head('HIDING WITHOUT TAILWIND');
+
+{
+  /* A site rule that sets `display` ties with Tailwind's .hidden on
+     specificity, so without a two-class rule of our own the element only
+     stays hidden while the CDN loads and loads in the right order. */
+  const css = (engine.match(/<style>[\s\S]*?<\/style>/) || [''])[0];
+  const withDisplay = new Set();
+  for(const m of css.matchAll(/([^{}]+)\{([^}]*display\s*:\s*([a-z-]+)[^}]*)\}/g)){
+    if(m[3] === 'none') continue;
+    for(const sel of m[1].split(',')){
+      const s = sel.trim();
+      const cls = [...s.matchAll(/\.([a-zA-Z][\w-]*)/g)].map(x => x[1]);
+      if(cls.length === 1 && !/[\s>+~:]/.test(s.slice(1))) withDisplay.add(cls[0]);
+    }
+  }
+  const exposed = [];
+  for(const cls of withDisplay){
+    const used = [...engine.matchAll(new RegExp(`class="([^"]*\\b${cls}\\b[^"]*)"`, 'g'))];
+    if(!used.some(m => /\bhidden\b/.test(m[1]))) continue;      // never hidden, no clash
+    const guard = new RegExp(`\\.${cls}\\.hidden|\\.hidden\\.${cls}`);
+    if(!guard.test(css)) exposed.push(cls);
+  }
+  if(exposed.length)
+    fail(`${exposed.map(c => '.' + c).join(', ')} set a display and are hidden with ` +
+         'the "hidden" class, but have no .x.hidden rule — they only stay hidden ' +
+         'while the Tailwind CDN loads first');
+  else pass('every element hidden with "hidden" stays hidden without the CDN');
+}
+
+/* ---------- 5c. the links that leave the site are off, not deleted ---------- */
+head('EXTERNAL LINKS');
+
+{
+  const FLAGS = [
+    ['SHOW_SUBJECT_TOOLS',  /const SHOW_SUBJECT_TOOLS\s*=\s*(true|false);/,
+     'the Waiheke-made interactive sites'],
+    ['SHOW_HIGH_STANDARDS', /const SHOW_HIGH_STANDARDS\s*=\s*(true|false);/,
+     'the High Standards NZ notes site'],
+    ['SHOW_OFFLINE_CARD',    /const SHOW_OFFLINE_CARD\s*=\s*(true|false);/,
+     'the no-screen card at the foot of the mode list']
+  ];
+  let broke = 0;
+  const on = [];
+  for(const [name, re, what] of FLAGS){
+    const m = engine.match(re);
+    if(!m){ fail(`${name} is gone — ${what} can no longer be switched back on`); broke++; continue; }
+    if(m[1] === 'true') on.push(name);
+  }
+
+  /* switching one off must not mean quietly deleting what it switched */
+  const KEPT = [
+    [/const SUBJECT_TOOLS = \{[\s\S]*?ChemDash/, 'the subject tool definitions'],
+    [/function renderModeTools\(/,                'renderModeTools'],
+    [/function hsLink\(/,                         'hsLink'],
+    [/highstandards\.co\.nz/,                     'the High Standards URL'],
+    [/id="credit-hsnz"/,                          'the High Standards credit'],
+    [/id="credit-tools"/,                         'the subject-tools credit'],
+    [/\.ext-site\{/,                              'the external-card styling'],
+    [/id="offline-card"/,                         'the no-screen card'],
+    [/\.off-card/,                                'the no-screen card styling']
+  ];
+  for(const [re, what] of KEPT)
+    if(!re.test(engine)){ fail(`${what} has been deleted, so the flag cannot restore it`); broke++; }
+
+  /* a credit for a link nobody can see is simply a wrong statement */
+  const CREDITS = [
+    [/credit-hsnz'\)\.classList\.toggle\('hidden', !SHOW_HIGH_STANDARDS\)/, 'credit-hsnz', 'SHOW_HIGH_STANDARDS'],
+    [/credit-tools'\)\.classList\.toggle\('hidden', !SHOW_SUBJECT_TOOLS\)/, 'credit-tools', 'SHOW_SUBJECT_TOOLS'],
+    [/offline-card'\)\.classList\.toggle\('hidden', !SHOW_OFFLINE_CARD\)/, 'offline-card', 'SHOW_OFFLINE_CARD']
+  ];
+  for(const [re, id, flag] of CREDITS)
+    if(!re.test(engine)){ fail(`the ${id} credit no longer follows ${flag}`); broke++; }
+
+  /* "Study this without AI" opens a panel in this page — it is not one of
+     these and must not get swept up with them */
+  /* with the card off, the banner tab is the only way into the no-screen
+     panel, so losing it would take the whole thing with it */
+  if(!/id="offline-open"/.test(engine)){
+    fail('the "Study without AI" tab in the banner has gone — nothing now opens the no-screen panel');
+    broke++;
+  }
+  if(!/\$\('offline-open'\)\.addEventListener/.test(engine)){
+    fail('the "Study without AI" tab no longer opens the panel'); broke++;
+  }
+
+  if(!broke)
+    pass(on.length ? `${FLAGS.length - on.length} of ${FLAGS.length} switched off; on: ${on.join(', ')}`
+                   : `all ${FLAGS.length} optional cards off, everything kept so they can be switched back`);
+}
 
 /* ---------- 6. build stamps agree ---------- */
 head('BUILD STAMPS');
@@ -331,6 +426,175 @@ try {
 
 } catch(e){
   fail('the bibliography module would not load: ' + e.message);
+}
+
+/* ---------- 9. study modes: every mode is whole, and its blocks resolve ---------- */
+head('STUDY MODES');
+
+{
+  const modesSrc  = (engine.match(/const MODES = \{[\s\S]*?\n\};/) || [''])[0];
+  const blocksSrc = (engine.match(/const BLOCKS = \{[\s\S]*?\n\};/) || [''])[0];
+
+  if(!modesSrc || !blocksSrc) fail('could not find the MODES or BLOCKS tables');
+  else {
+    const blockKeys = new Set([...blocksSrc.matchAll(/^([a-z]+):`/gm)].map(m => m[1]));
+    const modes = [...modesSrc.matchAll(/^([a-z]+):\{([\s\S]*?)(?=\n[a-z]+:\{|\n\};)/gm)];
+
+    if(modes.length < 9) fail(`only ${modes.length} study modes found; expected at least 9`);
+    else pass(`${modes.length} study modes, ${blockKeys.size} shared blocks`);
+
+    /* A typo in a blocks array silently drops that block from the prompt with
+       no error anywhere, so it is worth checking the names resolve. */
+    const byModeEarly = Object.fromEntries(modes.map(([, k, body]) => [k, body]));
+    let badRef = 0;
+    for(const [, key, body] of modes){
+      const arr = (body.match(/blocks:\[([^\]]*)\]/) || [, ''])[1];
+      for(const raw of arr.split(',')){
+        const name = raw.trim().replace(/^['"]|['"]$/g, '');
+        if(!name) continue;
+        /* 'parallel' is swapped for 'worked' on externally assessed standards */
+        if(!blockKeys.has(name) && name !== 'parallel'){
+          fail(`mode "${key}" asks for block "${name}", which does not exist`);
+          badRef++;
+        }
+      }
+      for(const f of ['label', 'blurb', 'body'])
+        if(!new RegExp(f + ':').test(body)){ fail(`mode "${key}" has no ${f}`); badRef++; }
+    }
+    if(!badRef) pass('every block each mode asks for exists, and no mode is missing a field');
+
+    /* renderModes now iterates the GROUPS, not MODES — so a mode left out of
+       every group does not render at all, with no error anywhere. This is the
+       check that catches that. */
+    const groupsSrc = (engine.match(/const MODE_GROUPS = \[[\s\S]*?\n\];/) || [''])[0];
+    if(!groupsSrc) fail('could not find the MODE_GROUPS table');
+    else {
+      const grouped = [];
+      for(const g of groupsSrc.matchAll(/modes:\[([^\]]*)\]/g))
+        for(const raw of g[1].split(','))
+          { const n = raw.trim().replace(/^['"]|['"]$/g,''); if(n) grouped.push(n); }
+      const modeKeys = modes.map(m => m[1]);
+      const orphan = modeKeys.filter(k => !grouped.includes(k));
+      const ghost  = grouped.filter(k => !modeKeys.includes(k));
+      const dupe   = grouped.filter((k,i) => grouped.indexOf(k) !== i);
+      if(orphan.length) fail(`mode(s) in no group, so they never render: ${orphan.join(', ')}`);
+      if(ghost.length)  fail(`group(s) list a mode that does not exist: ${ghost.join(', ')}`);
+      if(dupe.length)   fail(`mode(s) listed in more than one group: ${dupe.join(', ')}`);
+
+      const labels = [...groupsSrc.matchAll(/label:'([^']+)'/g)].map(m => m[1]);
+      const steers = [...groupsSrc.matchAll(/steer:'([^']+)'/g)].map(m => m[1]);
+      if(labels.length !== steers.length)
+        fail(`${labels.length} group labels but ${steers.length} steer lines`);
+      if(!/\.mgroup-h\{/.test(engine) || !/\.mgroup-tiles\{/.test(engine))
+        fail('the mode-group styles are missing, so the headings will be unstyled');
+      if(!orphan.length && !ghost.length && !dupe.length && labels.length === steers.length)
+        pass(`${labels.length} mode groups cover all ${modeKeys.length} modes exactly once`);
+    }
+
+    /* Gating belongs on the mode. Restating it at each call site is how the
+       stale-selection bug got in: the reset only ever checked one mode. */
+    const GATED = { ownnotes:'externally assessed standards only',
+                    reference:'standards whose content the standard itself fixes' };
+    let gateBad = 0;
+    for(const [key, why] of Object.entries(GATED)){
+      if(!byModeEarly[key]){ fail(`mode "${key}" is missing`); gateBad++; continue; }
+      if(!/only:\s*st\s*=>/.test(byModeEarly[key])){
+        fail(`mode "${key}" no longer declares its own "only" rule (${why})`); gateBad++;
+      }
+    }
+    if(/!==\s*'reference'|sel\.std\.reference/.test(engine)){
+      fail('a mode is still gated by a hardcoded check instead of its "only" rule');
+      gateBad++;
+    }
+    if(!/function modeFits\(/.test(engine)){
+      fail('modeFits is gone, so nothing applies the "only" rules'); gateBad++;
+    }
+    if(!gateBad) pass(`${Object.keys(GATED).length} gated modes declare their own rule, applied in one place`);
+
+    /* Colour runs on one axis: the group. A per-mode accent would put it back
+       to one-offs, and a bare accent fails AA in one theme or the other, so
+       both mix rules have to survive too. */
+    const strayAccent = /^[a-z]+:\{[\s\S]*?accent:'#/m.test(modesSrc) &&
+      [...modesSrc.matchAll(/^([a-z]+):\{([\s\S]*?)(?=\n[a-z]+:\{|\n\};)/gm)]
+        .filter(m => /accent:'#/.test(m[2])).map(m => m[1]);
+    if(strayAccent && strayAccent.length)
+      fail(`mode(s) carry their own accent instead of taking the group's: ${strayAccent.join(', ')}`);
+
+    const gAccents = [...groupsSrc.matchAll(/accent:'(#[0-9a-f]{6})'/gi)].map(m => m[1].toLowerCase());
+    const gLabels  = [...groupsSrc.matchAll(/label:'([^']+)'/g)].map(m => m[1]);
+    const dupeColour = gAccents.filter((c,i) => gAccents.indexOf(c) !== i);
+
+    /* colours the rest of the page has already claimed */
+    const RESERVED = { '#0d9488':'the external-site cards', '#b45309':'the no-screen card',
+                       '#db2026':'the recommended banner', '#002066':'the brand navy' };
+    const clash = gAccents.filter(c => RESERVED[c]).map(c => `${c} (${RESERVED[c]})`);
+
+    const lightRule = /\.mgroup \.tile \.hd\{ color:color-mix\(in srgb, var\(--fac-dark\) \d+%, #000\)/.test(engine);
+    const darkRule  = /body\.dark-mode \.mgroup \.tile \.hd\{ color:color-mix\(in srgb, var\(--fac-dark\) \d+%, #fff\)/.test(engine);
+    const headDark  = /body\.dark-mode \.mgroup-h\{ color:color-mix\(in srgb, var\(--fac-dark\) \d+%, #fff\)/.test(engine);
+    /* dashed must mean exactly one thing here: this leaves the prompt builder */
+    const tileDashed = /\.mgroup \.tile\{[^}]*border-style:dashed/.test(engine);
+
+    let colourBad = 0;
+    if(gAccents.length !== gLabels.length){
+      fail(`${gLabels.length} groups but ${gAccents.length} accents — every group needs its own`); colourBad++; }
+    if(dupeColour.length){ fail(`two groups share a colour: ${dupeColour.join(', ')}`); colourBad++; }
+    if(clash.length){ fail(`group accent reuses a colour already meaning something else: ${clash.join(', ')}`); colourBad++; }
+    if(!(lightRule && darkRule && headDark)){
+      fail('the light/dark contrast mixes for group colour are missing — a raw accent fails AA in one theme'); colourBad++; }
+    if(tileDashed){ fail('mode tiles are dashed, which is reserved for cards that leave the prompt builder'); colourBad++; }
+    if(!colourBad && !(strayAccent && strayAccent.length))
+      pass(`${gAccents.length} group colours, all distinct, none reserved, both theme mixes present`);
+
+
+    /* The lines these modes genuinely rest on. Editing the prose is fine;
+       losing one quietly changes what the tool does. Each rule is checked
+       against ITS OWN mode's body — a phrase that also appears in another
+       mode must not be allowed to cover for its removal here. */
+    const byMode = Object.fromEntries(modes.map(([, k, body]) => [k, body]));
+    const LOAD_BEARING = {
+      ownnotes: [
+        [/Then STOP and wait/,              'tells the model to wait for the material'],
+        [/Do not teach anything/,           'forbids teaching before the material arrives'],
+        [/content you invented/,            'says why waiting matters'],
+        [/NEVER SILENTLY FILL A GAP/,       'forbids silently filling gaps in the notes'],
+        [/This is not in your notes/,       'requires every gap to be labelled'],
+        [/NEVER OVERRULE THEIR TEACHER/,    'defers to the teacher over its own priors'],
+        [/Only once you have done 1 and 2/, 'gates drilling behind the coverage and depth audit'],
+        [/Never attach a grade to it/,      'refuses to grade the notes'],
+        [/Feedback on my writing/,          'redirects an assessed draft to the feedback mode']
+      ],
+      feedback: [
+        [/DO NOT GIVE IT A GRADE/,          'refuses to grade the work'],
+        [/Never supply the sentence/,       'will not write their missing paragraph']
+      ],
+      feynman: [
+        [/Then STOP\. Do not explain anything yourself/, 'refuses to explain before the student does'],
+        [/fluent nonsense feels exactly like understanding/, 'names the failure only it can catch'],
+        [/WRONG BUT FLUENT/,               'hunts for confident wrong statements first'],
+        [/JARGON STANDING IN FOR MECHANISM/, 'catches a term used in place of an explanation'],
+        [/Do not open with praise for the explanation as a whole/,
+                                           'refuses to open with blanket praise'],
+        [/Make them repair it/,            'makes the student fix it rather than fixing it for them']
+      ],
+      exam:     [[/Then STOP and wait/,     'waits rather than marking its own questions']],
+      exemplar: [[/Achieved/,               'still describes the Achieved band']]
+    };
+    let lost = 0, rules = 0;
+    for(const [mode, checks] of Object.entries(LOAD_BEARING)){
+      if(!byMode[mode]){ fail(`mode "${mode}" has gone missing entirely`); lost++; continue; }
+      for(const [re, what] of checks){
+        rules++;
+        if(!re.test(byMode[mode])){ fail(`"${mode}" mode no longer ${what}`); lost++; }
+      }
+    }
+    /* CORE sits outside the MODES table and applies in every mode. */
+    rules++;
+    if(!/NEVER GRADE THE STUDENT'S OWN WORK/.test(engine)){
+      fail('CORE no longer refuses to grade the student\'s own work'); lost++;
+    }
+    if(!lost) pass(`${rules} load-bearing prompt rules still present, each in its own mode`);
+  }
 }
 
 /* ---------- result ---------- */

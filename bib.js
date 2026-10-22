@@ -14,7 +14,7 @@
    ============================================================ */
 (function () {
 
-const BIB_BUILD = 'build 79 — reference list builder';
+const BIB_BUILD = 'build 87 — duplicate no-screen card removed';
 
 const R = () => document.getElementById('bib-root');
 const esc = s => String(s == null ? '' : s)

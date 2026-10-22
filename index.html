@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=79"></script>
-<script src="whs-derived-2026.js?v=79"></script>
+<script src="ncea-exams-2026.js?v=87"></script>
+<script src="whs-derived-2026.js?v=87"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -106,9 +106,38 @@ body.dark-mode .fac-pill[aria-pressed="true"], body.dark-mode .subj-pill[aria-pr
 .subj-soon{ font-size:.5625rem; text-transform:uppercase; letter-spacing:.08em; opacity:.7; }
 
 /* Accented mode tile — visually distinct from the faculty palette */
-.tile-accent{ border-style:dashed; }
-.tile-accent .hd{ color:var(--fac-dark); }
-.tile-accent[aria-pressed="true"]{ border-style:solid; }
+/* ---- Mode groups ----
+   The nine modes do about four jobs, so they are presented as four small
+   groups rather than one flat list of nine. The rule after the heading is
+   drawn with a pseudo-element so no extra markup is needed per group. ---- */
+.mgroup-h{ font-size:.6875rem; font-weight:900; text-transform:uppercase;
+  letter-spacing:.07em; margin:0 0 .15rem;
+  display:flex; align-items:center; gap:.5rem;
+  color:color-mix(in srgb, var(--fac-dark) 85%, #000); }
+/* the panel is lighter than a tile, so the dark mix has to go further */
+body.dark-mode .mgroup-h{ color:color-mix(in srgb, var(--fac-dark) 55%, #fff); }
+.mgroup-h::after{ content:''; flex:1 1 auto; height:1px;
+  background:color-mix(in srgb, var(--fac-dark) 38%, var(--line)); }
+.mgroup-s{ font-size:.6875rem; line-height:1.45; margin:0 0 .5rem;
+  color:color-mix(in srgb, var(--ink-soft) 55%, var(--ink)); }
+.mgroup-tiles{ display:grid; gap:.5rem; grid-template-columns:1fr; }
+@media (min-width:640px){ .mgroup-tiles{ grid-template-columns:1fr 1fr; } }
+
+/* Colour now runs on one axis: which group a mode belongs to. The group sets
+   --fac-dark once and its tiles inherit it, so a colour is never a one-off.
+   A bare accent fails AA in one theme or the other, so it is nudged toward
+   black on the light tile and toward white on the dark one. */
+.mgroup .tile .hd{ color:color-mix(in srgb, var(--fac-dark) 85%, #000); }
+body.dark-mode .mgroup .tile .hd{ color:color-mix(in srgb, var(--fac-dark) 65%, #fff); }
+
+/* Dashed borders are reserved for one meaning in this column: the card takes
+   you out of the prompt builder (.mtool). Modes are always solid. */
+.mgroup .tile{ border-style:solid; }
+/* The proper name for a mode, kept under a plain-English label so a student
+   can pick without knowing the jargon, and learns the word anyway. */
+.mode-term{ font-size:.625rem; font-weight:700; font-style:italic; margin:.1rem 0 0;
+  letter-spacing:.01em; color:color-mix(in srgb, var(--ink-soft) 55%, var(--ink)); }
+
 .mode-badge{ white-space:nowrap; }
 .mode-badge-sm{ font-size:.4375rem!important; letter-spacing:.03em!important;
   padding:.1rem .32rem!important; }
@@ -168,8 +197,10 @@ body.dark-mode{
 .btn-reveal:hover{ background:var(--bf-key); border-color:var(--bf-rule); }
 
 /* ---- Compact layout: section headings, breadcrumbs, sticky bar ---- */
+/* --brand-ink is already defined per theme (#002066 light, #a8c0ea dark), so it
+   needs no override. The old dark rule pushed this to --fac-dark, which sat at
+   3.29:1 on the panel — below AA for text this size. */
 .sec-h{ font-size:.9375rem; font-weight:800; color:var(--brand-ink); letter-spacing:-.01em; }
-body.dark-mode .sec-h{ color:var(--fac-dark); }
 
 /* A completed step collapses to one clickable line. */
 .crumb{
@@ -354,6 +385,12 @@ body.dark-mode .evidence-tab:hover{ background:#93c5fd; color:#0a1730; }
 
 .ev-back{ position:fixed; inset:0; z-index:10000; background:rgba(15,23,42,.55);
   display:flex; align-items:center; justify-content:center; padding:1rem; }
+
+/* These two set a display of their own, which ties with Tailwind's
+   .hidden{display:none} on specificity — so only source order was keeping
+   them shut. Two classes beats one, whatever order the stylesheets load in,
+   and the modals stay closed even if the Tailwind CDN never arrives. */
+.ev-back.hidden, .ext-site.hidden{ display:none; }
 .ev-card{ position:relative; max-width:42rem; max-height:86vh; overflow:auto;
   background:var(--surface); border-radius:.8rem; padding:1.4rem 1.5rem;
   box-shadow:0 20px 50px -12px rgba(0,0,0,.5); }
@@ -1379,7 +1416,7 @@ Bring earlier ideas back with short recall questions before moving on. Open a ne
 const MODES = {
 
 foundations:{ label:'Start from the beginning', blurb:'Break it right down for me, one small step at a time',
-  accent:'#0d9488', badge:'Start with the basics',
+  badge:'Start with the basics',
   blocks:['nofoothold','misconception','pressure','retrieval','parallel'],
   body:`YOUR TASK — SCAFFOLDED STEP-BY-STEP TEACHING
 
@@ -1441,7 +1478,8 @@ Say out loud which layer you are on: Foundation (Achieved), Connection (Merit), 
 
 End each objective with exactly one short question to check it landed, then adapt: confident, increase complexity; partly right, credit what is right and reinforce only the gap; confused, re-teach from a different angle; got it, accept and move on.`},
 
-tutor:{ label:'Socratic tutor', blurb:'Work through it with me, one step at a time',
+tutor:{ label:'Make me figure it out', term:'Socratic tutor',
+  blurb:'Ask me questions instead of telling me the answer',
   blocks:['attempt','socratic','escalation','release','nofoothold','misconception','pressure','mine','retrieval','parallel'],
   body:`YOUR TASK — SOCRATIC TUTOR
 
@@ -1532,8 +1570,114 @@ Write your own version rather than reusing that wording, and vary it if they ask
 
 Read the room first. If they sound anxious, if the deadline is close, or if they are already down on themselves, skip the joke entirely and just be kind and direct: you cannot see the task or the marking schedule, their teacher can, and here is the one thing that would make the work stronger.`},
 
+ownnotes:{ label:'Work from my own notes', blurb:'Check my class material against the standard, then drill me on it',
+  badge:'Paste or attach',
+  /* Externals only. On an internal the integrity guard has to stop it drilling
+     toward the assessed task, which is correct but leaves the mode doing half
+     its job — and a student pasting in material for a standard they are being
+     assessed on is a situation better handled by the feedback mode. */
+  only: st => st.mode === 'external',
+  blocks:['mine','misconception','technique','retrieval','pressure','parallel'],
+  body:`YOUR TASK — WORK FROM THE STUDENT'S OWN CLASS MATERIAL
+
+The student is about to give you their own material for this standard: class notes, a teacher's slide deck, a handout, a textbook chapter, photographs of a workbook, a lesson recording, or a summary they wrote themselves. You have the standard. They have the content. Your whole job is to put those two things together — which is exactly what a general study app cannot do for them, because it does not know what this standard requires.
+
+YOUR FIRST RESPONSE — THIS PART MATTERS MOST
+If their material is not already in front of you, your entire first response is: two sentences saying you have the standard and are ready for their notes, that they can paste them, attach a file, or photograph a page, and that messy, partial or handwritten notes are completely fine. Then STOP and wait.
+
+Do not teach anything. Do not summarise the standard back to them. Do not list what you expect their notes to contain, and do not ask them a set of warm-up questions. Anything you produce before their material arrives is content you invented, and the entire point of this mode is that the content is theirs.
+
+If their material IS already here, skip the waiting and go straight to the audit below.
+
+CHECK WHAT YOU HAVE BEEN GIVEN FIRST
+If it is their own assessed work — an essay, a report, a draft, an investigation write-up — this is the wrong mode. Say so plainly, tell them "Feedback on my writing" is the one they want, and move on. Class material and a student's own submission must be handled differently and you should not blur them.
+If it is unreadable, ask for a clearer copy before working on it.
+If it is very long, say which part you are covering first instead of attempting all of it at once badly.
+
+THEN DO THREE THINGS, IN THIS ORDER
+
+1 — COVERAGE: what is in there, and what is not
+Work through what this standard actually requires, using its evidence line, its three criteria and its grade-lift lines. Then tell them, specifically:
+  - What their material covers properly.
+  - What it touches too lightly for them to answer a question on.
+  - What this standard requires that is MISSING from their material altogether.
+  - What is in their material that this standard does NOT require. Say this out loud. Students lose whole evenings revising content they will never be assessed on, and almost nobody ever tells them which parts those are.
+Quote their own material back at them. "Your notes define osmosis but have nothing on why water moves" is useful. "Good coverage overall" is worthless.
+
+2 — DEPTH: what their material would currently let them produce
+Notes can cover every topic and still only support an Achieved answer. Use the grade-lift lines in the standard block — they are specific to this standard and they outrank any general assumption about what Merit or Excellence means. Say:
+  - What their notes would let them write right now.
+  - What this standard is asking for instead, in its own words.
+  - Precisely what is missing to close that gap — the mechanism, the causal chain, the interaction, the change over time, the specific evidence, or the judgement, depending on what THIS standard actually rewards.
+Describe this as a property of the NOTES. Never attach a grade to it, and never imply a grade for work they have already done.
+
+3 — DRILL: test them on their own content
+Only once you have done 1 and 2. Question them from their own material — their case study, their text, their dataset, their worked examples, their teacher's wording and terminology. Five questions at a time; wait for all five answers, then mark them and set the next five.
+Escalate as they succeed: can they recall it, can they apply it, can they make a judgement with it. That third level is where Excellence lives in most standards, so do not stop at recall.
+
+TWO HARD RULES
+
+NEVER SILENTLY FILL A GAP. If their notes are missing something the standard requires, you may absolutely teach it — but label it every single time: "This is not in your notes." If you quietly fold your own knowledge in with theirs, they walk away believing their notes are complete when they are not, and they will revise from them right up to the exam. That is the worst outcome this mode could produce.
+
+NEVER OVERRULE THEIR TEACHER. If something in their material differs from what you would have said, assume first that you are looking at a deliberate teaching choice: a particular approach, a simplification that is right for this level, a convention this school uses, or a case study you do not know. Say what you noticed, say it may be a difference in approach rather than an error, and tell them to check with their teacher. Only call something flatly wrong when it is a plain factual error of a kind nobody would teach on purpose. Their teacher knows this course and has seen the marking; you have not.
+
+Begin now. If their material is not here yet, your first response is the short ready-and-waiting one, and nothing else.`},
+
+feynman:{ label:'Explain it back to me', term:'the Feynman technique',
+  blurb:'I explain it in my own words, you find the holes', badge:'You do the talking',
+  blocks:['nofoothold','misconception','escalation','pressure','retrieval','parallel'],
+  body:`YOUR TASK — THE STUDENT EXPLAINS, YOU DIAGNOSE
+
+In every other mode you do the talking. Not here. The student explains an idea from this standard in their own words, as if to someone who has never studied the subject, and your job is to find what the explanation reveals.
+
+WHY THIS MODE EXISTS, AND WHAT YOU ARE ACTUALLY FOR
+A student doing this alone can tell when they get stuck. What they cannot tell is when they have said something smoothly, confidently and wrongly — fluent nonsense feels exactly like understanding from the inside. Catching that is the entire reason they are doing this with you rather than with a mirror. If you let a wrong explanation past because it sounded assured, you have actively harmed them.
+
+YOUR FIRST RESPONSE
+Offer four or five specific things from this standard they could explain — real ideas, mechanisms or processes drawn from the standard block, not vague topic headings. Tell them to pick one, or to say "you pick". Add one line: explain it as if to a Year 7, out loud or typed, no notes, and it is fine to stumble.
+
+Then STOP. Do not explain anything yourself. Do not give them a model answer, a definition, or a starting sentence. Anything you say about the idea before they speak becomes the words they repeat back to you, and the exercise is dead.
+
+Once they have picked, confirm the idea in one line and wait for their explanation.
+
+WHEN THE EXPLANATION ARRIVES
+Read all of it before saying anything. Then work through it in this order.
+
+1. WHAT THEY ACTUALLY HAVE. Name the parts that are genuinely correct and genuinely explained — quoting their own words. Be specific and be brief. This is not encouragement, it is a finding: it tells them which ground is solid.
+
+2. THE FOUR THINGS TO HUNT FOR. Go through their explanation looking for each of these, and quote the exact sentence every time:
+   - WRONG BUT FLUENT. Anything stated confidently that is not true. Say so plainly and immediately. This is the most important thing you do.
+   - JARGON STANDING IN FOR MECHANISM. The classic failure: naming the process as if naming it explained it. "Water moves because of osmosis." "The price rises due to market forces." "The poet creates atmosphere through imagery." The term has been used as a full stop where the explanation should have started. Point at it and ask what is actually happening.
+   - VAGUENESS WHERE THE DETAIL LIVES. "It kind of changes", "it affects things", "and then it happens". These are the places they do not know, covered over. Name them.
+   - THE JUMP. Where the explanation skipped a step — B follows A in their telling but the link is missing. Ask them for the missing middle.
+
+3. HOW DEEP IT WENT. Use the grade-lift lines in the standard block, which are specific to this standard. Did they describe what happens, or explain why and how? Did they reach whatever this standard actually rewards — the mechanism, the causal chain, the interaction, the change over time, the judgement? Say what their explanation currently reaches and what it does not. Do not put a grade on it.
+
+4. ONE THING, THEN BACK TO THEM. Pick the single biggest hole. Ask them to explain just that bit again — not the whole thing. Then stop and wait.
+
+THE LOOP
+Keep going: they re-explain, you diagnose, they go again. Work on one hole at a time and tell them when a hole is filled, concretely: "That's the mechanism — you didn't have that ten minutes ago."
+When an idea is solid, offer them the next one on the list, or a harder version of the same one: explain it without the analogy, or explain why the obvious alternative is wrong.
+
+ANALOGIES
+Students reach for analogies here, which is good. Test them rather than praising them: does the analogy carry the actual mechanism, or just the vibe? Ask where it breaks down. An analogy a student can break themselves is one they understand.
+
+WHAT YOU MUST NOT DO
+Do not open with praise for the explanation as a whole. "Great explanation, just a few small things" is the single worst response available to you: it certifies the fluent-but-wrong case and sends them away believing they know it. Credit specific correct parts, then go straight to what is missing.
+Do not explain the idea properly for them after their attempt. That turns this into a lesson and takes the work away at the exact moment it was about to pay off. Make them repair it. Only after they have genuinely tried and failed on the same point — see the escalation ladder — do you teach it directly, and then you ask them to explain it back to you in their own words before moving on.
+Do not accept a rephrase as a repair. If they fix the wording but not the understanding, say so.
+
+IF THEY CANNOT START AT ALL
+A student who cannot produce any explanation does not need questioning, they need teaching. Switch to the no-foothold path, teach the idea, then come straight back and ask them to explain it to you.
+
+Begin now with the list of things they could explain, and nothing else.`},
+
 reference:{ label:'Build me a reference sheet', blurb:'One organised page of everything I need to remember',
-  accent:'#0369a1', badge:'Resource',
+  badge:'Resource',
+  /* Only where the content is fixed by the standard. Where the material is the
+     student's own chosen text, case study or investigation, a complete sheet is
+     impossible, so the mode is hidden rather than producing something thin. */
+  only: st => !!st.reference,
   blocks:['technique','misconception','mine'],
   body:`YOUR TASK — BUILD A REFERENCE RESOURCE
 
@@ -1582,6 +1726,30 @@ That third round is what turns memorised detail into Excellence-level material, 
 Space earlier items back in rather than retiring them permanently. Every few rounds, ask them to reconstruct a whole case, event or example from memory in their own words, then tell them what they left out.`}
 
 };
+
+/* ---- How the modes are presented ----
+   Nine flat tiles is nine decisions, and the nine modes only do about four
+   jobs. Grouping them turns "pick one of nine" into "pick a group, then one
+   of three", and the steer line answers the question the tiles cannot: of
+   these, which do I want? Every mode must appear in exactly one group or it
+   simply will not render — the validator enforces that. ---- */
+const MODE_GROUPS = [
+  { label:'Teach me this standard', accent:'#0369a1',
+    steer:'Three ways in. Pick by how much you already have, not by how hard you want to work.',
+    modes:['foundations','explainer','tutor'] },
+
+  { label:'Test me on it', accent:'#7c3aed',
+    steer:'Pick by what you are short of: whole exam questions, specific detail, your own notes checked, or whether you can actually explain it.',
+    modes:['exam','recall','ownnotes','feynman'] },
+
+  { label:'Look at my work', accent:'#a21caf',
+    steer:'What a good answer looks like in this standard, and how yours compares. Neither will give you a grade.',
+    modes:['exemplar','feedback'] },
+
+  { label:'Make me something to study from', accent:'#15803d',
+    steer:'A finished page to print and keep, rather than a conversation.',
+    modes:['reference'] }
+];
 
 const INTERNAL_GUARD = `ASSESSMENT INTEGRITY — THIS IS AN INTERNALLY ASSESSED STANDARD
 
@@ -7556,7 +7724,7 @@ z
       </div>
       <div class="lg:col-span-3">
         <h2 class="sec-h mb-2">How do you want to study it?</h2>
-        <div id="modes" class="grid sm:grid-cols-2 gap-2"></div>
+        <div id="modes" class="space-y-3"></div>
         <div id="mode-tools" class="hidden"></div>
         <button id="offline-card" class="ext-site off-card">
           <span class="ext-tag off-tag">No screen</span>
@@ -7612,11 +7780,15 @@ z
       and grade-lift guidance are drafted from NZQA assessment reports, exemplars and marking
       schedules. They are drafts for subject teachers to review, not official NZQA material.</p>
 
-      <p><strong>Other study sites we point you to.</strong> The <em>External site</em> link beside the study options goes to
+      <p id="credit-hsnz" class="hidden"><strong>Other study sites we point you to.</strong> The <em>External site</em> link beside the study options goes to
       <a href="https://highstandards.co.nz" target="_blank" rel="noopener">High Standards NZ</a>,
       an independent New Zealand revision site with written notes and worked examples for Levels 2
       and 3 and Scholarship. It is their work, not ours, and we are not affiliated with them.
       No Brain Too Small and StudyTime NZ are also worth your time.</p>
+
+      <p id="credit-tools" class="hidden"><strong>Interactive subject sites.</strong> Circuit Builder,
+      ChemDash and Calculus Count are built at Waiheke High School and open in a new tab. They
+      drill the subject rather than generating a prompt.</p>
 
       <p><strong>Referencing.</strong> The bibliography maker follows the
       <a href="https://apastyle.apa.org/style-grammar-guidelines/references" target="_blank" rel="noopener">American
@@ -7638,7 +7810,7 @@ z
     </div>
   </details>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 79 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 87 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7674,6 +7846,23 @@ let stdFilter = 'all';   // 'all' | 'internal' | 'external'
 /* Interactive tools made at Waiheke for particular subjects. Keyed by
    "level::Subject" so a tool can be offered at one level without appearing at
    another. Add an entry and it shows up — nothing else to change. */
+/* ---- Links that leave the site ----
+   Both are switched OFF for now. Nothing has been deleted: the configs, the
+   render functions, the styling and the credits all remain exactly as they
+   were. Flip either back to true and its cards return with no other change.
+     SHOW_SUBJECT_TOOLS  — ChemDash, Circuit Builder, Calculus Count
+     SHOW_HIGH_STANDARDS — the High Standards NZ notes site
+   "Study this without AI" is NOT one of these — it opens a panel inside this
+   page rather than sending the student anywhere, so it is unaffected. ---- */
+const SHOW_SUBJECT_TOOLS  = false;
+const SHOW_HIGH_STANDARDS = false;
+
+/* The "Study this without AI" card at the foot of the mode list opened exactly
+   the same panel as the "Study without AI" tab in the banner — same handler,
+   same function, same content — so it was saying the same thing twice. Off for
+   now; the card, its styling and its handler all remain. */
+const SHOW_OFFLINE_CARD   = false;
+
 const SUBJECT_TOOLS = {
   '3::Physics': [
     { name:'Circuit Builder',
@@ -7695,10 +7884,10 @@ const SUBJECT_TOOLS = {
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=79' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=79' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=79' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=79' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=87' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=87' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=87' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=87' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7733,6 +7922,12 @@ function applyDark(on){
 }
 $('dark-toggle').addEventListener('click', ()=>applyDark(!document.body.classList.contains('dark-mode')));
 applyDark(localStorage.getItem('whs_dark_mode') === '1');
+
+/* A credit for a link nobody can see is just a wrong statement, so these
+   follow their flags rather than sitting there permanently. */
+$('credit-hsnz').classList.toggle('hidden', !SHOW_HIGH_STANDARDS);
+$('credit-tools').classList.toggle('hidden', !SHOW_SUBJECT_TOOLS);
+$('offline-card').classList.toggle('hidden', !SHOW_OFFLINE_CARD);
 
 function subj(){ return D().subjects[sel.subject]; }
 // Display in 3.1, 3.2, 3.3 order however the data was entered.
@@ -7968,7 +8163,7 @@ function renderStandards(){
    do the thing themselves, rather than producing text to paste into an AI. */
 function renderModeTools(){
   const box = $('mode-tools');
-  const list = SUBJECT_TOOLS[sel.level + '::' + sel.subject] || [];
+  const list = SHOW_SUBJECT_TOOLS ? (SUBJECT_TOOLS[sel.level + '::' + sel.subject] || []) : [];
   if(!list.length || !sel.std){ box.classList.add('hidden'); box.innerHTML = ''; return; }
   // Same look as the High Standards link below it: both leave the page rather
   // than build a prompt, so they should read as one family.
@@ -7995,7 +8190,7 @@ const HS_L3 = new Set(['Biology','Business Studies','Calculus','Chemistry',
 function hsLink(){
   const a = $('hsnz');
   const level = { '2':'/levels/2', '3':'/levels/3', 'S':'/scholarship/subjects' }[sel.level];
-  if(!level || !sel.std){ a.classList.add('hidden'); return; }
+  if(!SHOW_HIGH_STANDARDS || !level || !sel.std){ a.classList.add('hidden'); return; }
   const exact = sel.level === '3' && HS_L3.has(sel.subject);
   a.href = 'https://highstandards.co.nz' + (exact ? '/standards/AS' + sel.std.code : level);
   a.querySelector('.ext-name').innerHTML = exact
@@ -8027,6 +8222,9 @@ const METHOD_GUIDE = [
       { icon:'💬', name:'Self-explanation', what:'Explaining each step to yourself as you work.',
         how:'While solving a problem, say aloud what you are doing and why you chose it. It is slow, and it exposes the steps you have been doing by pattern rather than by understanding.',
         eg:'Doing a differentiation question, say why the chain rule applies here rather than the product rule.' },
+      { icon:'🗣️', name:'Explaining it to someone else', what:'Teaching an idea to a person who does not know it.',
+        how:'Explain it out loud to a friend, a sibling, or an empty room, in plain words and with no notes. Where you stumble, reach for jargon, or go quiet is exactly where you do not know it. Often sold as "the Feynman technique", which oversells it a bit — the evidence is the same moderate evidence as self-explanation. Its weakness is that on your own you cannot catch yourself being fluently wrong, so check anything you were unsure of afterwards.',
+        eg:'Explain to someone who has never done Chemistry why a tertiary haloalkane reacts the way it does — without using the word "carbocation" until you have said what is actually happening.' },
       { icon:'🔀', name:'Interleaved practice', what:'Mixing different problem types in one session.',
         how:'Rather than twenty questions of the same type, mix types so you have to work out which method applies. It feels harder and the results are worse in the session — and better in the exam, where the question does not tell you which method to use.',
         eg:'Mix integration, differentiation and limits in one set instead of doing each separately.' }
@@ -8209,12 +8407,12 @@ function pickStd(code){
       </div>
     </div>`;
   $('to-modes').addEventListener('click', ()=>{
-    $('step3').scrollIntoView({behavior:'smooth', block:'start'});
+    scrollTo('step3');
   });
   setStep(2, true, 'AS'+sel.std.code, `${sel.std.title}`);
   $('ab-label').textContent = `AS${sel.std.code} · ${sel.std.credits} cr · ${sel.std.mode}`;
   $('extra').value = '';
-  if(sel.mode === 'reference' && !sel.std.reference) sel.mode = null;
+  if(sel.mode && !modeFits(sel.mode, sel.std)) sel.mode = null;
   renderModes();
   markModes();
   $('brief-toggle').classList.remove('hidden');
@@ -8223,20 +8421,45 @@ function pickStd(code){
   build();
 }
 
-function renderModes(){
-  // "Build me a reference sheet" only appears on standards whose content is
-  // fixed by the standard itself. Where the material is the student's own
-  // chosen text, case study or investigation, a complete sheet is impossible,
-  // so the mode is hidden rather than producing something thin.
-  const usable = Object.entries(MODES).filter(([k]) =>
-    k !== 'reference' || (sel.std && sel.std.reference));
-  $('modes').innerHTML = usable.map(([k,m])=>`
-    <button class="tile text-left px-3 py-2.5${m.accent?' tile-accent':''}${m.banner?' tile-banner':''}" aria-pressed="false" data-k="${k}"
-            ${m.accent?`style="--fac-dark:${m.accent}"`:''}>
+/* Some modes only belong on some standards. Each one declares that for itself
+   with an `only` predicate beside its prompt, so the rule lives in one place
+   rather than being restated everywhere that asks. */
+function modeFits(k, st){
+  const m = MODES[k];
+  return !!m && (!m.only || (!!st && m.only(st)));
+}
+
+/* Not every browser context implements scrollIntoView — and a throw here would
+   abort whatever was midway through calling it. */
+function scrollTo(id){
+  const el = $(id);
+  if(el && el.scrollIntoView) el.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function modeTile(k, m){
+  /* no per-tile colour any more: the group sets --fac-dark once and the
+     tiles inside inherit it, so colour means "which group" and nothing else */
+  return `<button class="tile text-left px-3 py-2.5${m.banner?' tile-banner':''}" aria-pressed="false" data-k="${k}">
       ${m.banner?`<span class="mode-banner">${m.banner}</span>`:''}
       <p class="font-bold hd text-[13px] leading-tight">${m.label}${m.badge?` <span class="mode-badge${m.badge.length>12?' mode-badge-sm':''}">${m.badge}</span>`:''}</p>
+      ${m.term?`<p class="mode-term">(${m.term})</p>`:''}
       <p class="text-[11px] soft leading-snug mt-0.5">${m.blurb}</p>
-    </button>`).join('');
+    </button>`;
+}
+
+function renderModes(){
+  /* A group whose every mode is gated out for this standard is dropped
+     entirely, so no student is shown an empty heading. */
+  const groups = MODE_GROUPS
+    .map(g => ({ label:g.label, steer:g.steer, accent:g.accent,
+                 keys:g.modes.filter(k => modeFits(k, sel.std)) }))
+    .filter(g => g.keys.length);
+  $('modes').innerHTML = groups.map(g => `
+    <div class="mgroup"${g.accent ? ` style="--fac-dark:${g.accent}"` : ''}>
+      <p class="mgroup-h">${g.label}</p>
+      <p class="mgroup-s">${g.steer}</p>
+      <div class="mgroup-tiles">${g.keys.map(k => modeTile(k, MODES[k])).join('')}</div>
+    </div>`).join('');
   renderModeTools();
   hsLink();
   document.querySelectorAll('#modes .tile').forEach(b=>b.addEventListener('click',()=>{
@@ -8362,10 +8585,10 @@ async function applyURL(){
   }
 
   const m = p.get('mode');
-  if(m && MODES[m] && (m !== 'reference' || sel.std.reference)){ sel.mode = m; markModes(); }
+  if(m && modeFits(m, sel.std)){ sel.mode = m; markModes(); }
   showBrief(true);
   build();
-  $('step2').scrollIntoView({behavior:'smooth', block:'start'});
+  scrollTo('step2');
 }
 
 /* Students revise on paper, and the briefing is the best one-page summary in
@@ -8449,7 +8672,7 @@ function jumpTo(subject, code){
   pickStd(code);
   $('search').value = '';
   $('search-results').innerHTML = '';
-  $('step2').scrollIntoView({behavior:'smooth', block:'start'});
+  scrollTo('step2');
 }
 
 /* Compose a prompt from plain values, independent of any UI state.
@@ -8519,6 +8742,16 @@ ${s.pitfalls.map(x=>'  - '+x).join('\n')}${topic ? '\n\nTopic focus: ' + topic :
   return parts.join('\n\n---\n\n');
 }
 window.composePrompt = composePrompt;
+/* exposed so the test harness can check which modes a given standard offers
+   without having to drive the whole selection flow */
+window.MODES = MODES;
+window.MODE_GROUPS = MODE_GROUPS;
+/* The deep-link entry point, exposed under a distinct name so the test harness
+   can land on a standard the way a shared link does. A wrapper reusing the
+   original name would overwrite the declaration it means to call and recurse
+   forever — the trap window.loadLevel fell into. */
+window.nceaApplyURL = applyURL;
+window.modeFits = modeFits;
 
 function build(){
   if(!sel.std || !sel.mode) return;
@@ -8579,7 +8812,7 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=79"></script>
-<script src="bib.js?v=79"></script>
+<script src="timetable.js?v=87"></script>
+<script src="bib.js?v=87"></script>
 </body>
 </html>
