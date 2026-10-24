@@ -14,7 +14,7 @@
    ============================================================ */
 (function () {
 
-const BIB_BUILD = 'build 87 — duplicate no-screen card removed';
+const BIB_BUILD = 'build 89 — tiles lifted off the panel';
 
 const R = () => document.getElementById('bib-root');
 const esc = s => String(s == null ? '' : s)

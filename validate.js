@@ -322,6 +322,49 @@ head('EXTERNAL LINKS');
                    : `all ${FLAGS.length} optional cards off, everything kept so they can be switched back`);
 }
 
+/* ---------- 5e. the tiles must stand off the panel behind them ---------- */
+head('TILE SEPARATION');
+
+{
+  /* A tinted tile on a tinted panel sat 1.03:1 apart at the top of the panel
+     gradient — close enough to invisible. The tile now uses plain --surface
+     and the panel carries the colour; this keeps that true. */
+  const lum = c => { const s2 = c.map(v => { v/=255;
+    return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); });
+    return 0.2126*s2[0] + 0.7152*s2[1] + 0.0722*s2[2]; };
+  const ratio = (a,b) => { const [x,y] = [lum(a), lum(b)].sort((m,n)=>n-m);
+    return (x+0.05)/(y+0.05); };
+  const hexc = h => [1,3,5].map(i => parseInt(h.slice(i,i+2),16));
+  const blend = (a,b,p) => hexc(a).map((v,i) => Math.round(v*p + hexc(b)[i]*(1-p)));
+
+  const tileRule = (engine.match(/\.tile\{background:([^;]+);/) || [])[1] || '';
+  if(!/var\(--surface\)/.test(tileRule) || /--tint-in/.test(tileRule))
+    fail('the mode tiles are tinted again — a tinted tile on a tinted panel is ' +
+         'nearly invisible at the top of the panel gradient');
+  else {
+    const grab = (block, name) => {
+      const m = engine.match(new RegExp(block + '[\\s\\S]*?--' + name + ':(\\d+)%'));
+      return m ? parseInt(m[1],10)/100 : null;
+    };
+    const lightA = grab('--fac-dark:#002066', 'tint-a');
+    const darkA  = grab('--fac-dark:#4d7fd6', 'tint-a');
+    if(lightA === null || darkA === null) fail('could not read the panel tints');
+    else {
+      const lTop = ratio(hexc('#ffffff'), blend('#002066','#ffffff', lightA));
+      const dTop = ratio(hexc('#101a2e'), blend('#4d7fd6','#101a2e', darkA));
+      const page = ratio(blend('#002066','#ffffff', lightA), hexc('#eef2f7'));
+      const panelDarker = lum(blend('#002066','#ffffff', lightA)) < lum(hexc('#eef2f7'));
+      if(lTop < 1.08 || dTop < 1.08)
+        fail(`tiles sit only ${lTop.toFixed(3)}:1 (light) and ${dTop.toFixed(3)}:1 (dark) ` +
+             'from the panel behind them — raise --tint-a so the panel steps back');
+      else if(panelDarker)
+        fail(`--tint-a is ${(lightA*100).toFixed(0)}%, which makes the panel darker than the ` +
+             'page behind it — cards should sit lighter than their background');
+      else pass(`tiles stand ${lTop.toFixed(3)}:1 (light) and ${dTop.toFixed(3)}:1 (dark) off the panel`);
+    }
+  }
+}
+
 /* ---------- 6. build stamps agree ---------- */
 head('BUILD STAMPS');
 
@@ -546,6 +589,31 @@ head('STUDY MODES');
     if(!colourBad && !(strayAccent && strayAccent.length))
       pass(`${gAccents.length} group colours, all distinct, none reserved, both theme mixes present`);
 
+
+    /* Colours must not only differ, they must sit at a similar INTENSITY.
+       A vivid purple beside a muted blue reads as a mistake even when every
+       contrast ratio passes — which is exactly what happened at build 85,
+       where violet and magenta were twice as colourful as blue and green. */
+    {
+      const lin = v => { v /= 255; return v <= 0.04045 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); };
+      const chroma = h => {
+        const [r,g,b] = [1,3,5].map(i => parseInt(h.slice(i,i+2),16)).map(lin);
+        const l = Math.cbrt(0.4122214708*r + 0.5363325363*g + 0.0514459929*b);
+        const m = Math.cbrt(0.2119034982*r + 0.6806995451*g + 0.1073969566*b);
+        const s2= Math.cbrt(0.0883024619*r + 0.2817188376*g + 0.6299787005*b);
+        return Math.hypot(1.9779984951*l - 2.4285922050*m + 0.4505937099*s2,
+                          0.0259040371*l + 0.7827717662*m - 0.8086757660*s2);
+      };
+      const cs = gAccents.map(chroma);
+      if(cs.length){
+        const spread = Math.max(...cs) / Math.min(...cs);
+        if(spread > 1.5){
+          const worst = gAccents[cs.indexOf(Math.max(...cs))];
+          fail(`group colours are ${spread.toFixed(2)}x apart in intensity — ${worst} is far more ` +
+               'vivid than the others and will read as brighter. Keep them within 1.5x.');
+        } else pass(`group colours sit within ${spread.toFixed(2)}x of each other in intensity`);
+      }
+    }
 
     /* The lines these modes genuinely rest on. Editing the prose is fine;
        losing one quietly changes what the tool does. Each rule is checked
