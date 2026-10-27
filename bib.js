@@ -14,7 +14,7 @@
    ============================================================ */
 (function () {
 
-const BIB_BUILD = 'build 101 — writing tools';
+const BIB_BUILD = 'build 102 — writing tools';
 
 const R = () => document.getElementById('bib-root');
 const esc = s => String(s == null ? '' : s)

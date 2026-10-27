@@ -19,7 +19,7 @@
    ============================================================ */
 (function () {
 
-const W_BUILD = 'build 101 — writing tools';
+const W_BUILD = 'build 102 — writing tools';
 
 const R = () => document.getElementById('writing-root');
 const esc = s => String(s == null ? '' : s)
@@ -614,22 +614,19 @@ function suggestions(a){
 function render(){
   const r = R(); if(!r) return;
   stopSpeech();          // the buttons below are about to be replaced
-  r.innerHTML = head() + buildPane() + foot() + exampleModal();
+  r.innerHTML = buildPane() + foot() + exampleModal();
   wire();
 }
 
 function head(){
   /* The explanation is read once. What cannot be folded away is the promise
      that nothing here writes for them, so the folded bar carries it. */
-  if(S.headOpen !== true && S.shape) return `<div class="panel p-4 wr-stdbar wr-headbar">
-    <div>
-      <p class="wr-stdlab">Writing</p>
-      <p class="wr-stdsub"><strong>Nothing here writes a sentence for you.</strong>
-        Every word in your paragraph is yours, which is the only way it can be handed in.</p>
-    </div>
-    <button class="wr-btn wr-ghost" data-wrhead>Show</button>
-  </div>`;
-  return `<div class="panel p-5">
+  if(S.headOpen !== true && S.shape) return `<button class="panel p-4 wr-card" data-wrhead>
+    <p class="wr-cardlab">Writing</p>
+    <p class="wr-cardval">How this works</p>
+    <p class="wr-cardsub">Nothing here writes a sentence for you.</p>
+  </button>`;
+  return `<div class="panel p-5 wr-wide">
     <div class="wr-stdbar">
       <h2 class="wr-h">Writing</h2>
       ${S.shape ? '<button class="wr-btn wr-ghost" data-wrhead>Hide</button>' : ''}
@@ -676,20 +673,17 @@ function stdBar(){
   const cur = S.std ? findStd(S.std.level, S.std.code) : null;
   /* S.picking wins, so "Change" reopens the list without clearing what they
      already chose \u2014 Close puts them back where they were */
-  if(cur && !S.picking) return `<div class="panel p-4 wr-stdbar wr-stdchosen">
-    <div>
-      <p class="wr-stdlab">Writing for</p>
-      <p class="wr-stdname"><strong>AS${esc(cur.st.code)}</strong> ${esc(cur.st.title)}</p>
-      <p class="wr-stdsub">${esc(LEVEL_NAME[cur.level])} ${esc(cur.subject)} \u00b7
-        ${esc(cur.st.mode)}ly assessed \u00b7 ${esc(cur.st.format.split('.')[0])}.</p>
-    </div>
-    <button class="wr-btn wr-ghost" data-wrclear>Change</button>
-  </div>`;
+  if(cur && !S.picking) return `<button class="panel p-4 wr-card wr-stdchosen" data-wrclear>
+    <p class="wr-cardlab">Writing for</p>
+    <p class="wr-cardval">${esc(cur.st.ref || cur.st.code)} \u00b7 ${esc(cur.subject)}</p>
+    <p class="wr-cardsub">${esc(LEVEL_NAME[cur.level])} \u00b7 ${esc(cur.st.mode)}ly assessed.
+      ${esc(cur.st.title)}</p>
+  </button>`;
 
   const all = allWritingStandards();
   if(!all.length && !cur){
     ensureLevels();
-    return `<div class="panel p-4"><p class="wr-lead">${loadFailed
+    return `<div class="panel p-4 wr-wide"><p class="wr-lead">${loadFailed
       ? `The list of standards could not load, so you cannot pick one here. Both tools still
          work without it \u2014 pick a paragraph shape below, or paste a paragraph into
          <strong>Check a paragraph</strong>.`
@@ -697,15 +691,14 @@ function stdBar(){
          and start writing.`}</p></div>`;
   }
 
-  if(!S.picking) return `<div class="panel p-4 wr-stdbar">
-    <div>
-      <p class="wr-stdlab">No standard chosen</p>
-      <p class="wr-stdsub">Both tools work without one. Picking your standard shows what it
-        asks for and lets you send the paragraph straight to the feedback prompt.</p>
-    </div>
-    <button class="wr-btn wr-ghost" data-wrpick>Choose a standard</button>
-  </div>`;
+  if(!S.picking) return `<button class="panel p-4 wr-card wr-cardempty" data-wrpick>
+    <p class="wr-cardlab">Your standard</p>
+    <p class="wr-cardval">Choose a standard</p>
+    <p class="wr-cardsub">Optional. Picking one shows what it is marked on and sets the level
+      these questions are pitched at.</p>
+  </button>`;
 
+  /* the drill-down needs the full width of the row */
   const tree = writingTree();
   const n = S.nav || (S.nav = {});
   /* a level with one faculty, or a faculty with one subject, chooses itself */
@@ -756,7 +749,7 @@ function stdBar(){
     html += `<p class="wr-hint">${n.faculty ? 'Pick a subject.'
       : n.level ? 'Pick a faculty.' : 'Start with your level.'}</p>`;
   }
-  return `<div class="panel p-4">${html}</div>`;
+  return `<div class="panel p-4 wr-wide">${html}</div>`;
 }
 
 /* ============================================================
@@ -962,15 +955,13 @@ function standardAsks(){
   /* once they have a shape and are writing, this has been read and is just
      something to scroll past \u2014 so it folds itself, with one click back */
   const open = S.asksOpen === true || (S.asksOpen !== false && !S.shape);
-  if(!open) return `<div class="panel p-4 wr-stdbar wr-asks">
-    <div>
-      <p class="wr-stdlab">What ${esc(cur.st.ref || cur.st.code)} is marked on</p>
-      <p class="wr-stdsub">${esc((cur.st.bandShift || {}).mToE || (cur.st.bandShift || {}).aToM
-        || 'The band shift and the pitfalls for this standard.')}</p>
-    </div>
-    <button class="wr-btn wr-ghost" data-wrasks>Show</button>
-  </div>`;
-  return `<div class="panel p-4 wr-asks">
+  if(!open) return `<button class="panel p-4 wr-card wr-asks" data-wrasks>
+    <p class="wr-cardlab">Marked on</p>
+    <p class="wr-cardval">What ${esc(cur.st.ref || cur.st.code)} rewards</p>
+    <p class="wr-cardsub">The Merit and Excellence shift, and what loses marks in this
+      standard.</p>
+  </button>`;
+  return `<div class="panel p-4 wr-asks wr-wide">
     <div class="wr-stdbar">
       <h3 class="wr-h3">What ${esc(cur.st.ref || cur.st.code)} is actually marked on</h3>
       ${S.shape ? '<button class="wr-btn wr-ghost" data-wrasks>Hide</button>' : ''}
@@ -1130,7 +1121,9 @@ function openSite(key){
 /* ---- build pane ---- */
 
 function buildPane(){
-  return stdBar() + standardAsks() +
+  /* The three orientation panels sit in one row while they are folded, and
+     the one that opens spans the row rather than pushing the others around. */
+  return `<div class="wr-top">${head()}${stdBar()}${standardAsks()}</div>` +
     `<div class="wr-work"><div class="wr-main">${shapePicker()}${S.shape ? shapeForm() : ''}</div>` +
     ideasRail() + `</div>`;
 }
