@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=105"></script>
-<script src="whs-derived-2026.js?v=105"></script>
+<script src="ncea-exams-2026.js?v=106"></script>
+<script src="whs-derived-2026.js?v=106"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -1441,6 +1441,8 @@ body.dark-mode .wr-adv{ background:color-mix(in srgb, var(--wr-accent) 22%, var(
 .wr-ideaframe code{ font-family:'JetBrains Mono',monospace; font-size:.625rem; line-height:1.5;
   color:var(--ink-soft); background:var(--surface-2); padding:.2rem .35rem; border-radius:.3rem;
   display:inline-block; }
+.wr-words{ background:var(--surface-3); color:var(--ink-soft); }
+body.dark-mode .wr-words{ background:color-mix(in srgb, var(--ink) 14%, var(--surface)); }
 .wr-blanks{ background:color-mix(in srgb, #c5a059 26%, var(--surface)); color:var(--int-ink); }
 body.dark-mode .wr-blanks{ background:color-mix(in srgb, #c5a059 32%, var(--surface));
   color:#fde68a; }
@@ -1592,6 +1594,12 @@ body.dark-mode .wr-cmdname{ color:#5eead4; }
 .wr-cmdasks{ font-size:.8125rem; line-height:1.55; color:var(--ink); margin:.1rem 0 .4rem; }
 .wr-cmdasks:last-child{ margin-bottom:0; }
 .wr-cmdnone{ }
+.wr-cmdq{ font-size:.8125rem; font-weight:900; color:var(--ink); margin:.8rem 0 .4rem; }
+.wr-cmdqsub{ display:block; font-size:.6875rem; font-weight:600; line-height:1.5;
+  color:var(--ink-soft); margin-top:.1rem; }
+.wr-cmdmiss{ font-size:.75rem; line-height:1.55; color:var(--int-ink); margin:.5rem 0 0;
+  padding:.4rem .6rem; border-radius:.4rem; background:var(--int-bg); }
+body.dark-mode .wr-cmdmiss{ color:#fde68a; }
 .wr-cmds{ display:flex; flex-wrap:wrap; gap:.35rem; }
 .wr-cmd{ font-size:.75rem; font-weight:800; padding:.35rem .7rem; border-radius:9999px;
   cursor:pointer; background:var(--surface); color:var(--ink);
@@ -1602,6 +1610,25 @@ body.dark-mode .wr-cmd:hover{ border-color:#5eead4; color:#5eead4; }
 body.dark-mode .wr-cmd[aria-pressed="true"]{ background:#5eead4; border-color:#5eead4;
   color:#071f1c; }
 .wr-cmdclear{ border-style:dashed; }
+
+/* ---- the whole essay ---- */
+.wr-essay{ border-left:4px solid #15803d; }
+.wr-essaystat{ display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; margin:.5rem 0 .6rem; }
+.wr-essaybody{ display:flex; flex-direction:column; gap:.7rem; }
+.wr-essaypara{ padding:.7rem .85rem; border-radius:.6rem; background:#fdf6e8;
+  border:1px solid color-mix(in srgb, #c5a059 38%, transparent);
+  border-left:4px solid #c5a059; }
+body.dark-mode .wr-essaypara{ background:#231d12;
+  border-color:color-mix(in srgb, #c5a059 30%, transparent); border-left-color:#8a6d34; }
+.wr-essaygap{ background:var(--surface-2); border-style:dashed;
+  border-left-color:var(--line-strong); }
+body.dark-mode .wr-essaygap{ background:var(--surface-2); }
+.wr-essaylab{ display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; margin:0 0 .35rem;
+  font-size:.6875rem; font-weight:900; text-transform:uppercase; letter-spacing:.05em;
+  color:var(--ink-soft); }
+.wr-essaylab .wr-plannum{ width:1.3rem; height:1.3rem; font-size:.625rem; }
+.wr-essaynone{ font-size:.75rem; color:var(--ink-soft); margin:0;
+  display:flex; gap:.5rem; align-items:center; }
 
 /* ---- the essay plan ---- */
 .wr-plancard{ border-left:4px solid #15803d; }
@@ -1624,6 +1651,13 @@ body.dark-mode .wr-cmd[aria-pressed="true"]{ background:#5eead4; border-color:#5
   border-radius:.4rem; border:1.5px solid var(--line-strong); background:var(--surface);
   color:var(--ink); min-width:0; }
 .wr-planshape:focus, .wr-planpoint:focus{ border-color:var(--fac-dark); outline:none; }
+/* the framing paragraphs are a different job from the body, so they sit at
+   the top of the list and read differently */
+.wr-planshape optgroup{ font-weight:900; color:var(--ink-soft); }
+.wr-planshape option.wr-optframe, .wr-planshape optgroup.wr-optframe option{
+  color:#0f766e; font-weight:800; }
+body.dark-mode .wr-planshape option.wr-optframe,
+body.dark-mode .wr-planshape optgroup.wr-optframe option{ color:#2dd4bf; }
 .wr-planstate{ font-size:.625rem; font-weight:800; color:var(--ink-soft); white-space:nowrap; }
 .wr-planacts{ display:flex; gap:.3rem; }
 .wr-mini{ font-size:.625rem; font-weight:900; padding:.3rem .55rem; border-radius:.35rem;
@@ -1640,6 +1674,26 @@ body.dark-mode .wr-cmd[aria-pressed="true"]{ background:#5eead4; border-color:#5
   .wr-planmain{ grid-template-columns:1fr; }
   .wr-planstate, .wr-planacts{ grid-column:2; }
 }
+
+/* ---- where a student starts: level tabs and the question ---- */
+.wr-start{ grid-column:1 / -1; }
+.wr-strap{ font-size:.8125rem; line-height:1.55; color:var(--ink); margin:0 0 .7rem;
+  padding:.5rem .7rem; border-radius:.5rem; border-left:4px solid #c5a059;
+  background:color-mix(in srgb, #c5a059 12%, var(--surface)); }
+body.dark-mode .wr-strap{ background:color-mix(in srgb, #c5a059 18%, var(--surface)); }
+.wr-startrow{ display:flex; flex-wrap:wrap; gap:.6rem; align-items:center;
+  justify-content:space-between; }
+.wr-lvlseg button{ padding:.45rem 1.1rem; }
+.wr-startlvl{ font-size:.75rem; line-height:1.55; color:var(--ink-soft); margin:.5rem 0 0; }
+.wr-startq{ display:block; font-size:.875rem; font-weight:900; color:var(--fac-dark);
+  margin:.8rem 0 .3rem; }
+body.dark-mode .wr-startq{ color:var(--brand-ink); }
+.wr-start .wr-cmds{ margin-top:.6rem; }
+.wr-startcard .wr-cardval{ color:#0f766e; }
+body.dark-mode .wr-startcard .wr-cardval{ color:#5eead4; }
+.wr-cardnote{ font-size:.625rem; font-weight:800; color:var(--ink-faint); margin:.35rem 0 0; }
+.wr-promise{ font-size:.75rem; line-height:1.6; color:var(--ink); margin:1rem auto .3rem;
+  max-width:52rem; text-align:center; }
 
 /* ---- the three orientation cards, in one row ----
    Folded, they are equal cards the student can click. Whichever opens spans
@@ -8316,7 +8370,7 @@ z
     </div>
   </details>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 105 (2026-10-28) · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 106 (2026-10-28) · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -8390,10 +8444,10 @@ const SUBJECT_TOOLS = {
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=105' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=105' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=105' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=105' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=106' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=106' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=106' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=106' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -9335,8 +9389,8 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=105"></script>
-<script src="bib.js?v=105"></script>
-<script src="writing.js?v=105"></script>
+<script src="timetable.js?v=106"></script>
+<script src="bib.js?v=106"></script>
+<script src="writing.js?v=106"></script>
 </body>
 </html>

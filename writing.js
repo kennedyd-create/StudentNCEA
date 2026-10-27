@@ -19,7 +19,7 @@
    ============================================================ */
 (function () {
 
-const W_BUILD = 'build 105 — writing tools';
+const W_BUILD = 'build 106 — writing tools';
 
 const R = () => document.getElementById('writing-root');
 const esc = s => String(s == null ? '' : s)
@@ -30,25 +30,26 @@ const esc = s => String(s == null ? '' : s)
 const KEY = 'ncea_writing_v1';
 /* picking is the one part of the state that is never saved: whether the
    standard list is open is a this-moment thing, not something to restore. */
-let S = { std: null, shape: null, answers: {}, question: '', command: null, level: null, plan: [], slot: null, planOpen: false,
-          questionOpen: false, levelOpen: false,
+let S = { std: null, shape: null, answers: {}, question: '', commands: [], level: null, plan: [], slot: null, planOpen: false, essayOpen: false,
+          startOpen: false,
           picking: false, idea: null, lastStep: null, example: null, exLevel: null, asksOpen: null, headOpen: false, used: {}, recent: [], shapeOpen: false,
           nav: {} };   // where they are in the level/faculty/subject drill-down
 
 function save(){
   try{ localStorage.setItem(KEY, JSON.stringify({
-    std: S.std, shape: S.shape, answers: S.answers,
-    question: S.question, command: S.command, level: S.level, plan: S.plan, slot: S.slot,
+    shape: S.shape, answers: S.answers,
+    question: S.question, commands: S.commands, level: S.level, plan: S.plan, slot: S.slot,
     used: S.used, recent: S.recent })); }
   catch(e){ /* private browsing or a full quota — not worth interrupting them */ }
 }
 function load(){
   try{
     const o = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if(o){ S.std = o.std || null; S.shape = o.shape || null;
+    if(o){ S.shape = o.shape || null;
       S.answers = o.answers || {};
       S.question = typeof o.question === 'string' ? o.question : '';
-      S.command = o.command || null;
+      /* it used to be a single command word */
+      S.commands = Array.isArray(o.commands) ? o.commands : (o.command ? [o.command] : []);
       S.level = ['1','2','3','S'].indexOf(o.level) >= 0 ? o.level : null;
       S.plan = Array.isArray(o.plan) ? o.plan : [];
       S.slot = o.slot || null;
@@ -66,147 +67,11 @@ function load(){
        the choice in front of them, so the picker opens even when last
        session's shape is still remembered. */
     S.shapeOpen = true;
-    S.asksOpen = null;
+    S.startOpen = false;
   }catch(e){ /* corrupt store: start clean rather than die */ }
 }
 
-/* ============================================================
-   WHICH STANDARDS THIS IS FOR
-   An explicit list, not a guess. An earlier version read the
-   standard's format and evidence text for words like "essay",
-   which was wrong in both directions and silently so \u2014 Level 1
-   English, whose two externals are written exams, was missing
-   altogether.
-
-   The rule used to build this list: a standard is in when the
-   thing being marked is extended prose that explains, analyses,
-   evaluates or argues. It is out when the marked output is
-   skills application, numerical or spatial problem-solving, a
-   practical investigation, a performance, a visual or oral text,
-   or the conduct of a research process.
-
-   TEACHER REVIEW: these are my readings of the titles and
-   assessment formats, not NZQA rulings. The sciences and maths
-   are the least certain \u2014 Chemistry and Physics are here only
-   where the answer is written rather than calculated, which a
-   head of department may well judge differently. Adding or
-   removing a standard is one edit to the list below; the
-   validator checks every entry still resolves to a real
-   standard, so a typo cannot pass silently.
-   ============================================================ */
-
-const WRITING_STANDARDS = {
-  '1': {
-    "Geography": ['1.1', '1.3', '1.4'],
-    "History": ['1.1', '1.2', '1.3', '1.4'],
-    "Science": ['1.1', '1.2', '1.3', '1.4'],
-    "Chemistry and Biology": ['1.1', '1.2', '1.3', '1.4'],
-    "Physics, Earth and Space Science": ['1.1', '1.3', '1.4'],
-    "English": ['1.1', '1.2', '1.3', '1.4'],
-    "Te Reo Māori": ['1.4'],
-    "Physical Education": ['1.2', '1.3', '1.4'],
-    "Health Studies": ['1.1', '1.2', '1.3', '1.4'],
-    "Commerce": ['1.1', '1.2', '1.3', '1.4'],
-    "Digital Technologies": ['1.3'],
-    "Drama": ['1.4'],
-    "Music": ['1.3'],
-  },
-  '2': {
-    "Geography": ['2.1', '2.2', '2.3', '2.6', '2.7'],
-    "History": ['2.2', '2.3', '2.4', '2.5', '2.6'],
-    "Classical Studies": ['2.1', '2.2', '2.3', '2.4', '2.5'],
-    "Business Studies": ['2.1', '2.2', '2.5'],
-    "Biology": ['2.2', '2.3', '2.4', '2.5', '2.7'],
-    "Chemistry": ['2.3'],
-    "Earth & Space Science": ['2.2', '2.5', '2.6'],
-    "English": ['2.1', '2.2', '2.3', '2.4', '2.7', '2.8', '2.9', '2.10'],
-    "Mathematics and Statistics": ['2.11'],
-    "Te Reo Māori": ['2.4', '2.5'],
-    "Media Studies": ['2.1', '2.2', '2.3', '2.4', '2.7'],
-    "Art History": ['2.5', '2.6', '2.7', '2.8'],
-    "Physical Education": ['2.1', '2.2', '2.3', '2.5', '2.6', '2.7', '2.9', '2.10'],
-    "Health": ['2.1', '2.2', '2.4', '2.5'],
-    "Drama": ['2.3', '2.5', '2.7'],
-    "Music": ['2.7', '2.9'],
-    "Digital Technologies": ['2.9'],
-    "Psychology": ['2.1', '2.2', '2.4', '2.5'],
-  },
-  '3': {
-    "Geography": ['3.1', '3.2', '3.3', '3.6', '3.7'],
-    "Classical Studies": ['3.1', '3.2', '3.3', '3.4', '3.5'],
-    "Biology": ['3.2', '3.3', '3.4', '3.5', '3.6', '3.7'],
-    "Chemistry": ['3.3'],
-    "Physics": ['3.7'],
-    "Physical Education": ['3.1', '3.2', '3.3', '3.5', '3.6', '3.7', '3.8', '3.9'],
-    "Health": ['3.1', '3.2', '3.3', '3.4', '3.5'],
-    "English": ['3.1', '3.2', '3.3', '3.4', '3.7', '3.8', '3.9'],
-    "Te Reo Māori": ['3.4', '3.5'],
-    "Te Ao Haka": ['3.1', '3.4'],
-    "Statistics": ['3.12'],
-    "Art History": ['3.1', '3.2', '3.3', '3.4', '3.5', '3.6', '3.7', '3.8'],
-    "Digital Technologies": ['3.9'],
-    "Earth & Space Science": ['3.2', '3.4', '3.5'],
-    "Media Studies": ['3.1', '3.2', '3.3', '3.4', '3.7'],
-    "Music": ['3.7'],
-    "Drama": ['3.3', '3.5', '3.7'],
-    "Business Studies": ['3.1', '3.2', '3.5', '3.7'],
-    "History": ['3.2', '3.3', '3.4', '3.5', '3.6'],
-    "Psychology": ['3.1', '3.2', '3.4', '3.5'],
-    "Economics": ['3.1', '3.2', '3.3', '3.4', '3.5'],
-  },
-  'S': {
-    "Biology": ['S'],
-    "Chemistry": ['S'],
-    "Physics": ['S'],
-    "Calculus": ['S'],
-    "Statistics": ['S'],
-    "English": ['S'],
-    "History": ['S'],
-    "Geography": ['S'],
-    "Classical Studies": ['S'],
-    "Economics": ['S'],
-    "Drama": ['S'],
-  },};
-
-const isWriting = (st, level, subject) => {
-  const L = WRITING_STANDARDS[level]; if(!L) return false;
-  const refs = L[subject]; if(!refs) return false;
-  return refs.indexOf(st.ref || st.code) !== -1;
-};
-
 const LEVEL_NAME = { '1':'Level 1', '2':'Level 2', '3':'Level 3', 'S':'Scholarship' };
-
-function allWritingStandards(){
-  const D = window.NCEA_DATA || {};
-  const out = [];
-  for(const lvl of ['1','2','3','S']){
-    const d = D[lvl]; if(!d) continue;
-    for(const [subject, s] of Object.entries(d.subjects || {}))
-      for(const st of s.standards || [])
-        if(isWriting(st, lvl, subject)) out.push({ level: lvl, subject, st });
-  }
-  return out;
-}
-
-const findStd = (level, code) => allWritingStandards()
-  .find(x => x.level === level && x.st.code === code) || null;
-
-/* The level files load on demand, and a student may open this tab before
-   they have opened the study guide. Rather than sending them to another
-   tab to fetch the data, fetch it here and redraw when it lands. */
-let loading = false, loadFailed = false;
-function ensureLevels(){
-  if(loading || loadFailed) return;
-  if(typeof window.nceaLoadLevel !== 'function'){ loadFailed = true; return; }
-  loading = true;
-  Promise.all(['1','2','3','S'].map(id =>
-    window.nceaLoadLevel(id).catch(() => null)
-  )).then(() => {
-    loading = false;
-    if(!allWritingStandards().length) loadFailed = true;
-    render();
-  }).catch(() => { loading = false; loadFailed = true; render(); });
-}
 
 /* ============================================================
    THE PARAGRAPH SHAPES
@@ -314,7 +179,7 @@ const SHAPES = [
 
   { group:'Opening and closing' },
 
-  { id:'intro', name:'Opening a piece',
+  { id:'intro', role:'frame', name:'Opening a piece',
     use:'Sets up the question and your line on it. No throat-clearing about how since the dawn of time.',
     example:{ topic:"Does social media strengthen or weaken friendship?", byLevel:{"1": ["The question asks whether social media makes friendships stronger or weaker.", "I will argue that it does both: it strengthens the friendships people already have, but makes new ones harder to start.", "I will look first at how people keep in touch, then at how they meet new people, and finally at what happens when friendships end, because the answer is different at each stage."], "2": ["The question asks not whether social media changes friendship but whether that change counts as a strengthening or a weakening.", "This essay argues that the choice is a false one: social media deepens the friendships a person already has while thinning the conditions in which new ones begin.", "It takes maintenance first, then formation, then dissolution, because the evidence points in a different direction at each of the three and a single verdict would hide that."], "3": ["The question appears to ask for a verdict, but it assumes that strengthening and weakening are the available answers.", "This essay argues that social media acts asymmetrically across the life of a friendship, deepening maintenance while degrading formation, so that any single verdict conceals more than it reports.", "It takes the three stages in turn — maintenance, formation, dissolution — because the evidence points in different directions at each.", "The tension worth answering is that one affordance, frictionless contact, produces the gain at one stage and the loss at another."]} },
     deepen:'What is the tension in the question that makes it worth answering at all?',
@@ -327,7 +192,7 @@ const SHAPES = [
         hint:'Brief. A map, not a summary.' }
     ]},
 
-  { id:'conclusion', name:'Closing a piece',
+  { id:'conclusion', role:'frame', name:'Closing a piece',
     use:'Does more than repeat the introduction.',
     example:{ topic:"Does social media strengthen or weaken friendship?", byLevel:{"1": ["The evidence has shown that people who use social media keep in touch with more friends, but meet fewer new people face to face.", "So the answer is not simply stronger or weaker — social media strengthens the friendships people already have and weakens their chances of making new ones.", "This matters because the friendships people make as teenagers are often the ones they keep, so a tool that protects old friendships while blocking new ones has a larger effect than it first appears."], "2": ["The evidence has established that frequency of contact rises with social media use while the formation of new close friendships falls.", "The answer is therefore conditional rather than simple: social media strengthens maintenance and weakens formation.", "That conditional answer matters beyond this essay, because any policy treating social media as uniformly good or bad for young people will misfire at whichever end it has not accounted for."], "3": ["The evidence has established an asymmetry: contact frequency rises with use, while the rate at which new close friendships form falls.", "The answer is therefore not a verdict but a distribution — social media is good for the friendships a person has and bad for the ones they have not yet made.", "This matters beyond the essay because interventions are designed around verdicts, and a policy built on either half of this answer produces the opposite of its intention at the other.", "What the argument does not settle is whether the two effects are separable in practice; if they are not, the trade-off is the real question."]} },
     deepen:'What does your argument not settle, and why does that not undo it?',
@@ -417,6 +282,13 @@ const COMMANDS = [
     asks:'Significant to whom, measured how, and compared with what? Say so.' }
 ];
 
+/* command words in the question that the student has not ticked */
+function missedCommands(){
+  const picked = S.commands || [];
+  if(!picked.length) return [];
+  return detectedCommands().filter(c => !picked.includes(c.key));
+}
+
 /* what the question itself asks for, if they have typed one */
 function detectedCommands(){
   const q = (S.question || '').trim();
@@ -424,12 +296,13 @@ function detectedCommands(){
   return COMMANDS.filter(c => c.re.test(q));
 }
 
-/* the command in play: the one they picked, else the one their question uses */
+/* The student identifies the command words themselves \u2014 working out what a
+   question is actually asking is half of answering it. What they pick wins;
+   the detector is only a safety net for a student who skips the step, and a
+   nudge when their question plainly uses a word they did not tick. */
 function activeCommands(){
-  if(S.command){
-    const c = COMMANDS.find(x => x.key === S.command);
-    return c ? [c] : [];
-  }
+  const picked = (S.commands || []).map(k => COMMANDS.find(x => x.key === k)).filter(Boolean);
+  if(picked.length) return picked;
   let found = detectedCommands();
   /* "critically evaluate" also matches "evaluate"; the narrower one wins */
   if(found.some(c => c.key === 'critically'))
@@ -445,7 +318,7 @@ function activeCommands(){
 }
 
 /* a level chosen outright wins; a standard still implies one */
-function levelOf(){ return S.level || (S.std ? S.std.level : null); }
+function levelOf(){ return S.level || null; }
 
 function stepsFor(sh){
   const lvl = levelOf();
@@ -657,12 +530,13 @@ const OPENER_MOVES = MOVES.filter(m => m.cat === 'opener');
 /* Advanced constructions appear only at Level 3 and Scholarship, and only
    for subjects whose writing rewards them. Everything else is always on. */
 function movesFor(cat){
-  const cur = S.std ? findStd(S.std.level, S.std.code) : null;
+  /* With no subject to read, these gate on the level alone: at Level 1 and 2
+     a periodic sentence or an inversion reads as strain rather than control. */
+  const lvl = levelOf();
   return MOVES.filter(m => {
     if(m.cat !== cat) return false;
     if(cat !== 'advanced') return true;
-    if(!cur || (cur.level !== '3' && cur.level !== 'S')) return false;
-    return !m.subjects || m.subjects.test(cur.subject);
+    return lvl === '3' || lvl === 'S';
   });
 }
 
@@ -708,30 +582,6 @@ function render(){
   wire();
 }
 
-function head(){
-  /* The explanation is read once. What cannot be folded away is the promise
-     that nothing here writes for them, so the folded bar carries it. */
-  if(S.headOpen !== true && S.shape) return `<button class="panel p-4 wr-card" data-wrhead>
-    <p class="wr-cardlab">Writing <span class="wr-cardgo">Show</span></p>
-    <p class="wr-cardval">How this works</p>
-    <p class="wr-cardsub">Nothing here writes a sentence for you.</p>
-  </button>`;
-  return `<div class="panel p-5 wr-wide">
-    <div class="wr-stdbar">
-      <h2 class="wr-h">Writing</h2>
-      ${S.shape ? '<button class="wr-btn wr-ghost" data-wrhead>Hide</button>' : ''}
-    </div>
-    <p class="wr-lead">Pick the shape a paragraph needs and it asks you the questions
-    that shape has to answer, in order. You write the sentences. As you go it reports
-    what is there — how long each sentence is, how it opens, how the paragraph reads
-    as a whole — and the ideas beside you show ways to build a sentence.</p>
-    <p class="wr-warn"><strong>Nothing here writes a sentence for you.</strong> It asks the
-    questions and counts what is there. The sentence ideas can drop in a skeleton with the
-    gaps marked \u2014 <code>Although [what is true], </code> \u2014 but you fill every gap. Every
-    word in your paragraph is yours, which is the only way it can be handed in.</p>
-  </div>`;
-}
-
 /* There is no second tab. The whole-paragraph report used to live behind
    one; it now sits under the paragraph it describes, which is where a
    student is already looking. */
@@ -774,8 +624,16 @@ function planRow(r, i){
     <div class="wr-planmain">
       <select class="wr-planshape" data-wrplanshape="${esc(r.id)}">
         <option value="">Choose a shape\u2026</option>
-        ${SHAPES.filter(x => x.id).map(x => `<option value="${esc(x.id)}"
-          ${x.id === r.shape ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}
+        <optgroup label="Opening and closing" class="wr-optframe">
+          ${SHAPES.filter(x => x.id && x.role === 'frame').map(x => `<option
+            class="wr-optframe" value="${esc(x.id)}"
+            ${x.id === r.shape ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}
+        </optgroup>
+        <optgroup label="Body paragraphs">
+          ${SHAPES.filter(x => x.id && x.role !== 'frame').map(x => `<option
+            value="${esc(x.id)}"
+            ${x.id === r.shape ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}
+        </optgroup>
       </select>
       <input class="wr-planpoint" data-wrplanpoint="${esc(r.id)}" type="text"
         value="${esc(r.point || '')}" placeholder="The point this paragraph makes">
@@ -829,7 +687,8 @@ function planCard(){
       }).join('')}</p>` : ''}
     <div class="wr-acts">
       <button class="wr-btn wr-alt" data-wrplanadd>Add a paragraph</button>
-      ${rows.length ? `<button class="wr-btn wr-ghost" data-wrplancopy>Copy the plan</button>` : ''}
+      ${rows.length ? `<button class="wr-btn wr-go" data-wressayopen>See the whole essay</button>
+        <button class="wr-btn wr-ghost" data-wrplancopy>Copy the plan</button>` : ''}
     </div>
   </div>`;
 }
@@ -846,198 +705,8 @@ function planText(){
   return L.join('\n');
 }
 
-/* ---- the question card ---- */
-
-function questionCard(){
-  const q = (S.question || '').trim();
-  const cmds = activeCommands();
-  if(!S.questionOpen && q) return `<button class="panel p-4 wr-card wr-qcard" data-wrqopen>
-    <p class="wr-cardlab">Your question <span class="wr-cardgo">Change</span></p>
-    <p class="wr-cardval">${cmds.length
-      ? cmds.map(c => esc(c.label)).join(' + ') : 'No command word found'}</p>
-    <p class="wr-cardsub">${esc(q.length > 110 ? q.slice(0, 110) + '\u2026' : q)}</p>
-  </button>`;
-  if(!S.questionOpen) return `<button class="panel p-4 wr-card wr-cardempty" data-wrqopen>
-    <p class="wr-cardlab">Your question <span class="wr-cardgo">Add</span></p>
-    <p class="wr-cardval">Paste your question</p>
-    <p class="wr-cardsub">The command word in it decides what a paragraph has to do, so this is
-      the one thing worth filling in.</p>
-  </button>`;
-
-  return `<div class="panel p-4 md:p-5 wr-wide">
-    <div class="wr-stdbar">
-      <h3 class="wr-h3">What question are you answering?</h3>
-      <button class="wr-btn wr-ghost" data-wrqclose>Done</button>
-    </div>
-    <p class="wr-hint">Paste the essay or paragraph question exactly as it was given to you.
-      Nothing is sent anywhere; it is read here to find the command word.</p>
-    <textarea id="wr-q" class="wr-in" data-wrq rows="2"
-      placeholder="e.g. Analyse the causes of a significant historical event">${esc(S.question || '')}</textarea>
-
-    ${cmds.length ? `<div class="wr-cmdfound">
-      <p class="wr-cardlab">This question asks you to</p>
-      ${cmds.map(c => `<p class="wr-cmdname">${esc(c.label)}</p>
-        <p class="wr-cmdasks">${esc(c.asks)}</p>`).join('')}
-    </div>` : `<p class="wr-hint mt-2 wr-cmdnone">No command word spotted yet. Pick the one your
-      question uses and the shapes below will follow it.</p>`}
-
-    <p class="wr-rh">Or choose the command word yourself</p>
-    <div class="wr-cmds">${COMMANDS.map(c => `<button class="wr-cmd"
-      data-wrcmd="${esc(c.key)}" aria-pressed="${S.command === c.key}">${esc(c.label)}</button>`
-      ).join('')}${S.command
-        ? '<button class="wr-cmd wr-cmdclear" data-wrcmd="">Clear</button>' : ''}</div>
-  </div>`;
-}
-
-/* ---- the level card ---- */
-
-function levelCard(){
-  const lvl = levelOf();
-  if(!S.levelOpen && lvl) return `<button class="panel p-4 wr-card" data-wrlvlopen>
-    <p class="wr-cardlab">Level <span class="wr-cardgo">Change</span></p>
-    <p class="wr-cardval">${esc(LEVEL_NAME[lvl])}</p>
-    <p class="wr-cardsub">${esc((LEVEL_EXPECT[lvl] || {}).shape || '')}</p>
-  </button>`;
-  if(!S.levelOpen) return `<button class="panel p-4 wr-card wr-cardempty" data-wrlvlopen>
-    <p class="wr-cardlab">Level <span class="wr-cardgo">Choose</span></p>
-    <p class="wr-cardval">Which NCEA level?</p>
-    <p class="wr-cardsub">Level 3 asks more of the same paragraph than Level 1 does, so the
-      questions change with it.</p>
-  </button>`;
-
-  return `<div class="panel p-4 wr-wide">
-    <div class="wr-stdbar">
-      <h3 class="wr-h3">Which NCEA level are you writing at?</h3>
-      ${lvl ? '<button class="wr-btn wr-ghost" data-wrlvlclose>Done</button>' : ''}
-    </div>
-    <div class="wr-pills">${['1','2','3','S'].map(l => `<button class="fac-pill"
-      data-wrlvl="${l}" aria-pressed="${lvl === l}">${esc(LEVEL_NAME[l])}</button>`).join('')}</div>
-    ${lvl && LEVEL_EXPECT[lvl] ? `<div class="wr-level">
-      <p class="wr-levelh">At ${esc(LEVEL_NAME[lvl])}</p>
-      <p class="wr-levelb">${esc(LEVEL_EXPECT[lvl].line)}</p>
-      <p class="wr-levels">${esc(LEVEL_EXPECT[lvl].shape)}</p>
-    </div>` : ''}
-  </div>`;
-}
-
-/* ---- choosing a standard ----
-   The same drill-down as the study guide \u2014 level, then faculty, then
-   subject \u2014 so a student who has used that tab already knows this one.
-   Only levels, faculties and subjects that actually have a writing standard
-   are offered, so nothing leads to an empty list. */
-
-function writingTree(){
-  const out = {};
-  for(const x of allWritingStandards()){
-    const d = (window.NCEA_DATA || {})[x.level]; if(!d) continue;
-    const fac = (d.faculties || []).find(f => (f.subjects || []).includes(x.subject))
-             || { name:'Other', dark:'#475569', light:'#f1f5f9', subjects:[x.subject] };
-    const L = out[x.level] = out[x.level] || {};
-    const F = L[fac.name] = L[fac.name] || { fac, subjects:{} };
-    (F.subjects[x.subject] = F.subjects[x.subject] || []).push(x);
-  }
-  return out;
-}
-
-const pill = (cls, attr, label, on, fac) =>
-  `<button class="${cls}" ${attr} aria-pressed="${!!on}"${fac
-    ? ` style="--fac-dark:${esc(fac.dark)};--fac-light:${esc(fac.light)}"` : ''}>${label}</button>`;
-
-function stdBar(){
-  const cur = S.std ? findStd(S.std.level, S.std.code) : null;
-  /* S.picking wins, so "Change" reopens the list without clearing what they
-     already chose \u2014 Close puts them back where they were */
-  /* The chip is a span, not a button: a button inside a button is invalid
-     markup and breaks keyboard handling. The whole card is the one control. */
-  if(cur && !S.picking) return `<button class="panel p-4 wr-card wr-stdchosen" data-wrclear>
-    <p class="wr-cardlab">Writing for <span class="wr-cardgo">Change</span></p>
-    <p class="wr-cardval">${esc(cur.st.ref || cur.st.code)} \u00b7 ${esc(cur.subject)}</p>
-    <p class="wr-cardsub">${esc(LEVEL_NAME[cur.level])} \u00b7 ${esc(cur.st.mode)}ly assessed.
-      ${esc(cur.st.title)}</p>
-  </button>`;
-
-  const all = allWritingStandards();
-  if(!all.length && !cur){
-    ensureLevels();
-    return `<div class="panel p-4 wr-wide"><p class="wr-lead">${loadFailed
-      ? `The list of standards could not load, so you cannot pick one here. Both tools still
-         work without it \u2014 pick a paragraph shape below, or paste a paragraph into
-         <strong>Check a paragraph</strong>.`
-      : `Loading the standards\u2026 You do not have to wait. Pick a paragraph shape below
-         and start writing.`}</p></div>`;
-  }
-
-  if(!S.picking) return `<button class="panel p-4 wr-card wr-cardempty" data-wrpick>
-    <p class="wr-cardlab">Standard <span class="wr-cardgo">Optional</span></p>
-    <p class="wr-cardval">Add your standard</p>
-    <p class="wr-cardsub">You do not need this to write. Adding it shows the Merit and
-      Excellence shift for that standard, and what loses marks in it.</p>
-  </button>`;
-
-  /* the drill-down needs the full width of the row */
-  const tree = writingTree();
-  const n = S.nav || (S.nav = {});
-  /* a level with one faculty, or a faculty with one subject, chooses itself */
-  const levels = Object.keys(tree).sort();
-  if(n.level && !tree[n.level]) n.level = null;
-  const facs = n.level ? tree[n.level] : null;
-  if(n.faculty && (!facs || !facs[n.faculty])) n.faculty = null;
-  const subs = n.faculty ? facs[n.faculty].subjects : null;
-  if(n.subject && (!subs || !subs[n.subject])) n.subject = null;
-
-  let html = `<div class="wr-stdbar">
-    <div>
-      <p class="wr-stdlab">Which standard are you writing for?</p>
-      <p class="wr-stdsub">The ${all.length} standards assessed by extended writing.</p>
-    </div>
-    <button class="wr-btn wr-ghost" data-wrunpick>Close</button>
-  </div>
-  <p class="wr-lvlh">Level</p>
-  <div class="wr-pills">${levels.map(l =>
-    pill('fac-pill', `data-wrnav="level|${esc(l)}"`, esc(LEVEL_NAME[l]), n.level === l)).join('')}</div>`;
-
-  if(facs){
-    const names = Object.keys(facs).sort();
-    html += `<p class="wr-lvlh">Faculty</p>
-      <div class="wr-pills">${names.map(f => pill('fac-pill',
-        `data-wrnav="faculty|${esc(f)}"`,
-        `${esc(f)} <span class="fac-count">${Object.values(facs[f].subjects)
-          .reduce((a, b) => a + b.length, 0)}</span>`,
-        n.faculty === f, facs[f].fac)).join('')}</div>`;
-  }
-  if(subs){
-    const fac = facs[n.faculty].fac;
-    html += `<p class="wr-lvlh">Subject</p>
-      <div class="wr-pills">${Object.keys(subs).sort().map(sj => pill('subj-pill',
-        `data-wrnav="subject|${esc(sj)}"`,
-        `${esc(sj)} <span class="fac-count">${subs[sj].length}</span>`,
-        n.subject === sj, fac)).join('')}</div>`;
-  }
-  if(n.subject){
-    html += `<p class="wr-lvlh">Standard</p>
-      <div class="wr-picks">${subs[n.subject]
-        .sort((a, b) => String(a.st.ref || '').localeCompare(String(b.st.ref || '')))
-        .map(x => `<button class="wr-pick" data-wrstd="${esc(x.level)}|${esc(x.st.code)}">
-          <b>${esc(x.st.ref || x.st.code)}
-            <span class="wr-mode wr-${esc(x.st.mode)}">${esc(x.st.mode)}</span></b>
-          <span>${esc(x.st.title)}</span></button>`).join('')}</div>`;
-  } else {
-    html += `<p class="wr-hint">${n.faculty ? 'Pick a subject.'
-      : n.level ? 'Pick a faculty.' : 'Start with your level.'}</p>`;
-  }
-  return `<div class="panel p-4 wr-wide">${html}</div>`;
-}
-
-/* ============================================================
-   THE HABIT
-   One paragraph at a time, this tool cannot see the thing it
-   exists to change: a student who writes every paragraph the
-   same way. So it keeps a tally of the shapes they have
-   actually finished, and says so. Nothing here grades anything
-   \u2014 it reports a pattern the student cannot see from inside
-   a single paragraph.
-   ============================================================ */
-
+/* The tally is kept so a shape they lean on quietly drops out of the
+   recommendations. It is never shown to the student. */
 function recordUse(id){
   if(!id) return;
   S.used = S.used || {};
@@ -1053,8 +722,7 @@ function recordUse(id){
    way as the one above it, because those are facts about the
    text. It cannot tell them whether the evidence proves the
    claim \u2014 that needs a reader who knows the subject, which is
-   what the AI prompt is for. The line between the two is the
-   whole design, so nothing below ever looks at meaning.
+   what the AI prompt is for.
    ============================================================ */
 
 const HEDGES = /\b(very|really|quite|rather|somewhat|a bit|kind of|sort of|pretty much|basically|actually|simply|just|literally|obviously|clearly)\b/gi;
@@ -1068,7 +736,6 @@ const VAGUE = [
   [/\bstuff\b/i,                   'name it']
 ];
 
-/* one sentence, measured against the one before it */
 function liveNote(text, prevOpener){
   const t = String(text || '').trim();
   if(!t) return null;
@@ -1111,14 +778,133 @@ function liveHTML(text, prevOpener){
   </p>`;
 }
 
-/* the opener of the last filled answer before index i, so a student can see
-   two sentences in a row built the same way */
 function prevOpenerFor(a, steps, i){
   for(let k = i - 1; k >= 0; k--){
     const t = (a[k] || '').trim();
     if(t){ const ss = sentences(t); if(ss.length) return opener(ss[ss.length - 1]); }
   }
   return null;
+}
+
+/* ---- the whole essay ----
+   The plan holds the paragraphs; this is where they are read in order, as a
+   piece. It is assembled from what the student wrote and nothing else: no
+   joining sentences, no transitions supplied. Gaps show as gaps, because a
+   missing paragraph is the thing most worth seeing. */
+
+function paragraphOf(rowId){
+  const row = (S.plan || []).find(r => r.id === rowId);
+  if(!row || !row.shape) return '';
+  const sh = shapeById(row.shape); if(!sh) return '';
+  const a = S.answers[rowId] || [];
+  return stepsFor(sh).map((_, i) => (a[i] || '').trim()).filter(Boolean).join(' ');
+}
+
+function essayText(){
+  const L = [];
+  if((S.question || '').trim()) L.push(S.question.trim(), '');
+  for(const r of (S.plan || [])){
+    const t = paragraphOf(r.id);
+    if(t) L.push(t, '');
+  }
+  return L.join('\n').trim();
+}
+
+function essayPanel(){
+  const rows = S.plan || [];
+  const written = rows.filter(r => paragraphOf(r.id));
+  const words = wordCount(rows.map(r => paragraphOf(r.id)).join(' '));
+  return `<div class="panel p-4 md:p-5 wr-wide wr-essay">
+    <div class="wr-stdbar">
+      <h3 class="wr-h3">The whole essay</h3>
+      <button class="wr-btn wr-ghost" data-wressayclose>Back to the plan</button>
+    </div>
+    <p class="wr-hint">Your paragraphs in the order you planned them. Nothing has been added
+      between them \u2014 the joins are yours to write.</p>
+    <p class="wr-essaystat">
+      ${speakerBtn('essay', 'Read the whole essay aloud')}
+      <span class="wr-count wr-words">${words} word${words === 1 ? '' : 's'}</span>
+      <span class="wr-count">${written.length} of ${rows.length} paragraph${
+        rows.length === 1 ? '' : 's'} written</span>
+    </p>
+    ${(S.question || '').trim() ? `<p class="wr-planq">${esc(S.question)}</p>` : ''}
+    ${rows.length ? `<div class="wr-essaybody">${rows.map((r, i) => {
+      const sh = shapeById(r.shape);
+      const t = paragraphOf(r.id);
+      return `<div class="wr-essaypara${t ? '' : ' wr-essaygap'}">
+        <p class="wr-essaylab"><span class="wr-plannum">${i + 1}</span>
+          ${esc(sh ? sh.name : 'No shape chosen')}${(r.point || '').trim()
+            ? ` \u00b7 ${esc(r.point)}` : ''}</p>
+        ${t ? `<p class="wr-para">${esc(t)}</p>`
+            : `<p class="wr-essaynone">Not written yet.
+                <button class="wr-mini" data-wrplanopen="${esc(r.id)}">Write it</button></p>`}
+      </div>`;
+    }).join('')}</div>` : `<p class="wr-hint mt-2">No paragraphs planned yet.</p>`}
+    <div class="wr-acts">
+      <button class="wr-btn wr-alt" data-wressaycopy>Copy the whole essay</button>
+    </div>
+  </div>`;
+}
+
+/* ---- where a student starts ----
+   Three level tabs and the question. Everything else that used to sit up
+   here \u2014 the explainer, the standard chooser, the band-shift panel \u2014 was
+   reading, not doing. The question is the only thing the tool needs, and the
+   level is one click. */
+
+function startCard(){
+  const lvl = levelOf();
+  const q = (S.question || '').trim();
+  const cmds = activeCommands();
+
+  if(!S.startOpen && S.shape) return `<button class="panel p-4 wr-card wr-startcard"
+      data-wrstart>
+    <p class="wr-cardlab">${lvl ? esc(LEVEL_NAME[lvl]) : 'No level set'}
+      <span class="wr-cardgo">Change</span></p>
+    <p class="wr-cardval">${cmds.length ? esc(cmds[0].label) : 'Your question'}</p>
+    <p class="wr-cardsub">${q
+      ? esc(q.length > 120 ? q.slice(0, 120) + '\u2026' : q)
+      : 'No question added yet.'}</p>
+    <p class="wr-cardnote">How you write it, not what you write.</p>
+  </button>`;
+
+  return `<div class="panel p-4 md:p-5 wr-start">
+    <p class="wr-strap">This is about <strong>how</strong> you write, not what you write.
+      It never judges your content or your evidence \u2014 it cannot see your task \u2014 and it
+      never writes a sentence for you.</p>
+    <div class="wr-startrow">
+      <div class="seg wr-lvlseg">
+        ${['1','2','3'].map(l => `<button data-wrlvl="${l}"
+          aria-pressed="${lvl === l}">Level ${l}</button>`).join('')}
+      </div>
+      ${S.shape ? '<button class="wr-btn wr-ghost" data-wrstartclose>Done</button>' : ''}
+    </div>
+    ${lvl && LEVEL_EXPECT[lvl] ? `<p class="wr-startlvl">${esc(LEVEL_EXPECT[lvl].line)}</p>` : ''}
+
+    <label class="wr-startq" for="wr-q">What question are you answering?</label>
+    <textarea id="wr-q" class="wr-in" data-wrq rows="2"
+      placeholder="Paste your essay or paragraph question here">${esc(S.question || '')}</textarea>
+
+    <p class="wr-cmdq">Which command words does it use?
+      <span class="wr-cmdqsub">Pick every one that applies \u2014 questions often use more
+      than one, and each adds something the paragraph has to do.</span></p>
+    <div class="wr-cmds">${COMMANDS.map(c => `<button class="wr-cmd"
+      data-wrcmd="${esc(c.key)}"
+      aria-pressed="${(S.commands || []).includes(c.key)}">${esc(c.label)}</button>`
+      ).join('')}${(S.commands || []).length
+        ? '<button class="wr-cmd wr-cmdclear" data-wrcmd="">Clear all</button>' : ''}</div>
+
+    ${cmds.length ? `<div class="wr-cmdfound">
+      <p class="wr-cardlab">${(S.commands || []).length
+        ? 'So this paragraph has to' : 'Nothing picked yet, so going on the question alone'}</p>
+      ${cmds.map(c => `<p class="wr-cmdname">${esc(c.label)}</p>
+        <p class="wr-cmdasks">${esc(c.asks)}</p>`).join('')}
+    </div>` : `<p class="wr-hint mt-2 wr-cmdnone">Pick the command words above and the shapes
+      will follow them.</p>`}
+    ${missedCommands().length ? `<p class="wr-cmdmiss">Your question also uses
+      <strong>${missedCommands().map(c => esc(c.label)).join('</strong> and <strong>')}</strong>.
+      Worth a look before you start.</p>` : ''}
+  </div>`;
 }
 
 /* ---- reading it aloud ----
@@ -1182,83 +968,28 @@ const speakerBtn = (id, label) => canSpeak()
   ? `<button class="wr-speak" data-wrspeak="${esc(id)}" aria-pressed="false"
       title="${esc(label)}">\u25b6 Read aloud</button>` : '';
 
-/* ---- what the chosen standard asks for ----
-   Until now the standard only labelled the page and scoped the feedback
-   prompt. These two use it: the verbs in the standard decide which shapes
-   are worth recommending, and the band shift is the thing the paragraph
-   actually has to deliver. Both are read straight from the standard's own
-   data \u2014 nothing here is invented. */
-
-const VERB_SHAPES = [
-  { re:/evaluat|justif|judge|assess|significan/i, ids:['build','counter'] },
-  { re:/compar|contrast/i,                        ids:['compare'] },
-  { re:/caus|consequen|process|effect|shape/i,    ids:['cause'] },
-  { re:/analys|analyz|examin|explor|interpret/i,  ids:['angles','claim'] },
-  { re:/discuss|argu|respond/i,                   ids:['counter','build'] },
-  { re:/text|languag|quot|author|writer/i,        ids:['quote'] },
-  { re:/explain|describ|demonstrat|understand/i,  ids:['claim','cause'] }
-];
+/* ---- which shapes to put in front of them ---- */
 
 function suggestedShapes(){
   const out = [];
-  /* the question's own command word first: it is one verb, not a list of six */
+  /* the question's own command word: one verb, and the one that counts */
   for(const c of activeCommands()) for(const id of c.shapes)
     if(!out.includes(id)) out.push(id);
 
-  const cur = S.std ? findStd(S.std.level, S.std.code) : null;
+  /* at Level 3 the judgement shapes are worth putting in front of everyone,
+     because judgement is what the level is marked on */
   const lvl = levelOf();
-  if(!cur){
-    if(lvl === '3' || lvl === 'S')
-      for(const id of ['build','counter']) if(!out.includes(id)) out.push(id);
-    return out.slice(0, 4);
-  }
-  const hay = [(cur.st.verbs || []).join(' '), cur.st.title || ''].join(' ');
-  for(const v of VERB_SHAPES) if(v.re.test(hay)) for(const id of v.ids)
-    if(!out.includes(id)) out.push(id);
-  /* At Level 3 and Scholarship the judgement shapes are worth putting in
-     front of everyone, because that is what the levels are marked on. */
   if(lvl === '3' || lvl === 'S')
     for(const id of ['build','counter']) if(!out.includes(id)) out.push(id);
+
   /* a shape they already lean on is not a recommendation, it is a rut */
   const used = S.used || {};
   const lean = Object.keys(used).filter(k => used[k] >= 3);
   let fresh = out.filter(id => !lean.includes(id));
-  if(!fresh.length){
-    /* every shape the verbs point at is one they already lean on, so the
-       useful recommendation is the one they have never tried */
-    fresh = SHAPES.filter(x => x.id && x.group !== 'Opening and closing' && !used[x.id])
+  if(!fresh.length)
+    fresh = SHAPES.filter(x => x.id && x.role !== 'frame' && !used[x.id])
                   .map(x => x.id);
-  }
   return (fresh.length ? fresh : out).slice(0, 4);
-}
-
-function standardAsks(){
-  const cur = S.std ? findStd(S.std.level, S.std.code) : null;
-  if(!cur) return '';
-  const b = cur.st.bandShift || {}, pit = cur.st.pitfalls || [];
-  if(!b.aToM && !b.mToE && !pit.length) return '';
-  /* once they have a shape and are writing, this has been read and is just
-     something to scroll past \u2014 so it folds itself, with one click back */
-  const open = S.asksOpen === true || (S.asksOpen !== false && !S.shape);
-  if(!open) return `<button class="panel p-4 wr-card wr-asks" data-wrasks>
-    <p class="wr-cardlab">Marked on <span class="wr-cardgo">Show</span></p>
-    <p class="wr-cardval">What ${esc(cur.st.ref || cur.st.code)} rewards</p>
-    <p class="wr-cardsub">The Merit and Excellence shift, and what loses marks in this
-      standard.</p>
-  </button>`;
-  return `<div class="panel p-4 wr-asks wr-wide">
-    <div class="wr-stdbar">
-      <h3 class="wr-h3">What ${esc(cur.st.ref || cur.st.code)} is actually marked on</h3>
-      ${S.shape ? '<button class="wr-btn wr-ghost" data-wrasks>Hide</button>' : ''}
-    </div>
-    <p class="wr-hint">Straight from the standard. Your paragraph is one piece of this, not all of it.</p>
-    ${b.aToM ? `<div class="wr-band"><p class="wr-bandh">Achieved \u2192 Merit</p>
-      <p class="wr-bandb">${esc(b.aToM)}</p></div>` : ''}
-    ${b.mToE ? `<div class="wr-band"><p class="wr-bandh">Merit \u2192 Excellence</p>
-      <p class="wr-bandb">${esc(b.mToE)}</p></div>` : ''}
-    ${pit.length ? `<p class="wr-rh">What loses marks in this standard</p>
-      <ul class="wr-pits">${pit.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
-  </div>`;
 }
 
 /* ---- a worked example of each shape ----
@@ -1416,8 +1147,10 @@ function openSite(key){
 function buildPane(){
   /* The three orientation panels sit in one row while they are folded, and
      the one that opens spans the row rather than pushing the others around. */
-  return `<div class="wr-top">${questionCard()}${levelCard()}${stdBar()}</div>` +
-    `<div class="wr-top wr-top2">${planCard()}${head()}${standardAsks()}</div>` +
+  if(S.essayOpen) return `<div class="wr-top">${essayPanel()}</div>` +
+    `<div class="wr-work"><div class="wr-main">${shapePicker()}${S.shape ? shapeForm() : ''}</div>` +
+    ideasRail() + `</div>`;
+  return `<div class="wr-top">${startCard()}${planCard()}</div>` +
     `<div class="wr-work"><div class="wr-main">${shapePicker()}${S.shape ? shapeForm() : ''}</div>` +
     ideasRail() + `</div>`;
 }
@@ -1457,7 +1190,7 @@ function shapePicker(){
       <span class="wr-shapename">${esc(s.name)}${s.also
         ? ` <em>(${esc(s.also)})</em>` : ''}${fits
         ? ` <span class="wr-rec">${activeCommands().length ? 'suits your question'
-            : (S.std ? 'fits this standard' : 'suits this level')}</span>` : ''}</span>
+            : 'suits this level'}</span>` : ''}</span>
       <span class="wr-shapeuse">${esc(s.use)}</span>
     </button>
     ${s.example ? `<button class="wr-exmini" data-wrexample="${esc(s.id)}"
@@ -1472,8 +1205,6 @@ function shapePicker(){
     ${rec.length ? `<p class="wr-hint">${(() => {
       const c = activeCommands()[0];
       if(c) return `Marked ones suit a <strong>${esc(c.label)}</strong> question \u2014 a
-        starting point, not a rule.`;
-      if(S.std) return `Marked ones are picked from the verbs in the standard itself \u2014 a
         starting point, not a rule.`;
       return `Marked ones suit the level you chose \u2014 a starting point, not a rule.`;
     })()}</p>` : ''}
@@ -1507,8 +1238,11 @@ function shapeForm(){
       </div>`).join('')}
     <div class="wr-assembled">
       <p class="wr-alabel">${speakerBtn('para', 'Read your paragraph aloud')}Your paragraph so far${(() => {
-        const b = blanksLeft(steps.map((_, i) => a[i] || '').join(' '));
-        return b ? ` <span class="wr-count wr-blanks">${b} gap${b===1?'':'s'} still to fill</span>` : '';
+        const joined = steps.map((_, i) => (a[i] || '').trim()).filter(Boolean).join(' ');
+        const w = wordCount(joined);
+        const b = blanksLeft(joined);
+        return (w ? ` <span class="wr-count wr-words">${w} word${w===1?'':'s'}</span>` : '')
+          + (b ? ` <span class="wr-count wr-blanks">${b} gap${b===1?'':'s'} still to fill</span>` : '');
       })()}</p>
       <p class="wr-para">${filled ? esc(steps.map((_, i) => (a[i]||'').trim())
         .filter(Boolean).join(' ')) : '<span class="wr-empty">Nothing written yet.</span>'}</p>
@@ -1537,8 +1271,6 @@ function shapeForm(){
       <p class="wr-aithen">Then open <span class="wr-aisites">${AI_SITES.map(x =>
         `<button class="wr-aisite" data-wrai="${esc(x.key)}">${esc(x.name)}</button>`
         ).join('')}</span> and paste it in.</p>
-      ${S.std ? `<button class="wr-ailink" data-wrfeedback>Or copy a prompt about your
-        content and your standard instead</button>` : ''}
     </div>
   </div>`;
 }
@@ -1651,7 +1383,11 @@ function report(a){
 }
 
 function foot(){
-  return `<p class="wr-build">${W_BUILD} · the paragraph shapes are classical rhetoric,
+  return `<p class="wr-promise"><strong>Nothing here writes a sentence for you.</strong>
+    It asks the questions and counts what is there. The sentence ideas can drop in a skeleton
+    with the gaps marked, but you fill every gap \u2014 every word in your paragraph is yours,
+    which is the only way it can be handed in.</p>
+    <p class="wr-build">${W_BUILD} · the paragraph shapes are classical rhetoric,
     named here in NCEA's own terms</p>`;
 }
 
@@ -1666,19 +1402,6 @@ function currentText(){
   const sh = shapeById(S.shape); if(!sh) return '';
   const a = slotAnswers();
   return stepsFor(sh).map((_, i) => (a[i] || '').trim()).filter(Boolean).join(' ');
-}
-
-function feedbackPrompt(){
-  const text = currentText();
-  const cur = S.std ? findStd(S.std.level, S.std.code) : null;
-  const sh = shapeById(S.shape);
-  let extra = 'This is ONE PARAGRAPH, not a whole piece of work. Comment on this paragraph only.';
-  if(sh)
-    extra += ` I was trying to write it as "${sh.name}": ${sh.steps.map(s => s.q).join(' ')}`;
-  extra += '\n\nMy paragraph:\n\n' + text;
-  if(!cur || !window.composePrompt) return extra;
-  return window.composePrompt({ level: cur.level, subject: cur.subject, code: cur.st.code,
-    mode: 'feedback', topic: '__all__', context: '', extra });
 }
 
 function copy(text, btn, done){
@@ -1706,46 +1429,33 @@ function wire(){
   r.dataset.wrWired = '1';
 
   r.addEventListener('click', ev => {
-    const t = ev.target.closest('[data-wrstd],[data-wrclear],[data-wrshape],' +
-      '[data-wrcopy],[data-wrfeedback],[data-wrreset],' +
-      '[data-wrpick],[data-wrunpick],[data-wrnav],[data-wridea],[data-wraddframe],' +
+    const t = ev.target.closest('[data-wrshape],[data-wrcopy],[data-wrreset],' +
+      '[data-wridea],[data-wraddframe],' +
       '[data-wrshapeopen],[data-wrshapeclose],[data-wrexample],[data-wrexclose],' +
       '[data-wrexlevel],[data-wrexback],[data-wrai],[data-wrcraft],' +
-      '[data-wrasks],[data-wrhead],[data-wrspeak],[data-wrqopen],[data-wrqclose],' +
-      '[data-wrcmd],[data-wrlvlopen],[data-wrlvlclose],[data-wrlvl],' +
+      '[data-wrspeak],[data-wrstart],[data-wrstartclose],' +
+      '[data-wrcmd],[data-wrlvl],' +
       '[data-wrplanopenpanel],[data-wrplanclose],[data-wrplanadd],[data-wrplandel],' +
-      '[data-wrplanopen],[data-wrplancopy]');
+      '[data-wrplanopen],[data-wrplancopy],[data-wressayopen],[data-wressayclose],' +
+      '[data-wressaycopy]');
     if(!t) return;
     const d = t.dataset;
 
-    if('wrpick' in d){ S.picking = true; render(); return; }
-    if('wrunpick' in d){ S.picking = false; render(); return; }
     if('wridea' in d){ S.idea = S.idea === d.wridea ? null : d.wridea; render(); return; }
     if('wraddframe' in d){ addFrame(d.wraddframe); return; }
-    if('wrnav' in d){
-      const [k, v] = d.wrnav.split('|');
-      S.nav = S.nav || {};
-      /* picking a level clears the faculty under it, and so on down */
-      if(k === 'level'){ S.nav = { level: S.nav.level === v ? null : v }; }
-      if(k === 'faculty'){ S.nav.faculty = S.nav.faculty === v ? null : v; S.nav.subject = null; }
-      if(k === 'subject'){ S.nav.subject = S.nav.subject === v ? null : v; }
-      render(); return;
-    }
-    if('wrstd' in d){ S.picking = false; const [level, code] = d.wrstd.split('|');
-      S.std = { level, code }; save(); render(); return; }
-    if('wrclear' in d){ S.picking = true; render(); return; }
     if('wrshape' in d){
       S.shape = S.shape === d.wrshape ? null : d.wrshape;
       S.slot = null;                // picked by hand, so not a plan row
       S.shapeOpen = false;          // chosen, so fold the picker away
-      if(S.shape){ S.asksOpen = false; S.headOpen = false; }   // and the sections above
+      if(S.shape) S.startOpen = false;   // and the panel above it
       save(); render(); return;
     }
     if('wrcraft' in d){ recordUse(S.shape);
       copy(craftPrompt(), t, 'Copied \u2014 now open one below'); return; }
     if('wrai' in d){ openSite(d.wrai); return; }
-    if('wrasks' in d){ S.asksOpen = !S.asksOpen; render(); return; }
-    if('wrhead' in d){ S.headOpen = S.headOpen !== true; render(); return; }
+    if('wressayopen' in d){ S.essayOpen = true; S.planOpen = false; render(); return; }
+    if('wressayclose' in d){ S.essayOpen = false; S.planOpen = true; render(); return; }
+    if('wressaycopy' in d){ copy(essayText(), t); return; }
     if('wrplanopenpanel' in d){ S.planOpen = true; render(); return; }
     if('wrplanclose' in d){ S.planOpen = false; render(); return; }
     if('wrplanadd' in d){ S.plan = (S.plan || []).concat([{ id: newRowId(), shape:'', point:'' }]);
@@ -1759,20 +1469,27 @@ function wire(){
     if('wrplanopen' in d){
       const row = (S.plan || []).find(r => r.id === d.wrplanopen);
       if(row && row.shape){ S.slot = row.id; S.shape = row.shape;
-        S.shapeOpen = false; S.planOpen = false; S.headOpen = false; S.asksOpen = false; }
+        S.shapeOpen = false; S.planOpen = false; S.essayOpen = false; S.startOpen = false; }
       save(); render(); return;
     }
     if('wrplancopy' in d){ copy(planText(), t); return; }
-    if('wrqopen' in d){ S.questionOpen = true; render(); return; }
-    if('wrqclose' in d){ S.questionOpen = false; render(); return; }
-    if('wrcmd' in d){ S.command = d.wrcmd || null; save(); render(); return; }
-    if('wrlvlopen' in d){ S.levelOpen = true; render(); return; }
-    if('wrlvlclose' in d){ S.levelOpen = false; render(); return; }
-    if('wrlvl' in d){ S.level = S.level === d.wrlvl ? null : d.wrlvl;
-      S.levelOpen = false; save(); render(); return; }
+    if('wrcmd' in d){
+      const k = d.wrcmd;
+      if(!k) S.commands = [];
+      else {
+        S.commands = S.commands || [];
+        S.commands = S.commands.includes(k)
+          ? S.commands.filter(x => x !== k) : S.commands.concat([k]);
+      }
+      save(); render(); return;
+    }
+    if('wrlvl' in d){ S.level = S.level === d.wrlvl ? null : d.wrlvl; save(); render(); return; }
+    if('wrstart' in d){ S.startOpen = true; render(); return; }
+    if('wrstartclose' in d){ S.startOpen = false; render(); return; }
     if('wrspeak' in d){
       const sh2 = shapeById(S.shape);
-      if(d.wrspeak === 'para') speak('para', currentText());
+      if(d.wrspeak === 'essay') speak('essay', essayText());
+      else if(d.wrspeak === 'para') speak('para', currentText());
       else if(sh2 && sh2.example){
         const lvl2 = exampleLocked() ? exampleLevel() : (S.exLevel || exampleLevel());
         const ex2 = S.example ? shapeById(S.example) : sh2;
@@ -1793,8 +1510,6 @@ function wire(){
        this paragraph — which is when it counts towards the tally that
        notices they have built three the same way. */
     if('wrcopy' in d){ recordUse(S.shape); copy(currentText(), t); return; }
-    if('wrfeedback' in d){ recordUse(S.shape);
-      copy(feedbackPrompt(), t, 'Copied — paste it into your AI'); return; }
   });
 
   /* The analyser reruns as they type, so only the report is redrawn —
@@ -1819,6 +1534,17 @@ function wire(){
     if(el.dataset && el.dataset.wrq !== undefined){
       S.question = el.value; save();
       /* redraw only what the question feeds, so the caret stays put */
+      /* a full redraw would move the caret, so just the parts the question
+         feeds: the reading of it, and the nudge about words not ticked */
+      const miss = r.querySelector('.wr-cmdmiss');
+      if(miss) miss.remove();
+      const m2 = missedCommands();
+      if(m2.length){
+        const cmds2 = r.querySelector('.wr-cmds');
+        if(cmds2) cmds2.insertAdjacentHTML('afterend', `<p class="wr-cmdmiss">Your question also
+          uses <strong>${m2.map(c => esc(c.label)).join('</strong> and <strong>')}</strong>.
+          Worth a look before you start.</p>`);
+      }
       const found = r.querySelector('.wr-cmdfound');
       const none = r.querySelector('.wr-cmdnone');
       const cmds = activeCommands();
@@ -1877,9 +1603,15 @@ function wire(){
          the read-aloud button with it on every keystroke */
       const lab = r.querySelector('.wr-alabel');
       if(lab){
-        const b = blanksLeft(steps.map((_, k) => a[k] || '').join(' '));
-        const old = lab.querySelector('.wr-blanks');
-        if(old) old.remove();
+        const joined = steps.map((_, k) => (a[k] || '').trim()).filter(Boolean).join(' ');
+        const wc = wordCount(joined);
+        const b = blanksLeft(joined);
+        /* replace only the counters: rewriting the label would take the
+           read-aloud button with it on every keystroke */
+        const oldW = lab.querySelector('.wr-words'); if(oldW) oldW.remove();
+        const oldB = lab.querySelector('.wr-blanks'); if(oldB) oldB.remove();
+        if(wc) lab.insertAdjacentHTML('beforeend',
+          ` <span class="wr-count wr-words">${wc} word${wc===1?'':'s'}</span>`);
         if(b) lab.insertAdjacentHTML('beforeend',
           ` <span class="wr-count wr-blanks">${b} gap${b===1?'':'s'} still to fill</span>`);
       }
@@ -1897,13 +1629,12 @@ function wire(){
 
 load();
 window.Writing = {
-  moves: MOVES, planText, slotId, COMMANDS, detectedCommands, activeCommands, levelOf, speak, stopSpeech, canSpeak, craftPrompt, AI_SITES, openSite, exampleLevel, WRITING_STANDARDS, movesFor, liveNote, recordUse, stepsFor, LEVEL_EXPECT, addFrame, blanksLeft, suggestedShapes,
+  moves: MOVES, essayText, paragraphOf, planText, slotId, COMMANDS, detectedCommands, activeCommands, missedCommands, levelOf, speak, stopSpeech, canSpeak, craftPrompt, AI_SITES, openSite, exampleLevel, movesFor, liveNote, recordUse, stepsFor, LEVEL_EXPECT, addFrame, blanksLeft, suggestedShapes,
   open: render,
   state: S,
   /* exposed so the tests can check the analyser without driving the UI */
   analyse, sentences, opener, suggestions,
   shapes: SHAPES.filter(s => s.id),
-  isWriting, allWritingStandards,
   build: W_BUILD
 };
 
