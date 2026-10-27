@@ -19,7 +19,7 @@
    ============================================================ */
 (function () {
 
-const W_BUILD = 'build 97 — writing tools';
+const W_BUILD = 'build 98 — writing tools';
 
 const R = () => document.getElementById('writing-root');
 const esc = s => String(s == null ? '' : s)
@@ -30,7 +30,7 @@ const esc = s => String(s == null ? '' : s)
 const KEY = 'ncea_writing_v1';
 /* picking is the one part of the state that is never saved: whether the
    standard list is open is a this-moment thing, not something to restore. */
-let S = { std: null, shape: null, answers: {}, picking: false, idea: null, lastStep: null, example: null, exLevel: null, asksOpen: null, used: {}, recent: [], shapeOpen: false,
+let S = { std: null, shape: null, answers: {}, picking: false, idea: null, lastStep: null, example: null, exLevel: null, asksOpen: null, headOpen: false, used: {}, recent: [], shapeOpen: false,
           nav: {} };   // where they are in the level/faculty/subject drill-down
 
 function save(){
@@ -46,6 +46,11 @@ function load(){
       S.answers = o.answers || {};
       S.used = (o.used && typeof o.used === 'object') ? o.used : {};
       S.recent = Array.isArray(o.recent) ? o.recent : []; }
+    /* Folding is a within-session thing. Arriving at the tab, the shapes are
+       the choice in front of them, so the picker opens even when last
+       session's shape is still remembered. */
+    S.shapeOpen = true;
+    S.asksOpen = null;
   }catch(e){ /* corrupt store: start clean rather than die */ }
 }
 
@@ -613,8 +618,21 @@ function render(){
 }
 
 function head(){
+  /* The explanation is read once. What cannot be folded away is the promise
+     that nothing here writes for them, so the folded bar carries it. */
+  if(S.headOpen !== true && S.shape) return `<div class="panel p-4 wr-stdbar wr-headbar">
+    <div>
+      <p class="wr-stdlab">Writing</p>
+      <p class="wr-stdsub"><strong>Neither tool writes a sentence for you.</strong>
+        Every word in your paragraph is yours, which is the only way it can be handed in.</p>
+    </div>
+    <button class="wr-btn wr-ghost" data-wrhead>Show</button>
+  </div>`;
   return `<div class="panel p-5">
-    <h2 class="wr-h">Writing</h2>
+    <div class="wr-stdbar">
+      <h2 class="wr-h">Writing</h2>
+      ${S.shape ? '<button class="wr-btn wr-ghost" data-wrhead>Hide</button>' : ''}
+    </div>
     <p class="wr-lead">Two tools for the writing standards. <strong>Shape a paragraph</strong> asks
     you the questions a particular kind of paragraph has to answer, in order, and you write the
     sentences. <strong>Check a paragraph</strong> reads one you have already written and tells you
@@ -657,7 +675,7 @@ function stdBar(){
   const cur = S.std ? findStd(S.std.level, S.std.code) : null;
   /* S.picking wins, so "Change" reopens the list without clearing what they
      already chose \u2014 Close puts them back where they were */
-  if(cur && !S.picking) return `<div class="panel p-4 wr-stdbar">
+  if(cur && !S.picking) return `<div class="panel p-4 wr-stdbar wr-stdchosen">
     <div>
       <p class="wr-stdlab">Writing for</p>
       <p class="wr-stdname"><strong>AS${esc(cur.st.code)}</strong> ${esc(cur.st.title)}</p>
@@ -1062,19 +1080,15 @@ function craftPrompt(){
   return L.join('\n');
 }
 
-function openAI(key, btn){
+/* window.open(url, '_blank', 'noopener') returns null BY SPEC \u2014 noopener
+   severs the handle \u2014 so testing its return value reported every successful
+   tab as blocked. An anchor with rel="noopener" opens the tab just as safely
+   and leaves nothing ambiguous to test. */
+function openSite(key){
   const site = AI_SITES.find(s => s.key === key); if(!site) return;
-  /* open first, synchronously: a window.open after an await is a pop-up
-     blocker's definition of unrequested */
-  let w = null;
-  try { w = window.open(site.url, '_blank', 'noopener'); } catch(e){}
-  copy(craftPrompt(), btn, w ? 'Copied \u2014 paste it' : 'Copied');
-  if(!w && btn){
-    const note = btn.closest('.wr-aibar');
-    if(note && !note.querySelector('.wr-aiblocked'))
-      note.insertAdjacentHTML('beforeend', `<p class="wr-aiblocked">The prompt is copied. Your
-        browser blocked the new tab, so open ${esc(site.name)} yourself and paste it.</p>`);
-  }
+  const a = document.createElement('a');
+  a.href = site.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+  document.body.appendChild(a); a.click(); a.remove();
 }
 
 /* ---- build pane ---- */
@@ -1190,16 +1204,18 @@ function shapeForm(){
     </div>
     <div class="wr-aibar">
       <p class="wr-aih">Get feedback on how it is written</p>
-      <p class="wr-aib">One click copies your paragraph with a prompt about
+      <p class="wr-aib">Copy your paragraph together with a prompt about
         ${lvl ? `${esc(LEVEL_NAME[lvl])} expectations, ` : ''}the shape you chose and the
-        sentences you built, then opens the AI. The prompt tells it not to rewrite anything and
-        not to comment on your content \u2014 it cannot see your task, so it does not know.</p>
+        sentences you built. The prompt tells the AI not to rewrite anything and not to comment
+        on your content \u2014 it cannot see your task, so it does not know.</p>
       <div class="wr-aibtns">
-        ${AI_SITES.map(x => `<button class="wr-btn wr-ai" data-wrai="${esc(x.key)}">
-          Copy &amp; open ${esc(x.name)}</button>`).join('')}
+        <button class="wr-btn wr-ai" data-wrcraft>Copy my paragraph and the prompt</button>
       </div>
-      ${S.std ? `<button class="wr-ailink" data-wrfeedback>Or copy the full
-        standard-specific prompt instead</button>` : ''}
+      <p class="wr-aithen">Then open <span class="wr-aisites">${AI_SITES.map(x =>
+        `<button class="wr-aisite" data-wrai="${esc(x.key)}">${esc(x.name)}</button>`
+        ).join('')}</span> and paste it in.</p>
+      ${S.std ? `<button class="wr-ailink" data-wrfeedback>Or copy a prompt about your
+        content and your standard instead</button>` : ''}
     </div>
   </div>`;
 }
@@ -1379,7 +1395,8 @@ function wire(){
       '[data-wrcopy],[data-wrfeedback],[data-wrreset],' +
       '[data-wrpick],[data-wrunpick],[data-wrnav],[data-wridea],[data-wraddframe],' +
       '[data-wrshapeopen],[data-wrshapeclose],[data-wrexample],[data-wrexclose],' +
-      '[data-wrexlevel],[data-wrexback],[data-wrai],[data-wrasks]');
+      '[data-wrexlevel],[data-wrexback],[data-wrai],[data-wrcraft],' +
+      '[data-wrasks],[data-wrhead]');
     if(!t) return;
     const d = t.dataset;
 
@@ -1402,11 +1419,14 @@ function wire(){
     if('wrshape' in d){
       S.shape = S.shape === d.wrshape ? null : d.wrshape;
       S.shapeOpen = false;          // chosen, so fold the picker away
-      if(S.shape) S.asksOpen = false;   // and the section above it
+      if(S.shape){ S.asksOpen = false; S.headOpen = false; }   // and the sections above
       save(); render(); return;
     }
-    if('wrai' in d){ recordUse(S.shape); openAI(d.wrai, t); return; }
+    if('wrcraft' in d){ recordUse(S.shape);
+      copy(craftPrompt(), t, 'Copied \u2014 now open one below'); return; }
+    if('wrai' in d){ openSite(d.wrai); return; }
     if('wrasks' in d){ S.asksOpen = !S.asksOpen; render(); return; }
+    if('wrhead' in d){ S.headOpen = S.headOpen !== true; render(); return; }
     if('wrexample' in d){ S.example = d.wrexample; S.exLevel = exampleLevel(); render(); return; }
     if('wrexclose' in d){ S.example = null; render(); return; }
     if('wrexlevel' in d){ S.exLevel = d.wrexlevel; render(); return; }
@@ -1484,7 +1504,7 @@ function wire(){
 
 load();
 window.Writing = {
-  moves: MOVES, craftPrompt, AI_SITES, exampleLevel, WRITING_STANDARDS, movesFor, liveNote, recordUse, habitNote, stepsFor, LEVEL_EXPECT, addFrame, blanksLeft, suggestedShapes,
+  moves: MOVES, craftPrompt, AI_SITES, openSite, exampleLevel, WRITING_STANDARDS, movesFor, liveNote, recordUse, habitNote, stepsFor, LEVEL_EXPECT, addFrame, blanksLeft, suggestedShapes,
   open: render,
   state: S,
   /* exposed so the tests can check the analyser without driving the UI */
