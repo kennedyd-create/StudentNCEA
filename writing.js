@@ -19,7 +19,7 @@
    ============================================================ */
 (function () {
 
-const W_BUILD = 'build 95 — writing tools';
+const W_BUILD = 'build 97 — writing tools';
 
 const R = () => document.getElementById('writing-root');
 const esc = s => String(s == null ? '' : s)
@@ -30,7 +30,7 @@ const esc = s => String(s == null ? '' : s)
 const KEY = 'ncea_writing_v1';
 /* picking is the one part of the state that is never saved: whether the
    standard list is open is a this-moment thing, not something to restore. */
-let S = { std: null, shape: null, answers: {}, picking: false, idea: null, lastStep: null, example: null, exLevel: null, used: {}, recent: [], shapeOpen: false,
+let S = { std: null, shape: null, answers: {}, picking: false, idea: null, lastStep: null, example: null, exLevel: null, asksOpen: null, used: {}, recent: [], shapeOpen: false,
           nav: {} };   // where they are in the level/faculty/subject drill-down
 
 function save(){
@@ -906,8 +906,22 @@ function standardAsks(){
   if(!cur) return '';
   const b = cur.st.bandShift || {}, pit = cur.st.pitfalls || [];
   if(!b.aToM && !b.mToE && !pit.length) return '';
+  /* once they have a shape and are writing, this has been read and is just
+     something to scroll past \u2014 so it folds itself, with one click back */
+  const open = S.asksOpen === true || (S.asksOpen !== false && !S.shape);
+  if(!open) return `<div class="panel p-4 wr-stdbar wr-asks">
+    <div>
+      <p class="wr-stdlab">What ${esc(cur.st.ref || cur.st.code)} is marked on</p>
+      <p class="wr-stdsub">${esc((cur.st.bandShift || {}).mToE || (cur.st.bandShift || {}).aToM
+        || 'The band shift and the pitfalls for this standard.')}</p>
+    </div>
+    <button class="wr-btn wr-ghost" data-wrasks>Show</button>
+  </div>`;
   return `<div class="panel p-4 wr-asks">
-    <h3 class="wr-h3">What ${esc(cur.st.ref || cur.st.code)} is actually marked on</h3>
+    <div class="wr-stdbar">
+      <h3 class="wr-h3">What ${esc(cur.st.ref || cur.st.code)} is actually marked on</h3>
+      ${S.shape ? '<button class="wr-btn wr-ghost" data-wrasks>Hide</button>' : ''}
+    </div>
     <p class="wr-hint">Straight from the standard. Your paragraph is one piece of this, not all of it.</p>
     ${b.aToM ? `<div class="wr-band"><p class="wr-bandh">Achieved \u2192 Merit</p>
       <p class="wr-bandb">${esc(b.aToM)}</p></div>` : ''}
@@ -954,11 +968,11 @@ function exampleModal(){
       <p class="wr-exsub">${esc(sh.example.topic)}. The topic does not matter here; the
         shape does.</p>
       ${exampleLocked()
-        ? `<p class="wr-exlock">Written at <strong>Excellence</strong> for
-             ${esc(LEVEL_NAME[levelOf()])}${levelOf() === 'S'
-               ? ', using the Level 3 example' : ''}, because that is the standard you chose.</p>`
-        : `<p class="wr-exlock">Written at <strong>Excellence</strong> for each level. Pick your
-             standard and this shows only yours.</p>
+        ? `<p class="wr-exlock">Written for <strong>${esc(LEVEL_NAME[levelOf()])}</strong>${
+             levelOf() === 'S' ? ', using the Level 3 example' : ''}, to match the standard you
+             chose. It is one way of doing it, not a graded exemplar.</p>`
+        : `<p class="wr-exlock">The same paragraph at three levels. Each is one way of doing it,
+             not a graded exemplar. Pick your standard and this shows only yours.</p>
            <div class="seg wr-exseg">
              ${['1','2','3'].map(l => `<button data-wrexlevel="${l}"
                aria-pressed="${l === lvl}">Level ${l}</button>`).join('')}
@@ -976,6 +990,91 @@ function exampleModal(){
         above are the same ones you answer in your own words.</p>
     </div>
   </div>`;
+}
+
+/* ---- feedback on the craft, not the content ----
+   The AI on the other end cannot see the standard, the task or the evidence,
+   so asking it about the content invites a confident answer about something
+   it cannot know. This prompt asks only about things visible in the text
+   itself: whether the paragraph does what the shape requires, how the
+   sentences are built, and whether that is enough for the level. It also
+   forbids rewriting, because a rewritten paragraph is no longer the
+   student's work. */
+
+const AI_SITES = [
+  { key:'chatgpt', name:'ChatGPT', url:'https://chatgpt.com/' },
+  { key:'gemini',  name:'Gemini',  url:'https://gemini.google.com/app' },
+  { key:'claude',  name:'Claude',  url:'https://claude.ai/new' }
+];
+
+function craftPrompt(){
+  const text = currentText();
+  const sh = shapeById(S.shape);
+  const lvl = levelOf();
+  const ex = lvl && LEVEL_EXPECT[lvl];
+  const a = analyse(text);
+  const used = Object.entries(a.openers || {})
+    .map(([k, n]) => `${OPENER_NAME[k] || k} \u00d7${n}`).join(', ');
+  const openers = movesFor('opener');
+  const untried = openers.filter(m => !a.openers[m.key]).map(m => m.label);
+
+  const L = [];
+  L.push('You are giving a New Zealand secondary student feedback on the CRAFT of one paragraph.');
+  L.push('');
+  L.push('RULES, which matter more than being helpful:');
+  L.push('1. Do NOT rewrite the paragraph, and do not write any replacement sentence. If you supply words, the work stops being theirs and cannot be handed in.');
+  L.push('2. Do NOT comment on whether the content is correct, sufficient or relevant. You cannot see their standard, their task or their source material, so you do not know.');
+  L.push('3. Do NOT give or estimate a grade.');
+  L.push('4. Comment ONLY on what is visible in the text: structure, sentence construction, and whether each sentence does its job.');
+  L.push('5. Where something is weak, name it and ask a question that would help them fix it themselves.');
+  L.push('');
+  if(lvl){
+    L.push(`LEVEL: NCEA ${LEVEL_NAME[lvl]}.`);
+    if(ex){ L.push(`What this level expects of a paragraph: ${ex.line}`);
+            L.push(`Expected shape: ${ex.shape}`); }
+    L.push('');
+  }
+  if(sh){
+    L.push(`PARAGRAPH SHAPE they chose: "${sh.name}" \u2014 ${sh.use}`);
+    L.push('A paragraph of this shape has to answer these in order:');
+    stepsFor(sh).forEach((st, i) => L.push(`  ${i + 1}. ${st.q}`));
+    L.push('Tell them which of these the paragraph actually does, and which it skips or only gestures at.');
+    L.push('');
+  }
+  if(a.count){
+    L.push('SENTENCE CONSTRUCTION, measured from the text:');
+    L.push(`  ${a.count} sentences, ${a.words} words, average ${a.avg}, shortest ${a.shortest} and longest ${a.longest}.`);
+    L.push(`  Openings used: ${used || 'none detected'}.`);
+    L.push(`  Punctuation: ${a.semicolons} semicolon(s), ${a.dashes} dash(es), ${a.colons} colon(s).`);
+    if(untried.length) L.push(`  Openings not used at all: ${untried.join('; ')}.`);
+    L.push('Comment on variety and rhythm. If one construction would suit a particular sentence, say which sentence and which construction, and let them write it.');
+    L.push('');
+  }
+  L.push('ANSWER IN THIS ORDER:');
+  L.push('1. Does the paragraph do what the shape requires? Go through the numbered jobs above.');
+  L.push('2. Sentence construction: variety, length, rhythm, and anything repetitive.');
+  if(lvl) L.push('3. Is the construction doing enough for this NCEA level? Say what is missing, not what to write.');
+  L.push('End with two questions they could answer themselves to improve it.');
+  L.push('');
+  L.push('THE PARAGRAPH:');
+  L.push('');
+  L.push(text || '(nothing written yet)');
+  return L.join('\n');
+}
+
+function openAI(key, btn){
+  const site = AI_SITES.find(s => s.key === key); if(!site) return;
+  /* open first, synchronously: a window.open after an await is a pop-up
+     blocker's definition of unrequested */
+  let w = null;
+  try { w = window.open(site.url, '_blank', 'noopener'); } catch(e){}
+  copy(craftPrompt(), btn, w ? 'Copied \u2014 paste it' : 'Copied');
+  if(!w && btn){
+    const note = btn.closest('.wr-aibar');
+    if(note && !note.querySelector('.wr-aiblocked'))
+      note.insertAdjacentHTML('beforeend', `<p class="wr-aiblocked">The prompt is copied. Your
+        browser blocked the new tab, so open ${esc(site.name)} yourself and paste it.</p>`);
+  }
 }
 
 /* ---- build pane ---- */
@@ -1030,8 +1129,7 @@ function shapePicker(){
             ? ' <span class="wr-new">not tried</span>' : '')}</span>
       <span class="wr-shapeuse">${esc(s.use)}</span>
     </button>
-    ${s.example ? `<button class="wr-exbtn" data-wrexample="${esc(s.id)}"
-      title="See a worked example of this shape">Example</button>` : ''}</div>`;
+    </div>`;
   }
   if(open) html += '</div>';
   return `<div class="panel p-4 md:p-5">
@@ -1085,9 +1183,23 @@ function shapeForm(){
         is any good, because it cannot see your task or your evidence.</p>
         ${report(a)}</div>` : ''; })()}
     <div class="wr-acts">
-      <button class="wr-btn wr-alt" data-wrcopy>Copy it</button>
-      ${S.std ? `<button class="wr-btn wr-alt" data-wrfeedback>Get feedback on it</button>` : ''}
+      ${sh.example ? `<button class="wr-btn wr-ghost"
+        data-wrexample="${esc(sh.id)}">See an example</button>` : ''}
+      <button class="wr-btn wr-alt" data-wrcopy>Copy the paragraph</button>
       <button class="wr-btn wr-ghost" data-wrreset>Clear</button>
+    </div>
+    <div class="wr-aibar">
+      <p class="wr-aih">Get feedback on how it is written</p>
+      <p class="wr-aib">One click copies your paragraph with a prompt about
+        ${lvl ? `${esc(LEVEL_NAME[lvl])} expectations, ` : ''}the shape you chose and the
+        sentences you built, then opens the AI. The prompt tells it not to rewrite anything and
+        not to comment on your content \u2014 it cannot see your task, so it does not know.</p>
+      <div class="wr-aibtns">
+        ${AI_SITES.map(x => `<button class="wr-btn wr-ai" data-wrai="${esc(x.key)}">
+          Copy &amp; open ${esc(x.name)}</button>`).join('')}
+      </div>
+      ${S.std ? `<button class="wr-ailink" data-wrfeedback>Or copy the full
+        standard-specific prompt instead</button>` : ''}
     </div>
   </div>`;
 }
@@ -1267,7 +1379,7 @@ function wire(){
       '[data-wrcopy],[data-wrfeedback],[data-wrreset],' +
       '[data-wrpick],[data-wrunpick],[data-wrnav],[data-wridea],[data-wraddframe],' +
       '[data-wrshapeopen],[data-wrshapeclose],[data-wrexample],[data-wrexclose],' +
-      '[data-wrexlevel],[data-wrexback]');
+      '[data-wrexlevel],[data-wrexback],[data-wrai],[data-wrasks]');
     if(!t) return;
     const d = t.dataset;
 
@@ -1290,8 +1402,11 @@ function wire(){
     if('wrshape' in d){
       S.shape = S.shape === d.wrshape ? null : d.wrshape;
       S.shapeOpen = false;          // chosen, so fold the picker away
+      if(S.shape) S.asksOpen = false;   // and the section above it
       save(); render(); return;
     }
+    if('wrai' in d){ recordUse(S.shape); openAI(d.wrai, t); return; }
+    if('wrasks' in d){ S.asksOpen = !S.asksOpen; render(); return; }
     if('wrexample' in d){ S.example = d.wrexample; S.exLevel = exampleLevel(); render(); return; }
     if('wrexclose' in d){ S.example = null; render(); return; }
     if('wrexlevel' in d){ S.exLevel = d.wrexlevel; render(); return; }
@@ -1369,7 +1484,7 @@ function wire(){
 
 load();
 window.Writing = {
-  moves: MOVES, exampleLevel, WRITING_STANDARDS, movesFor, liveNote, recordUse, habitNote, stepsFor, LEVEL_EXPECT, addFrame, blanksLeft, suggestedShapes,
+  moves: MOVES, craftPrompt, AI_SITES, exampleLevel, WRITING_STANDARDS, movesFor, liveNote, recordUse, habitNote, stepsFor, LEVEL_EXPECT, addFrame, blanksLeft, suggestedShapes,
   open: render,
   state: S,
   /* exposed so the tests can check the analyser without driving the UI */

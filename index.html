@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=95"></script>
-<script src="whs-derived-2026.js?v=95"></script>
+<script src="ncea-exams-2026.js?v=97"></script>
+<script src="whs-derived-2026.js?v=97"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -1408,8 +1408,8 @@ body.dark-mode .wr-rail{ --wr-accent:#5eead4; --wr-accent-ink:#071f1c; }
 .wr-idea{ border-top:1px solid var(--line); }
 .wr-idea:first-of-type{ border-top:0; }
 .wr-ideab{ width:100%; text-align:left; cursor:pointer; background:none; border:0;
-  font-size:.75rem; font-weight:800; line-height:1.4; color:var(--ink);
-  padding:.4rem .2rem; display:flex; gap:.3rem; align-items:baseline; }
+  font-size:.75rem; font-weight:800; line-height:1.5; color:var(--ink);
+  padding:.45rem .25rem; display:block; }
 .wr-ideab:hover{ color:var(--wr-accent); }
 .wr-done > .wr-ideab{ color:var(--ink-soft); }
 .wr-tick{ color:#15803d; font-weight:900; }
@@ -1417,7 +1417,12 @@ body.dark-mode .wr-tick{ color:#4ade80; }
 .wr-ideaopen > .wr-ideab{ color:var(--wr-accent); }
 .wr-ideaopen{ background:color-mix(in srgb, var(--wr-accent) 8%, transparent);
   border-radius:.4rem; }
-.wr-rail .wr-rh{ color:color-mix(in srgb, var(--wr-accent) 80%, var(--ink-soft)); }
+.wr-rail .wr-rh{ color:color-mix(in srgb, var(--wr-accent) 80%, var(--ink-soft));
+  margin:.9rem 0 .1rem; padding-top:.5rem; border-top:2px solid
+  color-mix(in srgb, var(--wr-accent) 18%, var(--line)); }
+.wr-rail .wr-rh:first-of-type{ margin-top:.5rem; }
+.wr-idea{ border-top:1px solid var(--line); }
+.wr-idea + .wr-rh{ margin-top:1rem; }
 .wr-ideaeg{ border-left-color:color-mix(in srgb, var(--wr-accent) 50%, var(--line-strong)); }
 /* scoped to the rail so it beats .wr-alt, which is defined further down */
 .wr-rail .wr-ideaadd{ background:var(--wr-accent); border-color:var(--wr-accent);
@@ -1431,6 +1436,7 @@ body.dark-mode .wr-tick{ color:var(--wr-accent); }
   color:var(--ink); margin:.3rem 0 .4rem; padding-left:.5rem;
   border-left:2px solid var(--line-strong); }
 .wr-ideaadd{ font-size:.6875rem; padding:.35rem .7rem; }
+.wr-tick{ margin-right:.15rem; }
 .wr-adv{ font-size:.5rem; font-weight:900; text-transform:uppercase; letter-spacing:.06em;
   padding:.05rem .3rem; border-radius:.25rem; white-space:nowrap; margin-left:.2rem;
   background:color-mix(in srgb, var(--wr-accent) 20%, var(--surface));
@@ -1453,24 +1459,41 @@ body.dark-mode .wr-blanks{ background:color-mix(in srgb, #c5a059 32%, var(--surf
    Contrast checked on the rail's own surfaces \u2014 7.31:1 light, 10.3:1 dark. */
 .wr-rail{ --wr-key:#9a3412; }
 body.dark-mode .wr-rail{ --wr-key:#fdba74; }
+/* No horizontal padding at all. Padding pushed the following character away
+   and rendered "Three items , each bigger"; cancelling it with a negative
+   margin then crowded the space before the chip. Letting the background hug
+   the words exactly leaves the line spaced as written. */
 .wr-key{ font-weight:900; color:var(--wr-key);
-  background:color-mix(in srgb, var(--wr-key) 12%, transparent);
-  border-radius:.2rem; padding:0 .15rem; }
+  background:color-mix(in srgb, var(--wr-key) 10%, transparent);
+  border-radius:.15rem; padding:.1rem 0;
+  box-decoration-break:clone; -webkit-box-decoration-break:clone; }
 .wr-ideaeg .wr-key{ font-weight:700; font-style:normal;
-  background:color-mix(in srgb, var(--wr-key) 16%, transparent); }
-body.dark-mode .wr-key{ background:color-mix(in srgb, var(--wr-key) 18%, transparent); }
+  background:color-mix(in srgb, var(--wr-key) 12%, transparent); }
+body.dark-mode .wr-key{ background:color-mix(in srgb, var(--wr-key) 15%, transparent); }
 
+
+
+/* ---- handing it to an AI ---- */
+.wr-aibar{ margin-top:.9rem; padding:.7rem .8rem; border-radius:.6rem;
+  border:1.5px solid color-mix(in srgb, var(--fac-dark) 28%, var(--line-strong));
+  background:color-mix(in srgb, var(--fac-dark) 5%, var(--surface)); }
+body.dark-mode .wr-aibar{ background:color-mix(in srgb, var(--fac-dark) 16%, var(--surface)); }
+.wr-aih{ font-size:.8125rem; font-weight:900; color:var(--fac-dark); margin:0 0 .15rem; }
+body.dark-mode .wr-aih{ color:var(--brand-ink); }
+.wr-aib{ font-size:.75rem; line-height:1.55; color:var(--ink); margin:0 0 .5rem; }
+.wr-aibtns{ display:flex; flex-wrap:wrap; gap:.4rem; }
+.wr-ai{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
+.wr-ai:hover{ filter:brightness(1.15); }
+.wr-ailink{ display:inline-block; margin-top:.5rem; font-size:.6875rem; font-weight:700;
+  background:none; border:0; padding:0; cursor:pointer; color:var(--ink-soft);
+  text-decoration:underline; text-underline-offset:2px; }
+.wr-ailink:hover{ color:var(--fac-dark); }
+.wr-aiblocked{ font-size:.6875rem; line-height:1.5; color:var(--int-ink);
+  background:var(--int-bg); padding:.3rem .5rem; border-radius:.35rem; margin:.5rem 0 0; }
 
 /* ---- the worked-example popup ---- */
-.wr-shapewrap{ position:relative; display:flex; flex-direction:column; min-width:0; }
-.wr-shapewrap .wr-shape{ flex:1 1 auto; padding-bottom:1.9rem; }
-.wr-exbtn{ position:absolute; left:.7rem; bottom:.55rem; font-size:.625rem; font-weight:900;
-  padding:.15rem .45rem; border-radius:.3rem; cursor:pointer;
-  border:1px solid color-mix(in srgb, var(--fac-dark) 35%, var(--line-strong));
-  background:var(--surface); color:var(--fac-dark); transition:all .15s ease; }
-.wr-exbtn:hover{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
-body.dark-mode .wr-exbtn{ color:var(--brand-ink); }
-body.dark-mode .wr-exbtn:hover{ color:#fff; }
+.wr-shapewrap{ display:flex; flex-direction:column; min-width:0; }
+.wr-shapewrap .wr-shape{ flex:1 1 auto; }
 
 .wr-exback{ padding:1rem; }
 .wr-excard{ max-width:46rem; }
@@ -1488,11 +1511,14 @@ body.dark-mode .wr-exlock{ background:color-mix(in srgb, #15803d 18%, var(--surf
 .wr-expara{ font-family:Georgia,'Times New Roman',serif; font-size:.9375rem; line-height:1.85;
   color:var(--ink); padding:.8rem .9rem; border-radius:.6rem; background:var(--surface-2);
   border:1px solid var(--line); }
-.wr-exs{ border-radius:.25rem; padding:.05rem .1rem;
-  box-shadow:inset 0 -.4em 0 color-mix(in srgb, var(--exc) 22%, transparent); }
+/* a thin rule close to the baseline rather than a block of tint: it still
+   groups the sentence, but the words sit on white and stay easy to read */
+.wr-exs{ padding:.02rem .08rem 0;
+  box-shadow:inset 0 -.14em 0 color-mix(in srgb, var(--exc) 42%, transparent); }
 .wr-exs0{ --exc:#0369a1; } .wr-exs1{ --exc:#15803d; }
 .wr-exs2{ --exc:#9a3412; } .wr-exs3{ --exc:#7261ab; }
-body.dark-mode .wr-exs{ box-shadow:inset 0 -.4em 0 color-mix(in srgb, var(--exc) 42%, transparent); }
+body.dark-mode .wr-exs{
+  box-shadow:inset 0 -.14em 0 color-mix(in srgb, var(--exc) 60%, transparent); }
 body.dark-mode .wr-exs0{ --exc:#7dd3fc; } body.dark-mode .wr-exs1{ --exc:#86efac; }
 body.dark-mode .wr-exs2{ --exc:#fdba74; } body.dark-mode .wr-exs3{ --exc:#c4b5fd; }
 
@@ -1517,13 +1543,15 @@ body.dark-mode .wr-exnum{ background:color-mix(in srgb, var(--exc) 24%, var(--su
 /* ---- the note under each box, while they write ---- */
 .wr-live{ display:flex; flex-wrap:wrap; gap:.3rem; align-items:center;
   margin:.25rem 0 0; font-size:.6875rem; line-height:1.4; }
-.wr-liveflag .wr-livem{ color:var(--ink); }
 .wr-livem{ font-weight:800; color:var(--ink-soft); font-family:'JetBrains Mono',monospace;
   font-size:.625rem; }
-.wr-livef{ font-weight:700; padding:.1rem .35rem; border-radius:.3rem;
-  background:color-mix(in srgb, #c5a059 20%, var(--surface)); color:var(--int-ink); }
-body.dark-mode .wr-livef{ background:color-mix(in srgb, #c5a059 26%, var(--surface));
-  color:#fde68a; }
+/* These were a pale gold wash on a pale surface and disappeared. A solid
+   fill reads at a glance while still sitting under the box rather than
+   shouting from it. White on #c2410c is 5.18:1; the dark variant 9.4:1. */
+.wr-livef{ font-weight:800; padding:.12rem .4rem; border-radius:.3rem;
+  background:#c2410c; color:#fff; }
+body.dark-mode .wr-livef{ background:#fbbf24; color:#1c1206; }
+.wr-liveflag .wr-livem{ color:var(--ink); font-weight:900; }
 .wr-runwarn{ color:var(--int-ink); font-weight:700; }
 body.dark-mode .wr-runwarn{ color:#fde68a; }
 .wr-chosen .wr-stdname em{ font-style:normal; font-weight:700; color:var(--ink-soft); }
@@ -8191,7 +8219,7 @@ z
     </div>
   </details>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 95 (2026-10-27) · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 97 (2026-10-27) · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -8265,10 +8293,10 @@ const SUBJECT_TOOLS = {
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=95' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=95' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=95' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=95' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=97' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=97' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=97' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=97' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -9210,8 +9238,8 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=95"></script>
-<script src="bib.js?v=95"></script>
-<script src="writing.js?v=95"></script>
+<script src="timetable.js?v=97"></script>
+<script src="bib.js?v=97"></script>
+<script src="writing.js?v=97"></script>
 </body>
 </html>
