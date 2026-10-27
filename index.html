@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=89"></script>
-<script src="whs-derived-2026.js?v=89"></script>
+<script src="ncea-exams-2026.js?v=91"></script>
+<script src="whs-derived-2026.js?v=91"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -113,6 +113,17 @@ body.dark-mode .fac-pill[aria-pressed="true"], body.dark-mode .subj-pill[aria-pr
    The nine modes do about four jobs, so they are presented as four small
    groups rather than one flat list of nine. The rule after the heading is
    drawn with a pseudo-element so no extra markup is needed per group. ---- */
+/* Shown wherever a date is, once the NCEA year the data was built for has
+   passed. Amber rather than red: the site still works, the dates just cannot
+   be trusted any more. */
+.tt-stale{ font-size:.75rem; line-height:1.55; margin:0 0 .7rem;
+  padding:.6rem .75rem; border-radius:.5rem; color:var(--ink);
+  border:1px solid rgba(180,83,9,.45); border-left:4px solid #b45309;
+  background:color-mix(in srgb, #b45309 8%, var(--surface)); }
+body.dark-mode .tt-stale{ background:color-mix(in srgb, #b45309 22%, var(--surface));
+  border-color:rgba(252,211,77,.45); border-left-color:#fcd34d; }
+.tt-stale a{ text-decoration:underline; }
+
 .mgroup-h{ font-size:.6875rem; font-weight:900; text-transform:uppercase;
   letter-spacing:.07em; margin:0 0 .15rem;
   display:flex; align-items:center; gap:.5rem;
@@ -1213,6 +1224,165 @@ body.dark-mode .bib-danger:hover{ color:#fecaca; border-color:#fca5a5; }
   .bib-item{ flex-direction:column; gap:.5rem; }
   .bib-itemacts{ flex-direction:row; }
 }
+
+/* ============================================================
+   WRITING TOOLS  (writing.js)
+   Same panel chrome as the bibliography maker, so a student
+   who has used one tab already knows how this one behaves.
+   ============================================================ */
+.wr-h{ font-size:1.15rem; font-weight:900; letter-spacing:-.01em; color:var(--fac-dark);
+  margin:0 0 .5rem; }
+body.dark-mode .wr-h{ color:var(--brand-ink); }
+.wr-h3{ font-size:.9375rem; font-weight:900; color:var(--fac-dark); margin:0 0 .5rem;
+  letter-spacing:-.005em; }
+body.dark-mode .wr-h3{ color:var(--brand-ink); }
+.wr-lead{ font-size:.8125rem; line-height:1.6; color:var(--ink); margin:0 0 .6rem; }
+.wr-hint{ font-size:.6875rem; line-height:1.5; color:var(--ink-soft); margin:.25rem 0 0; }
+.wr-build{ font-size:.6875rem; text-align:center; margin:.2rem 0 0; color:var(--ink-faint); }
+
+/* the integrity line — the one claim this tool has to keep */
+.wr-warn{ font-size:.8125rem; line-height:1.6; color:var(--ink); margin:.8rem 0 0;
+  padding:.6rem .75rem; border-radius:.5rem; border-left:4px solid #c5a059;
+  background:color-mix(in srgb, #c5a059 12%, var(--surface)); }
+body.dark-mode .wr-warn{ background:color-mix(in srgb, #c5a059 18%, var(--surface)); }
+
+/* ---- the two tools ---- */
+.wr-tabwrap{ display:flex; justify-content:center; }
+.wr-seg button{ padding:.5rem 1.1rem; }
+
+/* ---- which standard ---- */
+.wr-stdbar{ display:flex; flex-wrap:wrap; gap:.8rem; align-items:center;
+  justify-content:space-between; }
+.wr-stdlab{ font-size:.625rem; font-weight:900; text-transform:uppercase; letter-spacing:.07em;
+  color:var(--ink-soft); margin:0 0 .2rem; }
+.wr-stdname{ font-size:.875rem; line-height:1.5; color:var(--ink); margin:0; }
+.wr-stdsub{ font-size:.6875rem; line-height:1.5; color:var(--ink-soft); margin:.2rem 0 0; }
+.wr-pickwrap{ display:flex; flex-direction:column; gap:.8rem; margin-top:.4rem; }
+.wr-lvlgroup{ min-width:0; }
+.wr-lvlh{ font-size:.6875rem; font-weight:900; text-transform:uppercase; letter-spacing:.06em;
+  color:var(--ink-soft); margin:0 0 .35rem; }
+.wr-picks{ display:grid; gap:.35rem; grid-template-columns:repeat(auto-fill,minmax(15rem,1fr)); }
+.wr-pick{ text-align:left; cursor:pointer; padding:.4rem .6rem; border-radius:.45rem;
+  background:var(--surface); border:1.5px solid var(--line-strong); color:var(--ink);
+  transition:all .15s ease; min-width:0; }
+.wr-pick:hover{ border-color:var(--fac-dark); background:var(--surface-3); }
+.wr-pick b{ display:block; font-size:.75rem; font-weight:900; color:var(--ink); }
+.wr-pick span{ display:block; font-size:.6875rem; line-height:1.4; color:var(--ink-soft);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* ---- paragraph shapes ---- */
+.wr-grouph{ font-size:.6875rem; font-weight:900; text-transform:uppercase; letter-spacing:.06em;
+  color:var(--ink-soft); margin:.9rem 0 .4rem; }
+.wr-grouph:first-child{ margin-top:0; }
+.wr-shapes{ display:grid; gap:.5rem; grid-template-columns:repeat(auto-fill,minmax(13.5rem,1fr)); }
+.wr-shape{ display:flex; flex-direction:column; gap:.2rem; text-align:left; cursor:pointer;
+  padding:.6rem .7rem; border-radius:.55rem; background:var(--surface);
+  border:1.5px solid var(--line-strong); transition:all .15s ease; }
+.wr-shape:hover{ border-color:var(--fac-dark); background:var(--surface-3); }
+.wr-shape[aria-pressed="true"]{ border-color:var(--fac-dark);
+  background:color-mix(in srgb, var(--fac-dark) 10%, var(--surface)); }
+body.dark-mode .wr-shape[aria-pressed="true"]{
+  background:color-mix(in srgb, var(--fac-dark) 24%, var(--surface)); }
+.wr-shapename{ font-size:.8125rem; font-weight:900; color:var(--ink); line-height:1.35; }
+.wr-shapename em{ font-style:normal; font-weight:700; color:var(--ink-soft); font-size:.75rem; }
+.wr-shapeuse{ font-size:.6875rem; line-height:1.45; color:var(--ink-soft); }
+
+/* ---- the questions ---- */
+.wr-form{ border-left:4px solid var(--fac-dark); }
+.wr-count{ font-size:.625rem; font-weight:900; padding:.08rem .4rem; border-radius:9999px;
+  background:var(--int-bg); color:var(--int-ink); margin-left:.2rem; white-space:nowrap; }
+.wr-step{ margin:.75rem 0 0; }
+.wr-step label{ display:flex; gap:.45rem; align-items:baseline; font-size:.8125rem;
+  font-weight:700; line-height:1.5; color:var(--ink); margin:0 0 .3rem; }
+.wr-num{ flex:0 0 auto; font-size:.625rem; font-weight:900; width:1.25rem; height:1.25rem;
+  display:inline-flex; align-items:center; justify-content:center; border-radius:9999px;
+  background:var(--fac-dark); color:#fff; }
+.wr-in{ width:100%; font-size:.8125rem; font-family:inherit; padding:.5rem .6rem;
+  border-radius:.5rem; border:1.5px solid var(--line-strong); background:var(--surface);
+  color:var(--ink); resize:vertical; line-height:1.55; }
+.wr-in:focus{ border-color:var(--fac-dark); outline:none;
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--fac-dark) 18%, transparent); }
+.wr-in::placeholder{ color:var(--ink-faint); }
+.wr-big{ font-size:.875rem; line-height:1.65; }
+
+/* ---- what they have so far ---- */
+.wr-assembled{ margin-top:.9rem; padding:.75rem .9rem; border-radius:.6rem;
+  background:var(--surface-2); border:1px dashed var(--line-strong); }
+.wr-alabel{ font-size:.625rem; font-weight:900; text-transform:uppercase; letter-spacing:.07em;
+  color:var(--ink-soft); margin:0 0 .3rem; }
+.wr-para{ font-family:Georgia,'Times New Roman',serif; font-size:.9375rem; line-height:1.7;
+  color:var(--ink); margin:0; }
+.wr-empty{ color:var(--ink-faint); font-family:inherit; font-size:.8125rem; }
+
+/* ---- the report ---- */
+.wr-report{ margin-top:.9rem; }
+.wr-stats{ display:grid; gap:.5rem; grid-template-columns:repeat(auto-fit,minmax(7rem,1fr)); }
+.wr-stat{ padding:.55rem .65rem; border-radius:.5rem; background:var(--surface-2);
+  border:1px solid var(--line); text-align:center; }
+.wr-stat b{ display:block; font-size:1.125rem; font-weight:900; color:var(--fac-dark);
+  line-height:1.2; }
+body.dark-mode .wr-stat b{ color:var(--brand-ink); }
+.wr-stat span{ display:block; font-size:.625rem; font-weight:700; color:var(--ink-soft);
+  text-transform:uppercase; letter-spacing:.04em; margin-top:.1rem; }
+.wr-rh{ font-size:.75rem; font-weight:900; text-transform:uppercase; letter-spacing:.06em;
+  color:var(--ink-soft); margin:1rem 0 .4rem; }
+
+.wr-openers{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column;
+  gap:.25rem; }
+.wr-openers li{ display:grid; grid-template-columns:1fr auto; align-items:center;
+  gap:.5rem .6rem; position:relative; padding:.3rem .5rem; border-radius:.4rem;
+  background:var(--surface-2); overflow:hidden; }
+.wr-obar{ position:absolute; inset:0 auto 0 0; width:var(--pct,0%);
+  background:color-mix(in srgb, var(--fac-dark) 16%, transparent); }
+body.dark-mode .wr-obar{ background:color-mix(in srgb, var(--fac-dark) 34%, transparent); }
+.wr-oname{ position:relative; font-size:.75rem; font-weight:700; color:var(--ink); }
+.wr-on{ position:relative; font-size:.75rem; font-weight:900; color:var(--ink-soft);
+  font-family:'JetBrains Mono',monospace; }
+.wr-punct{ font-size:.75rem; line-height:1.55; color:var(--ink-soft); margin:.5rem 0 0; }
+
+.wr-slist{ list-style:none; margin:0; padding:0; counter-reset:wrs; }
+.wr-slist li{ display:grid; grid-template-columns:2.6rem 7.5rem 1fr; gap:.5rem;
+  align-items:baseline; padding:.3rem 0; border-top:1px solid var(--line); }
+.wr-slist li:first-child{ border-top:0; }
+.wr-slen{ font-size:.6875rem; font-weight:900; color:var(--ink-soft);
+  font-family:'JetBrains Mono',monospace; }
+.wr-sop{ font-size:.6875rem; font-weight:700; color:var(--fac-dark); }
+body.dark-mode .wr-sop{ color:var(--brand-ink); }
+.wr-stext{ font-size:.75rem; line-height:1.5; color:var(--ink); min-width:0; }
+
+.wr-sug{ margin:.6rem 0 0; padding:.6rem .75rem; border-radius:.5rem;
+  border-left:3px solid var(--fac-dark); background:var(--surface-2); }
+.wr-sugh{ font-size:.8125rem; font-weight:900; color:var(--ink); margin:0 0 .2rem; }
+.wr-sugb{ font-size:.75rem; line-height:1.6; color:var(--ink); margin:0; }
+.wr-sugb em{ font-style:italic; color:var(--ink-soft); }
+
+.wr-moves{ margin-top:.5rem; }
+.wr-move{ padding:.6rem .75rem; margin-top:.4rem; border-radius:.5rem;
+  background:var(--surface-2); border:1px solid var(--line); }
+.wr-movename{ font-size:.8125rem; font-weight:900; color:var(--ink); margin:0; }
+.wr-movewhy{ font-size:.75rem; line-height:1.55; color:var(--ink-soft); margin:.15rem 0 0; }
+.wr-moveeg{ font-family:Georgia,'Times New Roman',serif; font-size:.8125rem; line-height:1.6;
+  color:var(--ink); margin:.35rem 0 0; padding-left:.6rem;
+  border-left:2px solid var(--line-strong); }
+
+/* ---- buttons: same set as the bibliography maker ---- */
+.wr-acts{ display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.9rem; }
+.wr-btn{ font-size:.75rem; font-weight:900; padding:.55rem 1rem; border-radius:.55rem;
+  cursor:pointer; border:1.5px solid transparent; transition:all .15s ease; }
+.wr-go{ background:#15803d; border-color:#15803d; color:#fff; }
+.wr-go:hover{ background:#166534; border-color:#166534; }
+.wr-alt{ background:var(--fac-dark); border-color:var(--fac-dark); color:#fff; }
+.wr-alt:hover{ filter:brightness(1.15); }
+.wr-ghost{ background:var(--surface); border-color:var(--line-strong); color:var(--ink-soft); }
+.wr-ghost:hover{ border-color:var(--fac-dark); color:var(--fac-dark); }
+
+@media (max-width:640px){
+  .wr-shapes{ grid-template-columns:1fr; }
+  .wr-slist li{ grid-template-columns:2.6rem 1fr; }
+  .wr-stext{ grid-column:1 / -1; }
+  .wr-stdbar{ flex-direction:column; align-items:flex-start; }
+}
+
 </style>
 </head>
 <body>
@@ -7598,6 +7768,7 @@ z
     <button class="mode-tab mode-tab-main" data-view="builder" aria-pressed="true">Ultimate Study Guide</button>
     <button class="mode-tab mode-tab-alt" data-view="timetable" aria-pressed="false">Study Timetable</button>
     <button class="mode-tab mode-tab-alt" data-view="bib" aria-pressed="false">Bibliography</button>
+    <button class="mode-tab mode-tab-alt" data-view="writing" aria-pressed="false">Writing</button>
     <button id="offline-open" class="offline-tab"
             title="Ways to study this standard with no screen at all">Study without AI</button>
     <button id="evidence-open" class="evidence-tab"
@@ -7665,6 +7836,7 @@ z
 
 <div id="tt-root" class="max-w-6xl mx-auto px-5 py-5 space-y-4 pb-32 hidden"></div>
 <div id="bib-root" class="max-w-6xl mx-auto px-5 py-5 space-y-4 pb-32 hidden"></div>
+<div id="writing-root" class="max-w-6xl mx-auto px-5 py-5 space-y-4 pb-32 hidden"></div>
 
 <main class="max-w-6xl mx-auto px-5 py-5 space-y-4 pb-32">
 
@@ -7813,7 +7985,7 @@ z
     </div>
   </details>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 89 · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 91 · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -7887,10 +8059,10 @@ const SUBJECT_TOOLS = {
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=89' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=89' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=89' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=89' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=91' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=91' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=91' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=91' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -7955,7 +8127,24 @@ function init(){
     document.querySelector('main').classList.toggle('hidden', v!=='builder');
     $('tt-root').classList.toggle('hidden', v!=='timetable');
     $('bib-root').classList.toggle('hidden', v!=='bib');
+    $('writing-root').classList.toggle('hidden', v!=='writing');
     $('actionbar').classList.toggle('hidden', v!=='builder' || !$('prompt').value);
+    if(v === 'writing'){
+      /* the writing tools inherit whatever standard the study guide has,
+         so a student who already picked one does not pick it twice */
+      if(window.Writing){
+        if(!window.Writing.state.std && sel.std && window.Writing.isWriting(sel.std))
+          window.Writing.state.std = { level: sel.level, code: sel.std.code };
+        window.Writing.open();
+      } else $('writing-root').innerHTML = `<div class="panel p-5">
+        <p class="text-sm"><strong>The writing tools could not start.</strong></p>
+        <p class="text-xs soft mt-2">Their file, <code>writing.js</code>, did not load. That
+        happens when the page is opened on its own \u2014 in a preview pane, from an email
+        attachment, or by double-clicking the HTML file \u2014 because it needs its companion
+        files alongside it.</p>
+        <p class="text-xs soft mt-2">Open the site from its real web address, where all the files
+        sit in the same folder.</p></div>`;
+    }
     if(v === 'bib'){
       if(window.Bibliography) window.Bibliography.open();
       else $('bib-root').innerHTML = `<div class="panel p-5">
@@ -8815,7 +9004,8 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=89"></script>
-<script src="bib.js?v=89"></script>
+<script src="timetable.js?v=91"></script>
+<script src="bib.js?v=91"></script>
+<script src="writing.js?v=91"></script>
 </body>
 </html>

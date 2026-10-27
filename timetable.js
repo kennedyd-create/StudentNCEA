@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 89 — tiles lifted off the panel';
+const TT_BUILD = 'build 91 — writing tools';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
@@ -871,6 +871,23 @@ function viewBar(){
    exam in November. Which deadline applies depends on the plan's target. */
 const DG = () => window.WHS_DERIVED;
 
+/* The exam dates, the digital/paper status and the standards themselves are all
+   built for one NCEA year. Once that year is behind us the dates are simply
+   wrong, and a plan built backwards from a wrong date puts every hour of
+   revision in the wrong place. So the data says which year it is for, and
+   anywhere a date is shown we say so rather than letting it pass as current. */
+const dataYear = () => (E() && E().year) || null;
+const yearIsPast = () => { const y = dataYear();
+  return !!y && new Date().getUTCFullYear() > y; };
+function staleNote(where){
+  if(!yearIsPast()) return '';
+  const y = dataYear(), now = new Date().getUTCFullYear();
+  return `<p class="tt-stale"><strong>These dates are from ${y}.</strong> It is ${now}, so
+    ${where} NZQA will have published a new timetable and this site has not been updated to it yet.
+    Check your own dates on <a href="${E().timetableUrl}" target="_blank" rel="noopener">NZQA</a>
+    or with your teacher before you rely on this plan.</p>`;
+}
+
 /* A workshop is a practical assessment sat in the mock week: it occupies a
    half-day, so nothing can be scheduled against it, but there is nothing to
    revise for either. It appears on the plan and nowhere else. */
@@ -1095,6 +1112,7 @@ function renderPlan(){
   const body = S.view==='day' ? dayView() : S.view==='week' ? weekView()
              : S.view==='month' ? monthView() : fullView();
   return `<div class="panel p-4 md:p-5 tt-plan${S.justBuilt?' tt-fresh':''}">
+    ${staleNote('this plan was built from dates that are out of date — ')}
     <div class="tt-planhead mb-3">
       <div class="tt-ph-left">
         <p class="tt-switchh">Choose type of study</p>
@@ -1241,6 +1259,8 @@ function printPlan(scope){
         <div>
           <h1>Study plan${keys.length>1?` — week ${i+1} of ${keys.length}`:''}</h1>
           <p>${pretty(wk,{day:'numeric',month:'long'})} to ${pretty(addDays(wk,6),{day:'numeric',month:'long'})}</p>
+          ${yearIsPast() ? `<p class="pl-stale">Built from the ${dataYear()} exam timetable —
+            check your own dates, they will have changed.</p>` : ''}
         </div>
         <div class="pl-meta">
           <p><strong>Name:</strong> ______________________</p>
@@ -1285,6 +1305,7 @@ function printPlan(scope){
       /* Subject colour as a left band plus a swatch. A band survives greyscale
          printing as a grey tone; the name is always there regardless. */
       .pl-sub{ width:124px; font-weight:700; border-left:5px solid var(--hue,#999)!important; }
+      .pl-stale{ font-size:8pt; color:#92400e; margin:1mm 0 0; font-weight:700; }
       .pl-swatch{ display:inline-block; width:8px; height:8px; border-radius:2px;
         background:var(--hue,#999); margin-right:5px; vertical-align:middle; }
       .pl-code{ display:block; font-weight:400; color:#555; font-size:9px; margin-left:13px; }
@@ -1756,6 +1777,7 @@ function stepExams(){
     <h3 class="sec-h mb-1"><span class="tt-step">5</span>When are your exams?</h3>
     <p class="tt-why"><strong>This is the part that matters most.</strong> The whole plan is built
       backwards from these dates, so a wrong one puts your revision in the wrong place.</p>
+    ${staleNote('')}
     <p class="text-xs soft mb-3">Pre-filled from the ${E().year} timetable. Check yours on
       <a href="${E().timetableUrl}" target="_blank" rel="noopener" class="underline">NZQA</a>.
       <strong>Digital exam</strong> or <strong>paper exam</strong> shows how you will sit each one —
