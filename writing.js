@@ -19,7 +19,7 @@
    ============================================================ */
 (function () {
 
-const W_BUILD = 'build 98 — writing tools';
+const W_BUILD = 'build 101 — writing tools';
 
 const R = () => document.getElementById('writing-root');
 const esc = s => String(s == null ? '' : s)
@@ -613,6 +613,7 @@ function suggestions(a){
 
 function render(){
   const r = R(); if(!r) return;
+  stopSpeech();          // the buttons below are about to be replaced
   r.innerHTML = head() + buildPane() + foot() + exampleModal();
   wire();
 }
@@ -623,7 +624,7 @@ function head(){
   if(S.headOpen !== true && S.shape) return `<div class="panel p-4 wr-stdbar wr-headbar">
     <div>
       <p class="wr-stdlab">Writing</p>
-      <p class="wr-stdsub"><strong>Neither tool writes a sentence for you.</strong>
+      <p class="wr-stdsub"><strong>Nothing here writes a sentence for you.</strong>
         Every word in your paragraph is yours, which is the only way it can be handed in.</p>
     </div>
     <button class="wr-btn wr-ghost" data-wrhead>Show</button>
@@ -633,12 +634,12 @@ function head(){
       <h2 class="wr-h">Writing</h2>
       ${S.shape ? '<button class="wr-btn wr-ghost" data-wrhead>Hide</button>' : ''}
     </div>
-    <p class="wr-lead">Two tools for the writing standards. <strong>Shape a paragraph</strong> asks
-    you the questions a particular kind of paragraph has to answer, in order, and you write the
-    sentences. <strong>Check a paragraph</strong> reads one you have already written and tells you
-    what it does — how many sentences, how each one opens, what you have not tried.</p>
-    <p class="wr-warn"><strong>Neither tool writes a sentence for you.</strong> One gives you the
-    questions, the other counts what is there. The sentence ideas can drop in a skeleton with the
+    <p class="wr-lead">Pick the shape a paragraph needs and it asks you the questions
+    that shape has to answer, in order. You write the sentences. As you go it reports
+    what is there — how long each sentence is, how it opens, how the paragraph reads
+    as a whole — and the ideas beside you show ways to build a sentence.</p>
+    <p class="wr-warn"><strong>Nothing here writes a sentence for you.</strong> It asks the
+    questions and counts what is there. The sentence ideas can drop in a skeleton with the
     gaps marked \u2014 <code>Although [what is true], </code> \u2014 but you fill every gap. Every
     word in your paragraph is yours, which is the only way it can be handed in.</p>
   </div>`;
@@ -776,33 +777,6 @@ function recordUse(id){
   save();
 }
 
-function habitNote(){
-  const r = S.recent || [], used = S.used || {};
-  const tried = Object.keys(used).length;
-  const bodyShapes = SHAPES.filter(x => x.id && x.group !== 'Opening and closing');
-  if(!r.length) return '';
-
-  /* three in a row of the same shape is a habit, not a choice */
-  const run = r.length >= 3 && r.slice(0, 3).every(x => x === r[0]) ? r[0] : null;
-  const untried = bodyShapes.filter(x => !used[x.id]);
-  if(run){
-    const alt = untried.length ? untried : bodyShapes.filter(x => x.id !== run);
-    return `<div class="wr-habit">
-      <p class="wr-habith">Your last three paragraphs were all ${esc(shapeById(run).name)}.</p>
-      <p class="wr-habitb">A piece of writing built from one shape reads flat however good the
-      content is, and markers see it immediately. For the next one, try
-      ${alt.slice(0, 2).map(x => `<strong>${esc(x.name)}</strong>`).join(' or ')}.</p>
-    </div>`;
-  }
-  if(tried >= 2) return `<div class="wr-habit wr-habitok">
-    <p class="wr-habith">You have used ${tried} different shapes so far.</p>
-    <p class="wr-habitb">${untried.length
-      ? `Still untried: ${untried.map(x => esc(x.name)).join(', ')}.`
-      : 'You have tried every one of them.'}</p>
-  </div>`;
-  return '';
-}
-
 /* ============================================================
    FEEDBACK WHILE THEY WRITE
    Everything here is counted, not judged. It can tell a student
@@ -810,8 +784,8 @@ function habitNote(){
    way as the one above it, because those are facts about the
    text. It cannot tell them whether the evidence proves the
    claim \u2014 that needs a reader who knows the subject, which is
-   what the feedback prompt is for. The line between the two is
-   the whole design, so nothing below ever looks at meaning.
+   what the AI prompt is for. The line between the two is the
+   whole design, so nothing below ever looks at meaning.
    ============================================================ */
 
 const HEDGES = /\b(very|really|quite|rather|somewhat|a bit|kind of|sort of|pretty much|basically|actually|simply|just|literally|obviously|clearly)\b/gi;
@@ -877,6 +851,67 @@ function prevOpenerFor(a, steps, i){
   }
   return null;
 }
+
+/* ---- reading it aloud ----
+   Hearing a paragraph read back catches what the eye skips: a sentence with
+   no air in it, three openings the same, a clause that cannot be said in one
+   breath. It runs on the browser's own speech synthesiser, so nothing is
+   sent anywhere, and it is simply absent on a browser that has none. */
+
+const canSpeak = () => typeof window !== 'undefined'
+  && typeof window.speechSynthesis !== 'undefined'
+  && typeof window.SpeechSynthesisUtterance !== 'undefined';
+
+let speaking = null;        // the id of whatever is being read, or null
+let speechFailed = false;   // set once, if the browser has no voice to use
+
+function stopSpeech(){
+  if(!canSpeak()) return;
+  try { window.speechSynthesis.cancel(); } catch(e){}
+  speaking = null;
+}
+
+function speak(id, text){
+  if(!canSpeak()) return;
+  const was = speaking;
+  stopSpeech();
+  if(was === id || !String(text || '').trim()){ paintSpeakers(); return; }
+  try {
+    const u = new window.SpeechSynthesisUtterance(String(text));
+    u.lang = 'en-NZ';
+    u.rate = 0.95;            // a shade under natural, so clauses land
+    u.onend = () => { speaking = null; paintSpeakers(); };
+    /* No voice installed is the common case on a locked-down school machine.
+       Silence with a button that flicks back tells them nothing, so say it. */
+    u.onerror = () => { speaking = null; speechFailed = true; paintSpeakers(); };
+    speaking = id;
+    window.speechSynthesis.speak(u);
+  } catch(e){ speaking = null; }
+  paintSpeakers();
+}
+
+/* the buttons are repainted rather than re-rendered, so nothing the student
+   has typed is disturbed while the speech is running */
+function paintSpeakers(){
+  const r = R(); if(!r) return;
+  r.querySelectorAll('[data-wrspeak]').forEach(b => {
+    const on = speaking === b.dataset.wrspeak;
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.innerHTML = on ? '\u25a0 Stop' : '\u25b6 Read aloud';
+    b.classList.toggle('wr-speakoff', speechFailed);
+    if(speechFailed) b.title = 'This device has no voice installed, so it cannot read aloud';
+  });
+  if(speechFailed) r.querySelectorAll('[data-wrspeak]').forEach(b => {
+    const host = b.parentElement;
+    if(host && !host.querySelector('.wr-speakerr'))
+      host.insertAdjacentHTML('beforeend',
+        ' <span class="wr-speakerr">no voice installed on this device</span>');
+  });
+}
+
+const speakerBtn = (id, label) => canSpeak()
+  ? `<button class="wr-speak" data-wrspeak="${esc(id)}" aria-pressed="false"
+      title="${esc(label)}">\u25b6 Read aloud</button>` : '';
 
 /* ---- what the chosen standard asks for ----
    Until now the standard only labelled the page and scoped the feedback
@@ -995,6 +1030,7 @@ function exampleModal(){
              ${['1','2','3'].map(l => `<button data-wrexlevel="${l}"
                aria-pressed="${l === lvl}">Level ${l}</button>`).join('')}
            </div>`}
+      <p class="wr-exread">${speakerBtn('example', 'Read this example aloud')}</p>
       <div class="wr-expara">${parts.map((t, i) =>
         `<span class="wr-exs wr-exs${i % 4}">${esc(t)}</span> `).join('')}</div>
       <p class="wr-rh">Which sentence does what</p>
@@ -1104,15 +1140,12 @@ function shapePicker(){
      the picker folds to a line. Reopening is one click and nothing is lost. */
   if(S.shape && !S.shapeOpen){
     const sh = shapeById(S.shape);
-    const h = habitNote();
     return `<div class="panel p-4 wr-stdbar wr-chosen">
       <div>
         <p class="wr-stdlab">Paragraph shape</p>
         <p class="wr-stdname"><strong>${esc(sh.name)}</strong>${sh.also
           ? ` <em>(${esc(sh.also)})</em>` : ''}</p>
         <p class="wr-stdsub">${esc(sh.use)}</p>
-        ${/last three/.test(h) ? `<p class="wr-stdsub wr-runwarn">You have used this shape for
-          your last three paragraphs \u2014 worth changing for the next one.</p>` : ''}
       </div>
       <div class="wr-acts">
         ${sh.example ? `<button class="wr-btn wr-ghost"
@@ -1132,18 +1165,15 @@ function shapePicker(){
       open = true; continue;
     }
     const fits = rec.includes(s.id);
-    const n = (S.used || {})[s.id] || 0;
     html += `<div class="wr-shapewrap"><button class="wr-shape${fits ? ' wr-fits' : ''}" data-wrshape="${esc(s.id)}"
         aria-pressed="${S.shape===s.id}">
       <span class="wr-shapename">${esc(s.name)}${s.also
         ? ` <em>(${esc(s.also)})</em>` : ''}${fits
-        ? ' <span class="wr-rec">fits this standard</span>' : ''}${n
-        ? ` <span class="wr-tally" title="paragraphs you have built this way">\u00d7${n}</span>`
-        : (Object.keys(S.used || {}).length
-            ? ' <span class="wr-new">not tried</span>' : '')}</span>
+        ? ' <span class="wr-rec">fits this standard</span>' : ''}</span>
       <span class="wr-shapeuse">${esc(s.use)}</span>
     </button>
-    </div>`;
+    ${s.example ? `<button class="wr-exmini" data-wrexample="${esc(s.id)}"
+      title="A worked paragraph in this shape">See an example</button>` : ''}</div>`;
   }
   if(open) html += '</div>';
   return `<div class="panel p-4 md:p-5">
@@ -1151,7 +1181,6 @@ function shapePicker(){
       <h3 class="wr-h3">What shape does this paragraph need?</h3>
       ${S.shape ? '<button class="wr-btn wr-ghost" data-wrshapeclose>Close</button>' : ''}
     </div>
-    ${habitNote()}
     ${rec.length ? `<p class="wr-hint">The ones marked <em>fits this standard</em> are picked
       from the verbs in the standard itself \u2014 they are a starting point, not a rule.</p>` : ''}
     ${html}
@@ -1183,7 +1212,7 @@ function shapeForm(){
         ${st.hint ? `<p class="wr-hint">${esc(st.hint)}</p>` : ''}
       </div>`).join('')}
     <div class="wr-assembled">
-      <p class="wr-alabel">Your paragraph so far${(() => {
+      <p class="wr-alabel">${speakerBtn('para', 'Read your paragraph aloud')}Your paragraph so far${(() => {
         const b = blanksLeft(steps.map((_, i) => a[i] || '').join(' '));
         return b ? ` <span class="wr-count wr-blanks">${b} gap${b===1?'':'s'} still to fill</span>` : '';
       })()}</p>
@@ -1234,7 +1263,6 @@ function ideasRail(){
   const openers = movesFor('opener');
   const inside  = movesFor('inside');
   const adv     = movesFor('advanced');
-  const left = openers.filter(m => !used(m.key)).length;
 
   const row = m => {
     const done = m.cat === 'opener' && used(m.key);
@@ -1245,6 +1273,8 @@ function ideasRail(){
         ${m.cat === 'advanced' ? '<span class="wr-adv">advanced</span>' : ''}
       </button>
       ${open ? `<div class="wr-ideabody">
+        <button class="wr-ideaclose" data-wridea="${esc(m.key)}"
+          aria-label="Close ${esc(m.label)}">\u00d7 Close</button>
         <p class="wr-ideawhy">${esc(m.why)}</p>
         <p class="wr-ideaeg">${markUp(m.eg, m.egMark)}</p>
         <button class="wr-btn wr-alt wr-ideaadd" data-wraddframe="${esc(m.key)}">Add the frame</button>
@@ -1254,8 +1284,7 @@ function ideasRail(){
   };
 
   return `<aside class="wr-rail"><div class="wr-railin">
-    <p class="wr-railh">Sentence ideas${a.count
-      ? ` <span class="wr-count">${left} of ${openers.length} not tried</span>` : ''}</p>
+    <p class="wr-railh">Sentence ideas</p>
     <p class="wr-railsub">Click one to see when to use it. <strong>Add the frame</strong> drops its
       skeleton into the box you were last writing in \u2014 with the gaps left for you. It never
       puts a finished sentence anywhere.</p>
@@ -1316,22 +1345,14 @@ function report(a){
          a.colons && `${a.colons} colon${a.colons===1?'':'s'}`]
         .filter(Boolean).join(' · ')}.</p>` : ''}
 
-    <p class="wr-rh">Sentence by sentence</p>
-    <ol class="wr-slist">${a.sentences.map(s => `<li>
-      <span class="wr-slen">${s.words}w</span>
-      <span class="wr-sop">${esc(OPENER_NAME[s.opener] || s.opener)}</span>
-      <span class="wr-stext">${esc(s.text.length > 90 ? s.text.slice(0,90) + '…' : s.text)}</span>
-    </li>`).join('')}</ol>
-
-    ${suggestions(a).map(s => s.moves
-      ? `<div class="wr-moves"><p class="wr-rh">Constructions you have not used here</p>
-          ${s.moves.map(m => `<div class="wr-move">
-            <p class="wr-movename">${esc(m.label)}</p>
-            <p class="wr-movewhy">${esc(m.why)}</p>
-            <p class="wr-moveeg">${esc(m.eg)}</p></div>`).join('')}</div>`
-      : `<div class="wr-sug"><p class="wr-sugh">${esc(s.head)}</p>
-          <p class="wr-sugb">${s.body}</p></div>`).join('')}
-
+    ${/* A sentence-by-sentence table repeated, for every sentence, exactly what
+          the note under each box already says; and a list of constructions
+          not used duplicated the rail sitting beside it. Both are gone. What
+          is left is the only thing here the student cannot see elsewhere:
+          the paragraph taken as a whole. */''}
+    ${suggestions(a).filter(s => !s.moves).map(s =>
+      `<div class="wr-sug"><p class="wr-sugh">${esc(s.head)}</p>
+        <p class="wr-sugb">${s.body}</p></div>`).join('')}
   </div>`;
 }
 
@@ -1396,7 +1417,7 @@ function wire(){
       '[data-wrpick],[data-wrunpick],[data-wrnav],[data-wridea],[data-wraddframe],' +
       '[data-wrshapeopen],[data-wrshapeclose],[data-wrexample],[data-wrexclose],' +
       '[data-wrexlevel],[data-wrexback],[data-wrai],[data-wrcraft],' +
-      '[data-wrasks],[data-wrhead]');
+      '[data-wrasks],[data-wrhead],[data-wrspeak]');
     if(!t) return;
     const d = t.dataset;
 
@@ -1427,6 +1448,17 @@ function wire(){
     if('wrai' in d){ openSite(d.wrai); return; }
     if('wrasks' in d){ S.asksOpen = !S.asksOpen; render(); return; }
     if('wrhead' in d){ S.headOpen = S.headOpen !== true; render(); return; }
+    if('wrspeak' in d){
+      const sh2 = shapeById(S.shape);
+      if(d.wrspeak === 'para') speak('para', currentText());
+      else if(sh2 && sh2.example){
+        const lvl2 = exampleLocked() ? exampleLevel() : (S.exLevel || exampleLevel());
+        const ex2 = S.example ? shapeById(S.example) : sh2;
+        const parts2 = (ex2.example.byLevel[lvl2] || ex2.example.byLevel['2']);
+        speak('example', parts2.join(' '));
+      }
+      return;
+    }
     if('wrexample' in d){ S.example = d.wrexample; S.exLevel = exampleLevel(); render(); return; }
     if('wrexclose' in d){ S.example = null; render(); return; }
     if('wrexlevel' in d){ S.exLevel = d.wrexlevel; render(); return; }
@@ -1484,11 +1516,15 @@ function wire(){
       } else if(whole) whole.remove();
       const rail = r.querySelector('.wr-rail');
       if(rail) rail.outerHTML = ideasRail();
+      /* rebuild only the gap counter: rewriting the whole label would take
+         the read-aloud button with it on every keystroke */
       const lab = r.querySelector('.wr-alabel');
       if(lab){
         const b = blanksLeft(steps.map((_, k) => a[k] || '').join(' '));
-        lab.innerHTML = 'Your paragraph so far' + (b
-          ? ` <span class="wr-count wr-blanks">${b} gap${b===1?'':'s'} still to fill</span>` : '');
+        const old = lab.querySelector('.wr-blanks');
+        if(old) old.remove();
+        if(b) lab.insertAdjacentHTML('beforeend',
+          ` <span class="wr-count wr-blanks">${b} gap${b===1?'':'s'} still to fill</span>`);
       }
     }
   });
@@ -1504,7 +1540,7 @@ function wire(){
 
 load();
 window.Writing = {
-  moves: MOVES, craftPrompt, AI_SITES, openSite, exampleLevel, WRITING_STANDARDS, movesFor, liveNote, recordUse, habitNote, stepsFor, LEVEL_EXPECT, addFrame, blanksLeft, suggestedShapes,
+  moves: MOVES, speak, stopSpeech, canSpeak, craftPrompt, AI_SITES, openSite, exampleLevel, WRITING_STANDARDS, movesFor, liveNote, recordUse, stepsFor, LEVEL_EXPECT, addFrame, blanksLeft, suggestedShapes,
   open: render,
   state: S,
   /* exposed so the tests can check the analyser without driving the UI */

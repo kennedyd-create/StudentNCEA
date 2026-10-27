@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=98"></script>
-<script src="whs-derived-2026.js?v=98"></script>
+<script src="ncea-exams-2026.js?v=101"></script>
+<script src="whs-derived-2026.js?v=101"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -1313,8 +1313,14 @@ body.dark-mode .wr-shape[aria-pressed="true"]{
 .wr-big{ font-size:.875rem; line-height:1.65; }
 
 /* ---- what they have so far ---- */
-.wr-assembled{ margin-top:.9rem; padding:.75rem .9rem; border-radius:.6rem;
-  background:var(--surface-2); border:1px dashed var(--line-strong); }
+/* Their own words, so the box is tinted apart from every working surface
+   around it \u2014 a warm paper colour against the cool panels. Body ink reads
+   at 13.6:1 on it in light mode and 12.3:1 in dark. */
+.wr-assembled{ margin-top:.9rem; padding:.8rem .95rem; border-radius:.6rem;
+  background:#fdf6e8; border:1px solid color-mix(in srgb, #c5a059 38%, transparent);
+  border-left:4px solid #c5a059; }
+body.dark-mode .wr-assembled{ background:#231d12;
+  border-color:color-mix(in srgb, #c5a059 30%, transparent); border-left-color:#8a6d34; }
 .wr-alabel{ font-size:.625rem; font-weight:900; text-transform:uppercase; letter-spacing:.07em;
   color:var(--ink-soft); margin:0 0 .3rem; }
 .wr-para{ font-family:Georgia,'Times New Roman',serif; font-size:.9375rem; line-height:1.7;
@@ -1347,15 +1353,6 @@ body.dark-mode .wr-obar{ background:color-mix(in srgb, var(--fac-dark) 34%, tran
   font-family:'JetBrains Mono',monospace; }
 .wr-punct{ font-size:.75rem; line-height:1.55; color:var(--ink-soft); margin:.5rem 0 0; }
 
-.wr-slist{ list-style:none; margin:0; padding:0; counter-reset:wrs; }
-.wr-slist li{ display:grid; grid-template-columns:2.6rem 7.5rem 1fr; gap:.5rem;
-  align-items:baseline; padding:.3rem 0; border-top:1px solid var(--line); }
-.wr-slist li:first-child{ border-top:0; }
-.wr-slen{ font-size:.6875rem; font-weight:900; color:var(--ink-soft);
-  font-family:'JetBrains Mono',monospace; }
-.wr-sop{ font-size:.6875rem; font-weight:700; color:var(--fac-dark); }
-body.dark-mode .wr-sop{ color:var(--brand-ink); }
-.wr-stext{ font-size:.75rem; line-height:1.5; color:var(--ink); min-width:0; }
 
 .wr-sug{ margin:.6rem 0 0; padding:.6rem .75rem; border-radius:.5rem;
   border-left:3px solid var(--fac-dark); background:var(--surface-2); }
@@ -1363,14 +1360,6 @@ body.dark-mode .wr-sop{ color:var(--brand-ink); }
 .wr-sugb{ font-size:.75rem; line-height:1.6; color:var(--ink); margin:0; }
 .wr-sugb em{ font-style:italic; color:var(--ink-soft); }
 
-.wr-moves{ margin-top:.5rem; }
-.wr-move{ padding:.6rem .75rem; margin-top:.4rem; border-radius:.5rem;
-  background:var(--surface-2); border:1px solid var(--line); }
-.wr-movename{ font-size:.8125rem; font-weight:900; color:var(--ink); margin:0; }
-.wr-movewhy{ font-size:.75rem; line-height:1.55; color:var(--ink-soft); margin:.15rem 0 0; }
-.wr-moveeg{ font-family:Georgia,'Times New Roman',serif; font-size:.8125rem; line-height:1.6;
-  color:var(--ink); margin:.35rem 0 0; padding-left:.6rem;
-  border-left:2px solid var(--line-strong); }
 
 
 /* ---- the work area: questions on the left, ideas sticky beside them ---- */
@@ -1430,7 +1419,11 @@ body.dark-mode .wr-tick{ color:#4ade80; }
 .wr-rail .wr-ideaadd:hover{ filter:brightness(1.1); }
 .wr-tick{ color:var(--wr-accent); }
 body.dark-mode .wr-tick{ color:var(--wr-accent); }
-.wr-ideabody{ padding:0 .2rem .6rem; }
+.wr-ideabody{ padding:0 .2rem .6rem; position:relative; }
+.wr-ideaclose{ float:right; margin:-.1rem 0 .2rem .4rem; font-size:.625rem; font-weight:900;
+  padding:.1rem .4rem; border-radius:.3rem; cursor:pointer; background:var(--surface);
+  border:1px solid var(--line-strong); color:var(--ink-soft); transition:all .15s ease; }
+.wr-ideaclose:hover{ border-color:var(--wr-accent); color:var(--wr-accent); }
 .wr-ideawhy{ font-size:.6875rem; line-height:1.55; color:var(--ink-soft); margin:0; }
 .wr-ideaeg{ font-family:Georgia,'Times New Roman',serif; font-size:.75rem; line-height:1.55;
   color:var(--ink); margin:.3rem 0 .4rem; padding-left:.5rem;
@@ -1500,9 +1493,31 @@ body.dark-mode .wr-aisite:hover{ color:#fff; }
 .wr-ailink:hover{ color:var(--fac-dark); }
 
 
+/* ---- read aloud ---- */
+.wr-speak{ font-size:.625rem; font-weight:900; padding:.15rem .5rem; border-radius:.3rem;
+  cursor:pointer; margin-right:.45rem; vertical-align:.05em; white-space:nowrap;
+  background:var(--surface); color:var(--ink-soft);
+  border:1px solid var(--line-strong); transition:all .15s ease; }
+.wr-speak:hover{ border-color:var(--fac-dark); color:var(--fac-dark); }
+.wr-speak[aria-pressed="true"]{ background:var(--fac-dark); border-color:var(--fac-dark);
+  color:#fff; }
+body.dark-mode .wr-speak:hover{ border-color:var(--brand-ink); color:var(--brand-ink); }
+body.dark-mode .wr-speak[aria-pressed="true"]{ color:#fff; }
+.wr-assembled .wr-speak{ text-transform:none; letter-spacing:0; }
+.wr-exread{ margin:0 0 .4rem; }
+.wr-speakoff{ opacity:.55; }
+.wr-speakerr{ font-size:.625rem; font-weight:700; color:var(--ink-faint);
+  text-transform:none; letter-spacing:0; }
+
 /* ---- the worked-example popup ---- */
 .wr-shapewrap{ display:flex; flex-direction:column; min-width:0; }
 .wr-shapewrap .wr-shape{ flex:1 1 auto; }
+.wr-exmini{ align-self:flex-start; margin-top:.25rem; font-size:.625rem; font-weight:900;
+  padding:.15rem .45rem; border-radius:.3rem; cursor:pointer; background:none; border:0;
+  color:var(--ink-soft); text-decoration:underline; text-underline-offset:2px;
+  transition:color .15s ease; }
+.wr-exmini:hover{ color:var(--fac-dark); }
+body.dark-mode .wr-exmini:hover{ color:var(--brand-ink); }
 
 .wr-exback{ padding:1rem; }
 .wr-excard{ max-width:46rem; }
@@ -1561,26 +1576,11 @@ body.dark-mode .wr-exnum{ background:color-mix(in srgb, var(--exc) 24%, var(--su
   background:#c2410c; color:#fff; }
 body.dark-mode .wr-livef{ background:#fbbf24; color:#1c1206; }
 .wr-liveflag .wr-livem{ color:var(--ink); font-weight:900; }
-.wr-runwarn{ color:var(--int-ink); font-weight:700; }
-body.dark-mode .wr-runwarn{ color:#fde68a; }
 .wr-headbar .wr-stdsub{ max-width:60ch; }
 .wr-stdchosen{ }
 .wr-chosen .wr-stdname em{ font-style:normal; font-weight:700; color:var(--ink-soft); }
 
 /* ---- the habit note ---- */
-.wr-habit{ margin:0 0 .6rem; padding:.6rem .75rem; border-radius:.5rem;
-  border-left:4px solid #c5a059; background:color-mix(in srgb, #c5a059 12%, var(--surface)); }
-body.dark-mode .wr-habit{ background:color-mix(in srgb, #c5a059 18%, var(--surface)); }
-.wr-habitok{ border-left-color:#15803d;
-  background:color-mix(in srgb, #15803d 8%, var(--surface)); }
-body.dark-mode .wr-habitok{ background:color-mix(in srgb, #15803d 16%, var(--surface)); }
-.wr-habith{ font-size:.8125rem; font-weight:900; color:var(--ink); margin:0; }
-.wr-habitb{ font-size:.75rem; line-height:1.55; color:var(--ink); margin:.15rem 0 0; }
-.wr-tally{ font-size:.5625rem; font-weight:900; padding:.05rem .3rem; border-radius:.25rem;
-  background:var(--surface-3); color:var(--ink-soft); white-space:nowrap; }
-.wr-new{ font-size:.5625rem; font-weight:900; text-transform:uppercase; letter-spacing:.05em;
-  padding:.05rem .3rem; border-radius:.25rem; background:var(--ext-bg); color:var(--ext-ink);
-  white-space:nowrap; }
 
 /* ---- what this level expects ---- */
 .wr-level{ margin:.1rem 0 .3rem; padding:.55rem .7rem; border-radius:.5rem;
@@ -1623,8 +1623,6 @@ body.dark-mode .wr-deep > label{ color:var(--brand-ink); }
 
 @media (max-width:640px){
   .wr-shapes{ grid-template-columns:1fr; }
-  .wr-slist li{ grid-template-columns:2.6rem 1fr; }
-  .wr-stext{ grid-column:1 / -1; }
   .wr-stdbar{ flex-direction:column; align-items:flex-start; }
 }
 
@@ -8230,7 +8228,7 @@ z
     </div>
   </details>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 98 (2026-10-27) · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 101 (2026-10-27) · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -8304,10 +8302,10 @@ const SUBJECT_TOOLS = {
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=98' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=98' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=98' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=98' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=101' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=101' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=101' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=101' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -9249,8 +9247,8 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=98"></script>
-<script src="bib.js?v=98"></script>
-<script src="writing.js?v=98"></script>
+<script src="timetable.js?v=101"></script>
+<script src="bib.js?v=101"></script>
+<script src="writing.js?v=101"></script>
 </body>
 </html>
