@@ -1259,6 +1259,11 @@ body.dark-mode .wr-warn{ background:color-mix(in srgb, #c5a059 18%, var(--surfac
 .wr-stdsub{ font-size:.6875rem; line-height:1.5; color:var(--ink-soft); margin:.2rem 0 0; }
 .wr-pickwrap{ display:flex; flex-direction:column; gap:.8rem; margin-top:.4rem; }
 .wr-lvlgroup{ min-width:0; }
+.wr-pills{ display:flex; flex-wrap:wrap; gap:.35rem; margin-bottom:.2rem; }
+.wr-mode{ font-size:.5625rem; font-weight:900; text-transform:uppercase; letter-spacing:.05em;
+  padding:.05rem .3rem; border-radius:.25rem; margin-left:.3rem; vertical-align:.08em; }
+.wr-internal{ background:var(--int-bg); color:var(--int-ink); }
+.wr-external{ background:var(--ext-bg); color:var(--ext-ink); }
 .wr-lvlh{ font-size:.6875rem; font-weight:900; text-transform:uppercase; letter-spacing:.06em;
   color:var(--ink-soft); margin:0 0 .35rem; }
 .wr-picks{ display:grid; gap:.35rem; grid-template-columns:repeat(auto-fill,minmax(15rem,1fr)); }
@@ -1267,7 +1272,9 @@ body.dark-mode .wr-warn{ background:color-mix(in srgb, #c5a059 18%, var(--surfac
   transition:all .15s ease; min-width:0; }
 .wr-pick:hover{ border-color:var(--fac-dark); background:var(--surface-3); }
 .wr-pick b{ display:block; font-size:.75rem; font-weight:900; color:var(--ink); }
-.wr-pick span{ display:block; font-size:.6875rem; line-height:1.4; color:var(--ink-soft);
+/* the direct child only: the internal/external tag is a span too, and it
+   has to stay an inline chip rather than a full-width bar */
+.wr-pick > span{ display:block; font-size:.6875rem; line-height:1.4; color:var(--ink-soft);
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 /* ---- paragraph shapes ---- */
@@ -1364,6 +1371,138 @@ body.dark-mode .wr-sop{ color:var(--brand-ink); }
 .wr-moveeg{ font-family:Georgia,'Times New Roman',serif; font-size:.8125rem; line-height:1.6;
   color:var(--ink); margin:.35rem 0 0; padding-left:.6rem;
   border-left:2px solid var(--line-strong); }
+
+
+/* ---- the work area: questions on the left, ideas sticky beside them ---- */
+/* The rail has to follow the student down the questions, which means two
+   things that are easy to get wrong: the grid item must stretch to the full
+   height of the column beside it, or the sticky box has no distance to
+   travel; and the scrolling box must be inside the sticky one, not the
+   sticky one itself. */
+.wr-work{ display:grid; gap:.75rem; grid-template-columns:1fr; align-items:stretch; }
+@media (min-width:1024px){ .wr-work{ grid-template-columns:minmax(0,1fr) 20rem; } }
+.wr-main{ min-width:0; }
+.wr-rail{ min-width:0; }
+@media (min-width:1024px){
+  .wr-rail{ align-self:stretch; }
+  .wr-railin{ position:sticky; top:.75rem; }
+  /* long enough to need its own scrollbar, but only inside the sticky box */
+  .wr-railscroll{ max-height:calc(100vh - 4.5rem); overflow-y:auto;
+    overscroll-behavior:contain; }
+}
+/* The rail is a different kind of thing from the questions beside it \u2014 it is
+   about how to build a sentence, not what this paragraph has to say \u2014 so it
+   carries its own colour rather than the faculty's. Teal sits clear of all
+   four mode-group colours. Contrast checked in both themes: 5.47:1 on white,
+   11.74:1 on the dark surface. */
+.wr-rail{ --wr-accent:#0f766e; --wr-accent-ink:#ffffff; }
+body.dark-mode .wr-rail{ --wr-accent:#5eead4; --wr-accent-ink:#071f1c; }
+.wr-railin{ background:var(--surface);
+  border:1.5px solid color-mix(in srgb, var(--wr-accent) 35%, var(--line-strong));
+  border-top:3px solid var(--wr-accent);
+  border-radius:.75rem; padding:.75rem .8rem; box-shadow:var(--shadow); }
+.wr-railh{ font-size:.875rem; font-weight:900; color:var(--wr-accent); margin:0 0 .2rem; }
+.wr-railsub{ font-size:.6875rem; line-height:1.5; color:var(--ink-soft); margin:0 0 .3rem; }
+.wr-railsub code{ font-family:'JetBrains Mono',monospace; font-size:.625rem; }
+
+.wr-idea{ border-top:1px solid var(--line); }
+.wr-idea:first-of-type{ border-top:0; }
+.wr-ideab{ width:100%; text-align:left; cursor:pointer; background:none; border:0;
+  font-size:.75rem; font-weight:800; line-height:1.4; color:var(--ink);
+  padding:.4rem .2rem; display:flex; gap:.3rem; align-items:baseline; }
+.wr-ideab:hover{ color:var(--wr-accent); }
+.wr-done > .wr-ideab{ color:var(--ink-soft); }
+.wr-tick{ color:#15803d; font-weight:900; }
+body.dark-mode .wr-tick{ color:#4ade80; }
+.wr-ideaopen > .wr-ideab{ color:var(--wr-accent); }
+.wr-ideaopen{ background:color-mix(in srgb, var(--wr-accent) 8%, transparent);
+  border-radius:.4rem; }
+.wr-rail .wr-rh{ color:color-mix(in srgb, var(--wr-accent) 80%, var(--ink-soft)); }
+.wr-ideaeg{ border-left-color:color-mix(in srgb, var(--wr-accent) 50%, var(--line-strong)); }
+/* scoped to the rail so it beats .wr-alt, which is defined further down */
+.wr-rail .wr-ideaadd{ background:var(--wr-accent); border-color:var(--wr-accent);
+  color:var(--wr-accent-ink); }
+.wr-rail .wr-ideaadd:hover{ filter:brightness(1.1); }
+.wr-tick{ color:var(--wr-accent); }
+body.dark-mode .wr-tick{ color:var(--wr-accent); }
+.wr-ideabody{ padding:0 .2rem .6rem; }
+.wr-ideawhy{ font-size:.6875rem; line-height:1.55; color:var(--ink-soft); margin:0; }
+.wr-ideaeg{ font-family:Georgia,'Times New Roman',serif; font-size:.75rem; line-height:1.55;
+  color:var(--ink); margin:.3rem 0 .4rem; padding-left:.5rem;
+  border-left:2px solid var(--line-strong); }
+.wr-ideaadd{ font-size:.6875rem; padding:.35rem .7rem; }
+.wr-adv{ font-size:.5rem; font-weight:900; text-transform:uppercase; letter-spacing:.06em;
+  padding:.05rem .3rem; border-radius:.25rem; white-space:nowrap; margin-left:.2rem;
+  background:color-mix(in srgb, var(--wr-accent) 20%, var(--surface));
+  color:color-mix(in srgb, var(--wr-accent) 80%, var(--ink)); }
+body.dark-mode .wr-adv{ background:color-mix(in srgb, var(--wr-accent) 22%, var(--surface));
+  color:var(--wr-accent); }
+.wr-advnote{ font-size:.625rem; line-height:1.5; color:var(--ink-soft); margin:0 0 .2rem; }
+.wr-ideaframe{ margin:.35rem 0 0; }
+.wr-ideaframe code{ font-family:'JetBrains Mono',monospace; font-size:.625rem; line-height:1.5;
+  color:var(--ink-soft); background:var(--surface-2); padding:.2rem .35rem; border-radius:.3rem;
+  display:inline-block; }
+.wr-blanks{ background:color-mix(in srgb, #c5a059 26%, var(--surface)); color:var(--int-ink); }
+body.dark-mode .wr-blanks{ background:color-mix(in srgb, #c5a059 32%, var(--surface));
+  color:#fde68a; }
+
+
+/* ---- the note under each box, while they write ---- */
+.wr-live{ display:flex; flex-wrap:wrap; gap:.3rem; align-items:center;
+  margin:.25rem 0 0; font-size:.6875rem; line-height:1.4; }
+.wr-liveflag .wr-livem{ color:var(--ink); }
+.wr-livem{ font-weight:800; color:var(--ink-soft); font-family:'JetBrains Mono',monospace;
+  font-size:.625rem; }
+.wr-livef{ font-weight:700; padding:.1rem .35rem; border-radius:.3rem;
+  background:color-mix(in srgb, #c5a059 20%, var(--surface)); color:var(--int-ink); }
+body.dark-mode .wr-livef{ background:color-mix(in srgb, #c5a059 26%, var(--surface));
+  color:#fde68a; }
+.wr-runwarn{ color:var(--int-ink); font-weight:700; }
+body.dark-mode .wr-runwarn{ color:#fde68a; }
+.wr-chosen .wr-stdname em{ font-style:normal; font-weight:700; color:var(--ink-soft); }
+
+/* ---- the habit note ---- */
+.wr-habit{ margin:0 0 .6rem; padding:.6rem .75rem; border-radius:.5rem;
+  border-left:4px solid #c5a059; background:color-mix(in srgb, #c5a059 12%, var(--surface)); }
+body.dark-mode .wr-habit{ background:color-mix(in srgb, #c5a059 18%, var(--surface)); }
+.wr-habitok{ border-left-color:#15803d;
+  background:color-mix(in srgb, #15803d 8%, var(--surface)); }
+body.dark-mode .wr-habitok{ background:color-mix(in srgb, #15803d 16%, var(--surface)); }
+.wr-habith{ font-size:.8125rem; font-weight:900; color:var(--ink); margin:0; }
+.wr-habitb{ font-size:.75rem; line-height:1.55; color:var(--ink); margin:.15rem 0 0; }
+.wr-tally{ font-size:.5625rem; font-weight:900; padding:.05rem .3rem; border-radius:.25rem;
+  background:var(--surface-3); color:var(--ink-soft); white-space:nowrap; }
+.wr-new{ font-size:.5625rem; font-weight:900; text-transform:uppercase; letter-spacing:.05em;
+  padding:.05rem .3rem; border-radius:.25rem; background:var(--ext-bg); color:var(--ext-ink);
+  white-space:nowrap; }
+
+/* ---- what this level expects ---- */
+.wr-level{ margin:.1rem 0 .3rem; padding:.55rem .7rem; border-radius:.5rem;
+  border-left:3px solid var(--fac-dark);
+  background:color-mix(in srgb, var(--fac-dark) 7%, var(--surface)); }
+body.dark-mode .wr-level{ background:color-mix(in srgb, var(--fac-dark) 20%, var(--surface)); }
+.wr-levelh{ font-size:.625rem; font-weight:900; text-transform:uppercase; letter-spacing:.06em;
+  color:var(--ink-soft); margin:0; }
+.wr-levelb{ font-size:.8125rem; line-height:1.55; color:var(--ink); margin:.15rem 0 0; }
+.wr-levels{ font-size:.6875rem; line-height:1.5; color:var(--ink-soft); margin:.25rem 0 0; }
+.wr-deep > label{ color:var(--fac-dark); }
+body.dark-mode .wr-deep > label{ color:var(--brand-ink); }
+
+/* ---- what the standard is marked on ---- */
+.wr-asks{ border-left:4px solid var(--fac-dark); }
+.wr-band{ margin-top:.4rem; padding:.5rem .65rem; border-radius:.45rem;
+  background:var(--surface-2); border:1px solid var(--line); }
+.wr-bandh{ font-size:.625rem; font-weight:900; text-transform:uppercase; letter-spacing:.06em;
+  color:var(--ink-soft); margin:0; }
+.wr-bandb{ font-size:.8125rem; line-height:1.55; color:var(--ink); margin:.15rem 0 0; }
+.wr-pits{ list-style:none; margin:.2rem 0 0; padding:0; display:flex; flex-direction:column;
+  gap:.2rem; }
+.wr-pits li{ font-size:.75rem; line-height:1.5; color:var(--int-ink); background:var(--int-bg);
+  padding:.3rem .5rem; border-radius:.4rem; }
+.wr-rec{ font-size:.5625rem; font-weight:900; text-transform:uppercase; letter-spacing:.05em;
+  padding:.05rem .3rem; border-radius:.25rem; background:var(--int-bg); color:var(--int-ink);
+  white-space:nowrap; }
+.wr-fits{ border-color:color-mix(in srgb, var(--fac-dark) 55%, var(--line-strong)); }
 
 /* ---- buttons: same set as the bibliography maker ---- */
 .wr-acts{ display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.9rem; }
