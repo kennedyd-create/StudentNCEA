@@ -19,7 +19,7 @@
    ============================================================ */
 (function () {
 
-const W_BUILD = 'build 92 — writing tools';
+const W_BUILD = 'build 95 — writing tools';
 
 const R = () => document.getElementById('writing-root');
 const esc = s => String(s == null ? '' : s)
@@ -30,12 +30,12 @@ const esc = s => String(s == null ? '' : s)
 const KEY = 'ncea_writing_v1';
 /* picking is the one part of the state that is never saved: whether the
    standard list is open is a this-moment thing, not something to restore. */
-let S = { std: null, shape: null, answers: {}, draft: '', tab: 'build', picking: false, idea: null, lastStep: null, used: {}, recent: [], shapeOpen: false,
+let S = { std: null, shape: null, answers: {}, picking: false, idea: null, lastStep: null, example: null, exLevel: null, used: {}, recent: [], shapeOpen: false,
           nav: {} };   // where they are in the level/faculty/subject drill-down
 
 function save(){
   try{ localStorage.setItem(KEY, JSON.stringify({
-    std: S.std, shape: S.shape, answers: S.answers, draft: S.draft, tab: S.tab,
+    std: S.std, shape: S.shape, answers: S.answers,
     used: S.used, recent: S.recent })); }
   catch(e){ /* private browsing or a full quota — not worth interrupting them */ }
 }
@@ -43,8 +43,7 @@ function load(){
   try{
     const o = JSON.parse(localStorage.getItem(KEY) || 'null');
     if(o){ S.std = o.std || null; S.shape = o.shape || null;
-      S.answers = o.answers || {}; S.draft = o.draft || '';
-      S.tab = o.tab === 'check' ? 'check' : 'build';
+      S.answers = o.answers || {};
       S.used = (o.used && typeof o.used === 'object') ? o.used : {};
       S.recent = Array.isArray(o.recent) ? o.recent : []; }
   }catch(e){ /* corrupt store: start clean rather than die */ }
@@ -52,14 +51,107 @@ function load(){
 
 /* ============================================================
    WHICH STANDARDS THIS IS FOR
-   Standards whose assessment produces extended prose. Read from
-   the standard's own format and evidence lines rather than a flag,
-   so the data files stay untouched; the validator checks the count
-   stays in a sane band in case a future data edit moves it.
+   An explicit list, not a guess. An earlier version read the
+   standard's format and evidence text for words like "essay",
+   which was wrong in both directions and silently so \u2014 Level 1
+   English, whose two externals are written exams, was missing
+   altogether.
+
+   The rule used to build this list: a standard is in when the
+   thing being marked is extended prose that explains, analyses,
+   evaluates or argues. It is out when the marked output is
+   skills application, numerical or spatial problem-solving, a
+   practical investigation, a performance, a visual or oral text,
+   or the conduct of a research process.
+
+   TEACHER REVIEW: these are my readings of the titles and
+   assessment formats, not NZQA rulings. The sciences and maths
+   are the least certain \u2014 Chemistry and Physics are here only
+   where the answer is written rather than calculated, which a
+   head of department may well judge differently. Adding or
+   removing a standard is one edit to the list below; the
+   validator checks every entry still resolves to a real
+   standard, so a typo cannot pass silently.
    ============================================================ */
 
-const WRITING_RE = /essay|extended (writing|response)|sustained|paragraph|written response|report|argument/i;
-const isWriting = st => !!st && (WRITING_RE.test(st.format || '') || WRITING_RE.test(st.evidence || ''));
+const WRITING_STANDARDS = {
+  '1': {
+    "Geography": ['1.1', '1.3', '1.4'],
+    "History": ['1.1', '1.2', '1.3', '1.4'],
+    "Science": ['1.1', '1.2', '1.3', '1.4'],
+    "Chemistry and Biology": ['1.1', '1.2', '1.3', '1.4'],
+    "Physics, Earth and Space Science": ['1.1', '1.3', '1.4'],
+    "English": ['1.1', '1.2', '1.3', '1.4'],
+    "Te Reo Māori": ['1.4'],
+    "Physical Education": ['1.2', '1.3', '1.4'],
+    "Health Studies": ['1.1', '1.2', '1.3', '1.4'],
+    "Commerce": ['1.1', '1.2', '1.3', '1.4'],
+    "Digital Technologies": ['1.3'],
+    "Drama": ['1.4'],
+    "Music": ['1.3'],
+  },
+  '2': {
+    "Geography": ['2.1', '2.2', '2.3', '2.6', '2.7'],
+    "History": ['2.2', '2.3', '2.4', '2.5', '2.6'],
+    "Classical Studies": ['2.1', '2.2', '2.3', '2.4', '2.5'],
+    "Business Studies": ['2.1', '2.2', '2.5'],
+    "Biology": ['2.2', '2.3', '2.4', '2.5', '2.7'],
+    "Chemistry": ['2.3'],
+    "Earth & Space Science": ['2.2', '2.5', '2.6'],
+    "English": ['2.1', '2.2', '2.3', '2.4', '2.7', '2.8', '2.9', '2.10'],
+    "Mathematics and Statistics": ['2.11'],
+    "Te Reo Māori": ['2.4', '2.5'],
+    "Media Studies": ['2.1', '2.2', '2.3', '2.4', '2.7'],
+    "Art History": ['2.5', '2.6', '2.7', '2.8'],
+    "Physical Education": ['2.1', '2.2', '2.3', '2.5', '2.6', '2.7', '2.9', '2.10'],
+    "Health": ['2.1', '2.2', '2.4', '2.5'],
+    "Drama": ['2.3', '2.5', '2.7'],
+    "Music": ['2.7', '2.9'],
+    "Digital Technologies": ['2.9'],
+    "Psychology": ['2.1', '2.2', '2.4', '2.5'],
+  },
+  '3': {
+    "Geography": ['3.1', '3.2', '3.3', '3.6', '3.7'],
+    "Classical Studies": ['3.1', '3.2', '3.3', '3.4', '3.5'],
+    "Biology": ['3.2', '3.3', '3.4', '3.5', '3.6', '3.7'],
+    "Chemistry": ['3.3'],
+    "Physics": ['3.7'],
+    "Physical Education": ['3.1', '3.2', '3.3', '3.5', '3.6', '3.7', '3.8', '3.9'],
+    "Health": ['3.1', '3.2', '3.3', '3.4', '3.5'],
+    "English": ['3.1', '3.2', '3.3', '3.4', '3.7', '3.8', '3.9'],
+    "Te Reo Māori": ['3.4', '3.5'],
+    "Te Ao Haka": ['3.1', '3.4'],
+    "Statistics": ['3.12'],
+    "Art History": ['3.1', '3.2', '3.3', '3.4', '3.5', '3.6', '3.7', '3.8'],
+    "Digital Technologies": ['3.9'],
+    "Earth & Space Science": ['3.2', '3.4', '3.5'],
+    "Media Studies": ['3.1', '3.2', '3.3', '3.4', '3.7'],
+    "Music": ['3.7'],
+    "Drama": ['3.3', '3.5', '3.7'],
+    "Business Studies": ['3.1', '3.2', '3.5', '3.7'],
+    "History": ['3.2', '3.3', '3.4', '3.5', '3.6'],
+    "Psychology": ['3.1', '3.2', '3.4', '3.5'],
+    "Economics": ['3.1', '3.2', '3.3', '3.4', '3.5'],
+  },
+  'S': {
+    "Biology": ['S'],
+    "Chemistry": ['S'],
+    "Physics": ['S'],
+    "Calculus": ['S'],
+    "Statistics": ['S'],
+    "English": ['S'],
+    "History": ['S'],
+    "Geography": ['S'],
+    "Classical Studies": ['S'],
+    "Economics": ['S'],
+    "Drama": ['S'],
+  },};
+
+const isWriting = (st, level, subject) => {
+  const L = WRITING_STANDARDS[level]; if(!L) return false;
+  const refs = L[subject]; if(!refs) return false;
+  return refs.indexOf(st.ref || st.code) !== -1;
+};
 
 const LEVEL_NAME = { '1':'Level 1', '2':'Level 2', '3':'Level 3', 'S':'Scholarship' };
 
@@ -70,10 +162,11 @@ function allWritingStandards(){
     const d = D[lvl]; if(!d) continue;
     for(const [subject, s] of Object.entries(d.subjects || {}))
       for(const st of s.standards || [])
-        if(isWriting(st)) out.push({ level: lvl, subject, st });
+        if(isWriting(st, lvl, subject)) out.push({ level: lvl, subject, st });
   }
   return out;
 }
+
 const findStd = (level, code) => allWritingStandards()
   .find(x => x.level === level && x.st.code === code) || null;
 
@@ -106,6 +199,7 @@ const SHAPES = [
 
   { id:'claim', name:'Claim and proof', also:'deductive',
     use:'State your point, then prove it. This is the one nearly every student defaults to \u2014 which is the reason to be deliberate about choosing it rather than falling into it.',
+    example:{ topic:"Night-time phone use and sleep", byLevel:{"1": ["Using a phone late at night makes it harder to fall asleep.", "A survey of 1,200 New Zealand teenagers found that those using screens after 10pm took 38 minutes longer to fall asleep than those who did not.", "That delay happens because the blue light from a screen stops the body making melatonin, the chemical that signals it is time to sleep, so the body is still being told it is daytime.", "This matters because 38 minutes a night adds up to more than four hours of lost sleep across a school week, which is why so many students are exhausted by Thursday."], "2": ["Late-night phone use is the single biggest cause of poor sleep among teenagers.", "A survey of 1,200 New Zealand teenagers found those using screens after 10pm took 38 minutes longer to fall asleep and scored measurably worse on next-day concentration tasks.", "The mechanism is hormonal: short-wavelength light suppresses melatonin production, so the body never receives the signal that night has begun, and the whole sleep cycle shifts later rather than simply shortening.", "The significance lies in that shift rather than in the lost minutes, because school start times do not move with it — the sleep is not only shorter, it falls at the wrong time of day."], "3": ["Late-night phone use is the most significant modifiable cause of teenage sleep loss.", "A survey of 1,200 New Zealand teenagers found those using screens after 10pm took 38 minutes longer to fall asleep and scored lower on next-day concentration tasks.", "The mechanism is well established: short-wavelength light suppresses melatonin, delaying the circadian signal that initiates sleep, so the entire cycle shifts later while the school start time does not.", "The significance lies in that mismatch rather than in the delay itself — a later bedtime is survivable; a later bedtime against a fixed 8.45am start is not.", "The strongest objection is that anxious teenagers reach for phones because they cannot sleep, not the reverse; but the experimental studies, which assign screen use rather than observe it, find the delay persists among good sleepers too."]} },
     deepen:'What is the strongest reason someone could give against this claim, and why does your evidence still hold?',
     steps:[
       { q:'What is your claim?',
@@ -120,6 +214,7 @@ const SHAPES = [
 
   { id:'cause', name:'Cause, process, result',
     use:'For explaining how something works or happens. Common in science, geography and economics.',
+    example:{ topic:"Why a dune erodes", byLevel:{"1": ["Dune erosion starts when storm waves become high enough to reach the bottom of the dune.", "The waves wash sand away from the base, the sand above it has nothing left to support it and slumps onto the beach, and the backwash then carries that sand out to sea.", "The result is that the dune face retreats several metres further inland after every big storm.", "This matters because the sand ends up offshore where waves cannot easily return it, so the dune does not simply grow back and the protection for the road behind it is permanently reduced."], "2": ["Dune erosion begins with a storm surge that lifts sea level high enough for waves to reach the dune toe.", "Wave action removes sand from the toe, which steepens the face beyond the angle sand can hold; the unsupported sand above then slumps, and the returning backwash carries it offshore into a sandbar.", "Each storm therefore moves the dune face several metres inland and deposits the sand where fair-weather waves cannot readily return it.", "This matters because the two processes run at different speeds: a storm erodes in hours what the slower fair-weather rebuilding takes months to replace, so a single stormy season leaves a deficit the dune carries into the next."], "3": ["Dune erosion is set off not by waves alone but by the coincidence of storm surge with high tide, which lifts wave attack to the dune toe.", "Waves undercut the toe, the face steepens past the angle of repose, the unsupported sand slumps, and backwash transports it seaward into an offshore bar.", "The net result is a landward retreat of several metres per storm event, against a fair-weather recovery measured in centimetres per month.", "The significance is the asymmetry: erosion and accretion run on different timescales, so a cluster of storms in one season produces losses the system cannot recover before the next.", "The undercutting is the step that matters most, because everything after it follows automatically — which is why engineered protection targets the toe rather than the face."]} },
     deepen:'Which step in that process mattered most, and how do you know?',
     steps:[
       { q:'What sets it off?', hint:'The trigger or starting condition.' },
@@ -132,6 +227,7 @@ const SHAPES = [
 
   { id:'angles', name:'One point, several angles',
     use:'When a single point needs more than one kind of support to be convincing.',
+    example:{ topic:"Why a school recycling scheme worked", byLevel:{"1": ["The school's recycling scheme worked because students were involved in running it.", "The bins were designed by the Year 10 class and placed outside every classroom, and the plastic collected doubled in the first term.", "A survey also showed that most students used the bins because their own classmates had asked them to, rather than because a teacher told them.", "Together these show the scheme worked for two different reasons — it was easy to use and it carried pressure from other students — which is why an earlier scheme with the same bins but no student involvement had failed."], "2": ["The recycling scheme succeeded because it changed the practical conditions and the social expectations around waste at the same time.", "Practically, the student-designed bins put a collection point within ten metres of every classroom door, and plastic recovery doubled within a term.", "Socially, the survey showed 68 per cent of students named “other students asked me to” rather than “the school required it” as their reason for using them.", "Neither factor explains the result alone: the identical bins had been trialled two years earlier without student involvement and changed nothing, which shows convenience only worked once it carried social weight."], "3": ["The scheme succeeded because it lowered the practical cost of recycling and raised the social cost of not recycling at once.", "The practical change was measurable: collection points within ten metres of every classroom door, and a doubling of plastic recovery in one term.", "The social change appeared in attitudes rather than volumes — 68 per cent cited peer expectation rather than school policy as their reason for taking part.", "What the two together establish is that convenience was necessary but not sufficient; the earlier trial used the same bins without student ownership and recovered no more than before.", "Of the two, the social change carries the greater weight, because convenience had already been tested in isolation and failed."]} },
     deepen:'Which of those angles carries the most weight, and why that one?',
     steps:[
       { q:'What is the point?', hint:'One sentence.' },
@@ -143,6 +239,7 @@ const SHAPES = [
 
   { id:'compare', name:'Compare and weigh',
     use:'Two things side by side. The weighing at the end is what lifts it above a list.',
+    example:{ topic:"Solar and wind generation", byLevel:{"1": ["Solar and wind power can be compared on how reliably they supply electricity when it is needed.", "Both are renewable, neither produces carbon dioxide while running, and both have become much cheaper over the last ten years.", "They differ in when they produce: solar panels generate only in daylight and nothing at all after sunset, while wind turbines can run at any hour as long as there is wind.", "For New Zealand that difference matters more than the cost does, because our demand for electricity peaks on winter evenings — exactly when solar produces nothing at all."], "2": ["Solar and wind generation are best compared on how well their output matches demand.", "Both are renewable, both produce no emissions in operation, and both have seen costs fall steeply over the past decade, so cost no longer separates them.", "They differ in the timing of output rather than the total: solar peaks at midday and falls to zero after sunset, while wind is less predictable hour to hour but is not confined to daylight.", "The timing difference is the one that decides the question for New Zealand, because national demand peaks on winter evenings — a source that is predictable but absent at peak is worth less than one that is unpredictable but sometimes present."], "3": ["Solar and wind are best compared not on cost per megawatt but on how far their output correlates with the demand curve.", "Both are low-emission in operation and both have seen costs fall by more than seventy per cent in a decade, so cost no longer separates them.", "They differ in the shape of their output: solar is daily and highly predictable but absent after sunset, while wind is erratic hour to hour yet uncorrelated with daylight.", "The second difference is the decisive one for New Zealand, where demand peaks on winter evenings: a source that is predictable but absent at peak is worth less than one that is unpredictable but sometimes present.", "The comparison itself shows what neither side shows alone — that reliability is a question of correlation with demand, not of variability on its own."]} },
     deepen:'What does the comparison itself show that neither side shows on its own?',
     steps:[
       { q:'What two things are you comparing, and on what basis?',
@@ -155,6 +252,7 @@ const SHAPES = [
 
   { id:'build', name:'Build to the judgement', also:'inductive',
     use:'Evidence first, conclusion last. Useful when the conclusion would look unearned if you led with it.',
+    example:{ topic:"Why a local café closed", byLevel:{"1": ["The café's weekday customer numbers fell from about 180 to 120 over two years.", "Over the same two years the rent rose twice, lifting its fixed costs by about 40 per cent.", "Two other cafés opened within 200 metres, both staying open later into the evening.", "Taken together these show the café did not close because of one bad decision — the rent had already taken the money it would have needed to open later and compete."], "2": ["Between 2022 and 2024 the café's weekday customer count fell from around 180 to 120.", "Over the same period the lease was renegotiated twice, raising fixed monthly costs by about 40 per cent.", "Two competing cafés opened within 200 metres, both trading later into the evening.", "What follows is that the closure was structural rather than managerial: falling revenue and rising fixed costs can each be absorbed alone, but together they removed the margin that would have funded the longer hours the competition demanded."], "3": ["Weekday customer counts fell from roughly 180 to 120 between 2022 and 2024.", "Fixed costs rose about 40 per cent over the same period through two lease renegotiations.", "Two competitors opened within 200 metres, both trading later into the evening.", "What follows is less obvious than a story about competition: the margin that would have funded longer hours had already gone to rent, so the café could not answer the competition that then finished it.", "The order matters — had the rent risen after rather than before the competitors arrived, the same three facts would support a different conclusion."]} },
     deepen:'What would have to be true for your judgement to be wrong?',
     steps:[
       { q:'First piece of evidence', hint:'Start with the least contentious.' },
@@ -166,6 +264,7 @@ const SHAPES = [
 
   { id:'counter', name:'The counter-argument',
     use:'Taking on the strongest objection. Nearly every Excellence criterion rewards this somewhere.',
+    example:{ topic:"Should school start later?", byLevel:{"1": ["Some people argue that school should not start later because it would push the end of the day back.", "They point out that sports practices and part-time jobs already run into the evening, and schools that have changed their start times report lower attendance at after-school sport.", "They are right about this: the school day does not get any shorter, so something at the other end has to give, and for some students that is paid work they rely on.", "Even so the case for a later start holds, because the lost hour affects some students in one activity while the extra sleep affects every student in every morning lesson."], "2": ["The strongest objection to a later school start is that it simply moves the problem to the end of the day.", "Schools that have shifted their start report later finishes, and surveys show both reduced attendance at after-school sport and fewer hours worked in part-time jobs.", "The objection is right about the mechanism, and right about who pays: the day does not shorten, so something gives at the other end, and for students who need the income that something is wages rather than sport.", "It does not outweigh the case, because the two costs are not comparable — the displaced hour falls on a minority in one activity, while the sleep gain reaches every student in every morning lesson."], "3": ["The strongest objection is that a later start displaces rather than solves, shifting the cost from the morning to the evening.", "The evidence is real: districts that have shifted start times report measurable falls in after-school sport participation and in paid work hours among senior students.", "The objection is right in principle and right about who pays — the cost falls on students who need the income, which is not a trivial redistribution.", "It does not defeat the case, because the two costs are not of the same kind: lost evening hours are spread out and partly substitutable, while lost morning attention is universal and strikes the thing school exists to do.", "What the objection does establish is that a later start is a policy with losers, which means it needs mitigation rather than simply a majority."]} },
     deepen:'What does the objection get right, and how far does that change your position?',
     steps:[
       { q:'What would someone who disagrees with you say?',
@@ -179,6 +278,7 @@ const SHAPES = [
 
   { id:'quote', name:'Working with a quotation',
     use:'For English, History, Classical Studies and Media Studies, where a dropped-in quote earns nothing.',
+    example:{ topic:"A line from a short story", byLevel:{"1": ["At this point in the story the narrator has just learned that her brother is not coming back.", "Instead of describing how she feels, the writer describes the kitchen as “still set for four”.", "The writer is using understatement — the number does the work, because four places tell us someone is missing without the narrator having to say so.", "The effect is that the reader works the loss out instead of being told about it, which makes it land harder and fits the way the whole story keeps feeling hidden behind ordinary objects."], "2": ["The moment comes immediately after the narrator learns her brother will not return.", "Rather than describing her reaction, the writer gives us a kitchen “still set for four”.", "The technique is understatement by displacement: the emotional weight is handed to a domestic object, and the numeral performs the work an adjective would ordinarily do.", "The effect is that the reader performs the realisation instead of receiving it, which matters because it is the method the whole story runs on — feeling is never named, only furnished, so the reader is made complicit in every discovery."], "3": ["The line falls at the hinge of the story, immediately after the narrator learns her brother will not return.", "The writer offers no reaction at all, only a kitchen “still set for four”.", "The technique is understatement by displacement — grief is handed to a countable domestic detail, and the numeral performs the work an adjective would ordinarily do.", "The effect is to move the act of realisation from narrator to reader, which matters because it establishes the method the rest of the story depends on: feeling is never named, only furnished.", "Stating it plainly would gain clarity and lose the reader's complicity, and it is the complicity that makes the ending land."]} },
     deepen:'What does the writer gain by putting it this way rather than plainly?',
     steps:[
       { q:'What is happening at this point?',
@@ -195,6 +295,7 @@ const SHAPES = [
 
   { id:'intro', name:'Opening a piece',
     use:'Sets up the question and your line on it. No throat-clearing about how since the dawn of time.',
+    example:{ topic:"Does social media strengthen or weaken friendship?", byLevel:{"1": ["The question asks whether social media makes friendships stronger or weaker.", "I will argue that it does both: it strengthens the friendships people already have, but makes new ones harder to start.", "I will look first at how people keep in touch, then at how they meet new people, and finally at what happens when friendships end, because the answer is different at each stage."], "2": ["The question asks not whether social media changes friendship but whether that change counts as a strengthening or a weakening.", "This essay argues that the choice is a false one: social media deepens the friendships a person already has while thinning the conditions in which new ones begin.", "It takes maintenance first, then formation, then dissolution, because the evidence points in a different direction at each of the three and a single verdict would hide that."], "3": ["The question appears to ask for a verdict, but it assumes that strengthening and weakening are the available answers.", "This essay argues that social media acts asymmetrically across the life of a friendship, deepening maintenance while degrading formation, so that any single verdict conceals more than it reports.", "It takes the three stages in turn — maintenance, formation, dissolution — because the evidence points in different directions at each.", "The tension worth answering is that one affordance, frictionless contact, produces the gain at one stage and the loss at another."]} },
     deepen:'What is the tension in the question that makes it worth answering at all?',
     steps:[
       { q:'What is the question actually asking?',
@@ -207,6 +308,7 @@ const SHAPES = [
 
   { id:'conclusion', name:'Closing a piece',
     use:'Does more than repeat the introduction.',
+    example:{ topic:"Does social media strengthen or weaken friendship?", byLevel:{"1": ["The evidence has shown that people who use social media keep in touch with more friends, but meet fewer new people face to face.", "So the answer is not simply stronger or weaker — social media strengthens the friendships people already have and weakens their chances of making new ones.", "This matters because the friendships people make as teenagers are often the ones they keep, so a tool that protects old friendships while blocking new ones has a larger effect than it first appears."], "2": ["The evidence has established that frequency of contact rises with social media use while the formation of new close friendships falls.", "The answer is therefore conditional rather than simple: social media strengthens maintenance and weakens formation.", "That conditional answer matters beyond this essay, because any policy treating social media as uniformly good or bad for young people will misfire at whichever end it has not accounted for."], "3": ["The evidence has established an asymmetry: contact frequency rises with use, while the rate at which new close friendships form falls.", "The answer is therefore not a verdict but a distribution — social media is good for the friendships a person has and bad for the ones they have not yet made.", "This matters beyond the essay because interventions are designed around verdicts, and a policy built on either half of this answer produces the opposite of its intention at the other.", "What the argument does not settle is whether the two effects are separable in practice; if they are not, the trade-off is the real question."]} },
     deepen:'What does your argument not settle, and why does that not undo it?',
     steps:[
       { q:'What has your evidence established?',
@@ -256,6 +358,19 @@ function stepsFor(sh){
   if((lvl === '3' || lvl === 'S') && sh.deepen) out.push({ q:sh.deepen, deep:true });
   if(lvl === 'S') out.push(Object.assign({ deep:true }, SCHOL_STEP));
   return out;
+}
+
+/* Highlighting the operative words is the point of the rail: a student
+   skimming it should see "adverb" and the comma that follows it, not a
+   wall of equally-weighted prose. Both marks are plain substrings of the
+   text they sit in, checked by the validator, so neither can drift. */
+function markUp(text, needle){
+  const t = esc(text);
+  if(!needle) return t;
+  const n = esc(needle);
+  const at = t.indexOf(n);
+  if(at < 0) return t;
+  return t.slice(0, at) + '<b class="wr-key">' + n + '</b>' + t.slice(at + n.length);
 }
 
 const shapeById = id => SHAPES.find(s => s.id === id) || null;
@@ -360,47 +475,58 @@ const MOVES = [
   { key:'preposition', cat:'opener', label:'Open one with a preposition',
     why:'Puts the time, place or condition first and gets you out of subject-verb-object.',
     eg:'By 1863, the Crown had already decided on invasion.',
+    mark:'preposition', egMark:'By 1863,',
     frame:'By [when], ' },
   { key:'participle-ing', cat:'opener', label:'Open one with an -ing verb',
     why:'Links an action to the main clause without a connective.',
     eg:'Facing falling yields, the farmers changed their irrigation.',
+    mark:'-ing verb', egMark:'Facing falling yields,',
     frame:'[Verb]ing [what], ' },
   { key:'participle-ed', cat:'opener', label:'Open one with an -ed verb',
     why:'Describes the subject before you name it.',
     eg:'Weakened by erosion, the cliff face collapsed within a decade.',
+    mark:'-ed verb', egMark:'Weakened by erosion,',
     frame:'[Verb]ed by [what], ' },
   { key:'subordinate', cat:'opener', label:'Open one with While, Although or Because',
     why:'Shows the relationship between two ideas rather than stating them in sequence.',
     eg:'Although the data showed a rise, the sample was too small to be conclusive.',
+    mark:'While, Although or Because', egMark:'Although the data showed a rise,',
     frame:'Although [what is true], ' },
   { key:'adverb', cat:'opener', label:'Open one with an adverb',
     why:'Sets the manner or degree up front.',
     eg:'Gradually, the sediment built up behind the groyne.',
+    mark:'adverb', egMark:'Gradually,',
     frame:'[Adverb]ly, ' },
 
   { key:'appositive', cat:'inside', label:'Name it, then define it between commas',
     why:'Gets a definition in without a whole sentence spent on it. Useful whenever a marker needs to see you know the term.',
     eg:'Longshore drift, the movement of sediment along a shore, had shifted the whole beach north.',
+    mark:'between commas', egMark:', the movement of sediment along a shore,',
     frame:'[Term], [what it means], ' },
   { key:'colon', cat:'inside', label:'Use a colon to deliver what you just promised',
     why:'Sets an expectation in the first half and meets it in the second. Strong for a definition, a list, or a single telling example.',
     eg:'One factor outweighed the rest: the land itself.',
+    mark:'colon', egMark:': the land itself.',
     frame:'[The set-up]: ' },
   { key:'semicolon', cat:'inside', label:'Join two linked ideas with a semicolon',
     why:'Holds two ideas in one sentence so the reader sees they belong together, without a connective doing the work.',
     eg:'The groyne trapped sediment on one side; the beach beyond it narrowed every year.',
+    mark:'semicolon', egMark:'; the beach beyond it narrowed every year.',
     frame:'[First idea]; [the idea it leads to].' },
   { key:'dashes', cat:'inside', label:'Drop detail in between a pair of dashes',
     why:'Adds a qualification mid-sentence without starting a new one. Use once in a paragraph, not twice.',
     eg:'The cliff — undercut, saturated and unsupported — failed in a single night.',
+    mark:'pair of dashes', egMark:'— undercut, saturated and unsupported —',
     frame:'[Subject] \u2014 [the detail] \u2014 [verb] [rest].' },
   { key:'triple', cat:'inside', label:'Three items, each bigger than the last',
     why:'Three is the shortest group that reads as a pattern. Put the weightiest one last.',
     eg:'The confiscation took their farms, their river and their authority.',
+    mark:'Three items', egMark:'their farms, their river and their authority',
     frame:'[One], [two] and [the biggest one].' },
   { key:'short', cat:'inside', label:'Follow a long sentence with a very short one',
     why:'A five-word sentence after a thirty-word one lands hard. This is how you signal the point that matters.',
     eg:'The land itself was the prize.',
+    mark:'very short one', egMark:'The land itself was the prize.',
     frame:'[Five words or fewer].' },
 
   /* ---- advanced: Level 3 and Scholarship, and only where the subject's own
@@ -411,20 +537,24 @@ const MOVES = [
   { key:'midparticiple', cat:'advanced', label:'Put the participle in the middle',
     why:'Interrupts the main clause to qualify the subject before the verb lands. Packs a second idea in without a second sentence.',
     eg:'The Crown, having already massed troops on the border, treated the refusal as a pretext.',
+    mark:'participle in the middle', egMark:', having already massed troops on the border,',
     frame:'[Subject], having [done what], [main verb] [rest].' },
   { key:'periodic', cat:'advanced', label:'Hold the main clause until the end',
     why:'Everything qualifies first and the point lands last, so the reader has to take the conditions on board before the claim arrives. Use once in a piece, for the sentence that matters most.',
     eg:'Because the boundary had been set, because the Crown knew it, and because the troops crossed anyway, the invasion was deliberate.',
+    mark:'main clause until the end', egMark:'the invasion was deliberate.',
     frame:'Because [one], because [two], and because [three], [the point].',
     subjects:/english|history|classical|media|art history|geography|economics|psychology|health|education/i },
   { key:'inversion', cat:'advanced', label:'Invert it for emphasis',
     why:'Putting the adverb first and the auxiliary before the subject throws weight onto the thing you fronted. Striking once, mannered twice.',
     eg:'Rarely had a single boundary carried so much weight.',
+    mark:'Invert', egMark:'Rarely had',
     frame:'Rarely [had/has/did] [subject] [verb] [rest].',
     subjects:/english|history|classical|media|art history/i },
   { key:'antithesis', cat:'advanced', label:'Set one thing against another',
     why:'Balances what it is not against what it is, in one sentence. Built for judgement writing, where the marker wants to see you rule something out as well as in.',
     eg:'The war was fought not over sovereignty but over land.',
+    mark:'one thing against another', egMark:'not over sovereignty but over land',
     frame:'[Subject] [verb] not [what it is not] but [what it is].' }
 ];
 const OPENER_MOVES = MOVES.filter(m => m.cat === 'opener');
@@ -478,8 +608,7 @@ function suggestions(a){
 
 function render(){
   const r = R(); if(!r) return;
-  r.innerHTML = head() + tabs() +
-    (S.tab === 'check' ? checkPane() : buildPane()) + foot();
+  r.innerHTML = head() + buildPane() + foot() + exampleModal();
   wire();
 }
 
@@ -497,14 +626,9 @@ function head(){
   </div>`;
 }
 
-function tabs(){
-  return `<div class="panel p-3 wr-tabwrap">
-    <div class="seg wr-seg">
-      <button data-wrtab="build" aria-pressed="${S.tab==='build'}">Shape a paragraph</button>
-      <button data-wrtab="check" aria-pressed="${S.tab==='check'}">Check a paragraph</button>
-    </div>
-  </div>`;
-}
+/* There is no second tab. The whole-paragraph report used to live behind
+   one; it now sits under the paragraph it describes, which is where a
+   student is already looking. */
 
 /* ---- choosing a standard ----
    The same drill-down as the study guide \u2014 level, then faculty, then
@@ -794,6 +918,66 @@ function standardAsks(){
   </div>`;
 }
 
+/* ---- a worked example of each shape ----
+   The topics are deliberately unrelated to any standard: the point is to
+   show what the SHAPE does, and a student reading an example from their own
+   standard tends to borrow the content. Each sentence is tagged with the
+   question it answers, so the paragraph and the questions above it are
+   visibly the same thing. Level 1, 2 and 3 are the same topic written three
+   ways, so what changes is the demand rather than the subject. */
+
+/* With a standard chosen there is one right level to show, so the switcher
+   is noise: a Level 1 student does not need to be offered a Level 3 answer
+   they will be tempted to copy. Without a standard the three are offered,
+   because seeing the same paragraph at three levels is the teaching point. */
+function exampleLevel(){
+  const l = levelOf();
+  if(l === 'S') return '3';
+  if(l === '1' || l === '2' || l === '3') return l;
+  return S.exLevel || '2';
+}
+const exampleLocked = () => !!levelOf();
+
+function exampleModal(){
+  const sh = S.example ? shapeById(S.example) : null;
+  if(!sh || !sh.example) return '';
+  /* a locked level ignores whatever the switcher was last set to */
+  const lvl = exampleLocked() ? exampleLevel() : (S.exLevel || exampleLevel());
+  const parts = sh.example.byLevel[lvl] || sh.example.byLevel['2'];
+  const steps = sh.steps.concat(sh.deepen ? [{ q: sh.deepen, deep: true }] : []);
+  return `<div class="ev-back wr-exback" data-wrexback>
+    <div class="ev-card wr-excard" role="dialog" aria-modal="true"
+         aria-label="Example of ${esc(sh.name)}">
+      <button class="wr-exclose" data-wrexclose aria-label="Close">\u00d7</button>
+      <p class="wr-exlab">Worked example</p>
+      <h3 class="wr-h3">${esc(sh.name)}</h3>
+      <p class="wr-exsub">${esc(sh.example.topic)}. The topic does not matter here; the
+        shape does.</p>
+      ${exampleLocked()
+        ? `<p class="wr-exlock">Written at <strong>Excellence</strong> for
+             ${esc(LEVEL_NAME[levelOf()])}${levelOf() === 'S'
+               ? ', using the Level 3 example' : ''}, because that is the standard you chose.</p>`
+        : `<p class="wr-exlock">Written at <strong>Excellence</strong> for each level. Pick your
+             standard and this shows only yours.</p>
+           <div class="seg wr-exseg">
+             ${['1','2','3'].map(l => `<button data-wrexlevel="${l}"
+               aria-pressed="${l === lvl}">Level ${l}</button>`).join('')}
+           </div>`}
+      <div class="wr-expara">${parts.map((t, i) =>
+        `<span class="wr-exs wr-exs${i % 4}">${esc(t)}</span> `).join('')}</div>
+      <p class="wr-rh">Which sentence does what</p>
+      <ol class="wr-exbreak">${parts.map((t, i) => `<li>
+        <span class="wr-exnum wr-exs${i % 4}">${i + 1}</span>
+        <span class="wr-exq">${esc(steps[i] ? steps[i].q : '')}${steps[i] && steps[i].deep
+          ? ' <span class="wr-rec">Level 3</span>' : ''}</span>
+        <span class="wr-ext">${esc(t)}</span>
+      </li>`).join('')}</ol>
+      <p class="wr-hint">This is an example to read, not a template to fill in. The questions
+        above are the same ones you answer in your own words.</p>
+    </div>
+  </div>`;
+}
+
 /* ---- build pane ---- */
 
 function buildPane(){
@@ -817,7 +1001,11 @@ function shapePicker(){
         ${/last three/.test(h) ? `<p class="wr-stdsub wr-runwarn">You have used this shape for
           your last three paragraphs \u2014 worth changing for the next one.</p>` : ''}
       </div>
-      <button class="wr-btn wr-ghost" data-wrshapeopen>Change shape</button>
+      <div class="wr-acts">
+        ${sh.example ? `<button class="wr-btn wr-ghost"
+          data-wrexample="${esc(sh.id)}">See an example</button>` : ''}
+        <button class="wr-btn wr-ghost" data-wrshapeopen>Change shape</button>
+      </div>
     </div>`;
   }
 
@@ -832,7 +1020,7 @@ function shapePicker(){
     }
     const fits = rec.includes(s.id);
     const n = (S.used || {})[s.id] || 0;
-    html += `<button class="wr-shape${fits ? ' wr-fits' : ''}" data-wrshape="${esc(s.id)}"
+    html += `<div class="wr-shapewrap"><button class="wr-shape${fits ? ' wr-fits' : ''}" data-wrshape="${esc(s.id)}"
         aria-pressed="${S.shape===s.id}">
       <span class="wr-shapename">${esc(s.name)}${s.also
         ? ` <em>(${esc(s.also)})</em>` : ''}${fits
@@ -841,7 +1029,9 @@ function shapePicker(){
         : (Object.keys(S.used || {}).length
             ? ' <span class="wr-new">not tried</span>' : '')}</span>
       <span class="wr-shapeuse">${esc(s.use)}</span>
-    </button>`;
+    </button>
+    ${s.example ? `<button class="wr-exbtn" data-wrexample="${esc(s.id)}"
+      title="See a worked example of this shape">Example</button>` : ''}</div>`;
   }
   if(open) html += '</div>';
   return `<div class="panel p-4 md:p-5">
@@ -888,8 +1078,13 @@ function shapeForm(){
       <p class="wr-para">${filled ? esc(steps.map((_, i) => (a[i]||'').trim())
         .filter(Boolean).join(' ')) : '<span class="wr-empty">Nothing written yet.</span>'}</p>
     </div>
+    ${(() => { const a = analyse(currentText());
+      return a.count >= 2 ? `<div class="wr-whole">
+        <p class="wr-rh">The paragraph as a whole</p>
+        <p class="wr-hint">This counts what is there \u2014 it does not judge whether the content
+        is any good, because it cannot see your task or your evidence.</p>
+        ${report(a)}</div>` : ''; })()}
     <div class="wr-acts">
-      <button class="wr-btn wr-go" data-wrcheck>Check this paragraph</button>
       <button class="wr-btn wr-alt" data-wrcopy>Copy it</button>
       ${S.std ? `<button class="wr-btn wr-alt" data-wrfeedback>Get feedback on it</button>` : ''}
       <button class="wr-btn wr-ghost" data-wrreset>Clear</button>
@@ -918,12 +1113,12 @@ function ideasRail(){
     const open = S.idea === m.key;
     return `<div class="wr-idea${done ? ' wr-done' : ''}${open ? ' wr-ideaopen' : ''}">
       <button class="wr-ideab" data-wridea="${esc(m.key)}" aria-expanded="${open}">
-        ${done ? '<span class="wr-tick" aria-hidden="true">\u2713</span>' : ''}${esc(m.label)}
+        ${done ? '<span class="wr-tick" aria-hidden="true">\u2713</span>' : ''}${markUp(m.label, m.mark)}
         ${m.cat === 'advanced' ? '<span class="wr-adv">advanced</span>' : ''}
       </button>
       ${open ? `<div class="wr-ideabody">
         <p class="wr-ideawhy">${esc(m.why)}</p>
-        <p class="wr-ideaeg">${esc(m.eg)}</p>
+        <p class="wr-ideaeg">${markUp(m.eg, m.egMark)}</p>
         <button class="wr-btn wr-alt wr-ideaadd" data-wraddframe="${esc(m.key)}">Add the frame</button>
         <p class="wr-ideaframe"><code>${esc(m.frame)}</code></p>
       </div>` : ''}
@@ -939,7 +1134,7 @@ function ideasRail(){
     <div class="wr-railscroll">
       <p class="wr-rh">Ways to open a sentence</p>
       ${openers.map(row).join('')}
-      <p class="wr-rh">Ways to build one</p>
+      <p class="wr-rh">Ways to build a sentence</p>
       ${inside.map(row).join('')}
       ${adv.length ? `<p class="wr-rh">Advanced</p>
         <p class="wr-advnote">Rhetorical constructions that reward Level 3 and Scholarship
@@ -969,21 +1164,6 @@ function addFrame(key){
 }
 
 const blanksLeft = text => (String(text).match(/\[[^\]]+\]/g) || []).length;
-
-/* ---- check pane ---- */
-
-function checkPane(){
-  const a = analyse(S.draft);
-  return `<div class="panel p-4 md:p-5">
-    <h3 class="wr-h3">Paste a paragraph</h3>
-    <p class="wr-lead">One paragraph at a time. This counts what is there — it does not judge
-    whether the content is any good, because it cannot see your standard, your task or your
-    evidence.</p>
-    <textarea id="wr-draft" class="wr-in wr-big" rows="7"
-      placeholder="Paste or write a paragraph here">${esc(S.draft)}</textarea>
-    ${a.count ? report(a) : `<p class="wr-hint mt-2">Nothing to read yet.</p>`}
-  </div>`;
-}
 
 function report(a){
   const pct = k => a.count ? Math.round((a.openers[k] || 0) / a.count * 100) : 0;
@@ -1024,10 +1204,6 @@ function report(a){
       : `<div class="wr-sug"><p class="wr-sugh">${esc(s.head)}</p>
           <p class="wr-sugb">${s.body}</p></div>`).join('')}
 
-    <div class="wr-acts">
-      ${S.std ? `<button class="wr-btn wr-alt" data-wrfeedback>Get feedback on it</button>` : ''}
-      <button class="wr-btn wr-ghost" data-wrcleardraft>Clear</button>
-    </div>
   </div>`;
 }
 
@@ -1044,7 +1220,6 @@ function foot(){
    ============================================================ */
 
 function currentText(){
-  if(S.tab === 'check') return (S.draft || '').trim();
   const sh = shapeById(S.shape); if(!sh) return '';
   const a = S.answers[sh.id] || [];
   return stepsFor(sh).map((_, i) => (a[i] || '').trim()).filter(Boolean).join(' ');
@@ -1055,7 +1230,7 @@ function feedbackPrompt(){
   const cur = S.std ? findStd(S.std.level, S.std.code) : null;
   const sh = shapeById(S.shape);
   let extra = 'This is ONE PARAGRAPH, not a whole piece of work. Comment on this paragraph only.';
-  if(sh && S.tab === 'build')
+  if(sh)
     extra += ` I was trying to write it as "${sh.name}": ${sh.steps.map(s => s.q).join(' ')}`;
   extra += '\n\nMy paragraph:\n\n' + text;
   if(!cur || !window.composePrompt) return extra;
@@ -1088,14 +1263,14 @@ function wire(){
   r.dataset.wrWired = '1';
 
   r.addEventListener('click', ev => {
-    const t = ev.target.closest('[data-wrtab],[data-wrstd],[data-wrclear],[data-wrshape],' +
-      '[data-wrcheck],[data-wrcopy],[data-wrfeedback],[data-wrreset],[data-wrcleardraft],' +
+    const t = ev.target.closest('[data-wrstd],[data-wrclear],[data-wrshape],' +
+      '[data-wrcopy],[data-wrfeedback],[data-wrreset],' +
       '[data-wrpick],[data-wrunpick],[data-wrnav],[data-wridea],[data-wraddframe],' +
-      '[data-wrshapeopen],[data-wrshapeclose]');
+      '[data-wrshapeopen],[data-wrshapeclose],[data-wrexample],[data-wrexclose],' +
+      '[data-wrexlevel],[data-wrexback]');
     if(!t) return;
     const d = t.dataset;
 
-    if('wrtab' in d){ S.tab = d.wrtab; save(); render(); return; }
     if('wrpick' in d){ S.picking = true; render(); return; }
     if('wrunpick' in d){ S.picking = false; render(); return; }
     if('wridea' in d){ S.idea = S.idea === d.wridea ? null : d.wridea; render(); return; }
@@ -1117,30 +1292,26 @@ function wire(){
       S.shapeOpen = false;          // chosen, so fold the picker away
       save(); render(); return;
     }
+    if('wrexample' in d){ S.example = d.wrexample; S.exLevel = exampleLevel(); render(); return; }
+    if('wrexclose' in d){ S.example = null; render(); return; }
+    if('wrexlevel' in d){ S.exLevel = d.wrexlevel; render(); return; }
+    /* clicking the backdrop itself, not the card on top of it, closes */
+    if('wrexback' in d && ev.target === t){ S.example = null; render(); return; }
     if('wrshapeopen' in d){ S.shapeOpen = true; render(); return; }
     if('wrshapeclose' in d){ S.shapeOpen = false; render(); return; }
     if('wrreset' in d){ if(S.shape) delete S.answers[S.shape]; save(); render(); return; }
-    if('wrcleardraft' in d){ S.draft = ''; save(); render(); return; }
-    if('wrcheck' in d){ recordUse(S.shape); S.draft = currentText(); S.tab = 'check';
-      save(); render(); return; }
-    if('wrcopy' in d){ copy(currentText(), t); return; }
-    if('wrfeedback' in d){ copy(feedbackPrompt(), t, 'Copied — paste it into your AI'); return; }
+    /* Copying it, or sending it for feedback, is a student finishing with
+       this paragraph — which is when it counts towards the tally that
+       notices they have built three the same way. */
+    if('wrcopy' in d){ recordUse(S.shape); copy(currentText(), t); return; }
+    if('wrfeedback' in d){ recordUse(S.shape);
+      copy(feedbackPrompt(), t, 'Copied — paste it into your AI'); return; }
   });
 
   /* The analyser reruns as they type, so only the report is redrawn —
      rebuilding the textarea would move the caret to the end. */
   r.addEventListener('input', ev => {
     const el = ev.target;
-    if(el.id === 'wr-draft'){
-      S.draft = el.value; save();
-      const box = r.querySelector('.wr-report');
-      const a = analyse(S.draft);
-      if(a.count){
-        if(box) box.outerHTML = report(a);
-        else el.insertAdjacentHTML('afterend', report(a));
-      } else if(box) box.outerHTML = '<p class="wr-hint mt-2">Nothing to read yet.</p>';
-      return;
-    }
     if(el.dataset && el.dataset.wrstep !== undefined && S.shape){
       const i = +el.dataset.wrstep;
       const a = S.answers[S.shape] = S.answers[S.shape] || [];
@@ -1166,6 +1337,16 @@ function wire(){
         if(html){ if(isNote) cur.outerHTML = html; else box.insertAdjacentHTML('afterend', html); }
         else if(isNote) cur.remove();
       }
+      const whole = r.querySelector('.wr-whole');
+      const a2 = analyse(currentText());
+      if(a2.count >= 2){
+        const html = `<div class="wr-whole"><p class="wr-rh">The paragraph as a whole</p>
+          <p class="wr-hint">This counts what is there \u2014 it does not judge whether the content
+          is any good, because it cannot see your task or your evidence.</p>${report(a2)}</div>`;
+        if(whole) whole.outerHTML = html;
+        else { const as = r.querySelector('.wr-form .wr-acts');
+               if(as) as.insertAdjacentHTML('beforebegin', html); }
+      } else if(whole) whole.remove();
       const rail = r.querySelector('.wr-rail');
       if(rail) rail.outerHTML = ideasRail();
       const lab = r.querySelector('.wr-alabel');
@@ -1188,7 +1369,7 @@ function wire(){
 
 load();
 window.Writing = {
-  moves: MOVES, movesFor, liveNote, recordUse, habitNote, stepsFor, LEVEL_EXPECT, addFrame, blanksLeft, suggestedShapes,
+  moves: MOVES, exampleLevel, WRITING_STANDARDS, movesFor, liveNote, recordUse, habitNote, stepsFor, LEVEL_EXPECT, addFrame, blanksLeft, suggestedShapes,
   open: render,
   state: S,
   /* exposed so the tests can check the analyser without driving the UI */
