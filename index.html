@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WHS: NCEA Master Tutor</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="ncea-exams-2026.js?v=102"></script>
-<script src="whs-derived-2026.js?v=102"></script>
+<script src="ncea-exams-2026.js?v=103"></script>
+<script src="whs-derived-2026.js?v=103"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -1593,7 +1593,16 @@ body.dark-mode .wr-livef{ background:#fbbf24; color:#1c1206; }
 .wr-card:hover{ border-color:var(--fac-dark);
   box-shadow:0 1px 2px rgba(15,23,42,.05), 0 6px 14px -8px rgba(15,23,42,.2); }
 .wr-cardlab{ font-size:.5625rem; font-weight:900; text-transform:uppercase;
-  letter-spacing:.08em; color:var(--ink-soft); margin:0 0 .2rem; }
+  letter-spacing:.08em; color:var(--ink-soft); margin:0 0 .25rem;
+  display:flex; align-items:center; gap:.4rem; }
+/* the visible affordance; the card itself is the button */
+.wr-cardgo{ font-size:.5625rem; font-weight:900; text-transform:uppercase; letter-spacing:.06em;
+  padding:.1rem .4rem; border-radius:.25rem; white-space:nowrap;
+  border:1px solid color-mix(in srgb, var(--fac-dark) 35%, var(--line-strong));
+  background:var(--surface); color:var(--fac-dark); transition:all .15s ease; }
+body.dark-mode .wr-cardgo{ color:var(--brand-ink); }
+.wr-card:hover .wr-cardgo{ background:var(--fac-dark); border-color:var(--fac-dark);
+  color:#fff; }
 .wr-cardval{ font-size:.875rem; font-weight:900; line-height:1.3; color:var(--fac-dark);
   margin:0 0 .25rem; }
 body.dark-mode .wr-cardval{ color:var(--brand-ink); }
@@ -8248,7 +8257,7 @@ z
     </div>
   </details>
 
-  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 102 (2026-10-27) · 
+  <p class="text-xs faint text-center pb-2" id="engine-build">Engine build 103 (2026-10-27) · 
     Standard codes, titles, credits and internal/external status verified against NZQA (2026).
     Teaching notes are drafts for subject teachers to review.
   </p>
@@ -8322,10 +8331,10 @@ const SUBJECT_TOOLS = {
 const LEVELS = [
   // ?v= is a cache buster. Bump the number whenever a data file is
   // re-uploaded, otherwise browsers keep serving the old one.
-  { id:'1', label:'Level 1', file:'ncea-l1.js?v=102' },
-  { id:'2', label:'Level 2', file:'ncea-l2.js?v=102' },
-  { id:'3', label:'Level 3', file:'ncea-l3.js?v=102' },
-  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=102' }
+  { id:'1', label:'Level 1', file:'ncea-l1.js?v=103' },
+  { id:'2', label:'Level 2', file:'ncea-l2.js?v=103' },
+  { id:'3', label:'Level 3', file:'ncea-l3.js?v=103' },
+  { id:'S', label:'Scholarship', file:'ncea-scholarship.js?v=103' }
 ];
 
 const D = () => window.NCEA_DATA[sel.level];
@@ -9267,8 +9276,8 @@ async function flashCopy(btn){
 init();
 applyURL();
 </script>
-<script src="timetable.js?v=102"></script>
-<script src="bib.js?v=102"></script>
-<script src="writing.js?v=102"></script>
+<script src="timetable.js?v=103"></script>
+<script src="bib.js?v=103"></script>
+<script src="writing.js?v=103"></script>
 </body>
 </html>

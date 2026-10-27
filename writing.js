@@ -19,7 +19,7 @@
    ============================================================ */
 (function () {
 
-const W_BUILD = 'build 102 — writing tools';
+const W_BUILD = 'build 103 — writing tools';
 
 const R = () => document.getElementById('writing-root');
 const esc = s => String(s == null ? '' : s)
@@ -622,7 +622,7 @@ function head(){
   /* The explanation is read once. What cannot be folded away is the promise
      that nothing here writes for them, so the folded bar carries it. */
   if(S.headOpen !== true && S.shape) return `<button class="panel p-4 wr-card" data-wrhead>
-    <p class="wr-cardlab">Writing</p>
+    <p class="wr-cardlab">Writing <span class="wr-cardgo">Show</span></p>
     <p class="wr-cardval">How this works</p>
     <p class="wr-cardsub">Nothing here writes a sentence for you.</p>
   </button>`;
@@ -673,8 +673,10 @@ function stdBar(){
   const cur = S.std ? findStd(S.std.level, S.std.code) : null;
   /* S.picking wins, so "Change" reopens the list without clearing what they
      already chose \u2014 Close puts them back where they were */
+  /* The chip is a span, not a button: a button inside a button is invalid
+     markup and breaks keyboard handling. The whole card is the one control. */
   if(cur && !S.picking) return `<button class="panel p-4 wr-card wr-stdchosen" data-wrclear>
-    <p class="wr-cardlab">Writing for</p>
+    <p class="wr-cardlab">Writing for <span class="wr-cardgo">Change</span></p>
     <p class="wr-cardval">${esc(cur.st.ref || cur.st.code)} \u00b7 ${esc(cur.subject)}</p>
     <p class="wr-cardsub">${esc(LEVEL_NAME[cur.level])} \u00b7 ${esc(cur.st.mode)}ly assessed.
       ${esc(cur.st.title)}</p>
@@ -692,7 +694,7 @@ function stdBar(){
   }
 
   if(!S.picking) return `<button class="panel p-4 wr-card wr-cardempty" data-wrpick>
-    <p class="wr-cardlab">Your standard</p>
+    <p class="wr-cardlab">Your standard <span class="wr-cardgo">Choose</span></p>
     <p class="wr-cardval">Choose a standard</p>
     <p class="wr-cardsub">Optional. Picking one shows what it is marked on and sets the level
       these questions are pitched at.</p>
@@ -956,7 +958,7 @@ function standardAsks(){
      something to scroll past \u2014 so it folds itself, with one click back */
   const open = S.asksOpen === true || (S.asksOpen !== false && !S.shape);
   if(!open) return `<button class="panel p-4 wr-card wr-asks" data-wrasks>
-    <p class="wr-cardlab">Marked on</p>
+    <p class="wr-cardlab">Marked on <span class="wr-cardgo">Show</span></p>
     <p class="wr-cardval">What ${esc(cur.st.ref || cur.st.code)} rewards</p>
     <p class="wr-cardsub">The Merit and Excellence shift, and what loses marks in this
       standard.</p>

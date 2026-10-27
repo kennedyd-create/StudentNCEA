@@ -11,7 +11,7 @@
    ============================================================ */
 (function () {
 
-const TT_BUILD = 'build 102 — writing tools';
+const TT_BUILD = 'build 103 — writing tools';
 
 const R = () => document.getElementById('tt-root');
 const E = () => window.NCEA_EXAMS;
