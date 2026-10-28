@@ -19,7 +19,7 @@
    ============================================================ */
 (function () {
 
-const W_BUILD = 'build 106 — writing tools';
+const W_BUILD = 'build 109 — writing tools';
 
 const R = () => document.getElementById('writing-root');
 const esc = s => String(s == null ? '' : s)
@@ -31,6 +31,7 @@ const KEY = 'ncea_writing_v1';
 /* picking is the one part of the state that is never saved: whether the
    standard list is open is a this-moment thing, not something to restore. */
 let S = { std: null, shape: null, answers: {}, question: '', commands: [], level: null, plan: [], slot: null, planOpen: false, essayOpen: false,
+          mode: null, resetOpen: false,
           startOpen: false,
           picking: false, idea: null, lastStep: null, example: null, exLevel: null, asksOpen: null, headOpen: false, used: {}, recent: [], shapeOpen: false,
           nav: {} };   // where they are in the level/faculty/subject drill-down
@@ -39,6 +40,7 @@ function save(){
   try{ localStorage.setItem(KEY, JSON.stringify({
     shape: S.shape, answers: S.answers,
     question: S.question, commands: S.commands, level: S.level, plan: S.plan, slot: S.slot,
+    mode: S.mode,
     used: S.used, recent: S.recent })); }
   catch(e){ /* private browsing or a full quota — not worth interrupting them */ }
 }
@@ -53,6 +55,7 @@ function load(){
       S.level = ['1','2','3','S'].indexOf(o.level) >= 0 ? o.level : null;
       S.plan = Array.isArray(o.plan) ? o.plan : [];
       S.slot = o.slot || null;
+      S.mode = (o.mode === 'essay' || o.mode === 'paragraph') ? o.mode : null;
       /* Answers used to be keyed by shape id. They are keyed by slot now, so
          anything written before this change would otherwise be orphaned. */
       for(const k of Object.keys(S.answers)){
@@ -68,6 +71,7 @@ function load(){
        session's shape is still remembered. */
     S.shapeOpen = true;
     S.startOpen = false;
+    S.resetOpen = false;
   }catch(e){ /* corrupt store: start clean rather than die */ }
 }
 
@@ -846,6 +850,62 @@ function essayPanel(){
   </div>`;
 }
 
+/* a quiet line telling them what the next step is, rather than showing
+   every step at once */
+function nextStep(){
+  return `<div class="panel p-4 wr-next">
+    <p class="wr-nexth">Next: pick your level, or paste your question.</p>
+    <p class="wr-nextb">Either one brings up the paragraph shapes. The level sets how much the
+      questions ask of you; the question decides which shapes suit it.</p>
+  </div>`;
+}
+
+/* ---- one paragraph, or a whole essay ----
+   Both are kept side by side in the saved state, so switching between them
+   is not destructive and needs no warning. Clearing is the only thing that
+   loses work, so that is the only thing that asks. */
+
+const essayMode = () => S.mode === 'essay';
+
+function modeRow(){
+  return `<div class="wr-moderow">
+    <span class="wr-modelab">How much are you writing?</span>
+    <div class="seg wr-modeseg">
+      <button data-wrmode="paragraph" aria-pressed="${S.mode === 'paragraph'}">One paragraph</button>
+      <button data-wrmode="essay" aria-pressed="${S.mode === 'essay'}">A whole essay</button>
+    </div>
+    <button class="wr-mini wr-resetbtn" data-wrreset0>Start again</button>
+  </div>
+  ${S.mode ? '' : `<p class="wr-hint">Pick one to begin. You can switch later without losing
+    anything \u2014 a paragraph you have written and a plan you have made are both kept.</p>`}`;
+}
+
+function resetPanel(){
+  if(!S.resetOpen) return '';
+  const sh = shapeById(S.shape);
+  const rows = (S.plan || []).length;
+  const written = (S.plan || []).filter(r => paragraphOf(r.id)).length;
+  return `<div class="wr-reset">
+    <p class="wr-reseth">Start again?</p>
+    <ul class="wr-resetlist">
+      <li><strong>This paragraph only</strong> \u2014 the sentences in
+        ${sh ? esc(sh.name) : 'the paragraph you are writing'}. Your question, level and plan
+        stay as they are.</li>
+      <li><strong>Everything</strong> \u2014 your question, your level, the
+        ${rows} planned paragraph${rows === 1 ? '' : 's'}${written
+          ? ` (${written} with writing in ${written === 1 ? 'it' : 'them'})` : ''},
+        and every sentence you have written.</li>
+    </ul>
+    <p class="wr-resetwarn">This cannot be undone. Nothing is stored anywhere else, so once it
+      is cleared it is gone.</p>
+    <div class="wr-acts">
+      ${sh ? `<button class="wr-btn wr-ghost" data-wrresetpara>Clear this paragraph</button>` : ''}
+      <button class="wr-btn wr-danger" data-wrresetall>Clear everything</button>
+      <button class="wr-btn wr-ghost" data-wrresetcancel>Cancel</button>
+    </div>
+  </div>`;
+}
+
 /* ---- where a student starts ----
    Three level tabs and the question. Everything else that used to sit up
    here \u2014 the explainer, the standard chooser, the band-shift panel \u2014 was
@@ -865,13 +925,17 @@ function startCard(){
     <p class="wr-cardsub">${q
       ? esc(q.length > 120 ? q.slice(0, 120) + '\u2026' : q)
       : 'No question added yet.'}</p>
-    <p class="wr-cardnote">How you write it, not what you write.</p>
+    <p class="wr-cardnote">${S.mode === 'essay' ? 'Whole essay' : 'One paragraph'}
+      \u00b7 how you write it, not what you write.</p>
   </button>`;
 
   return `<div class="panel p-4 md:p-5 wr-start">
+    ${modeRow()}
+    ${resetPanel()}
     <p class="wr-strap">This is about <strong>how</strong> you write, not what you write.
       It never judges your content or your evidence \u2014 it cannot see your task \u2014 and it
       never writes a sentence for you.</p>
+    ${!S.mode ? '' : `
     <div class="wr-startrow">
       <div class="seg wr-lvlseg">
         ${['1','2','3'].map(l => `<button data-wrlvl="${l}"
@@ -899,11 +963,12 @@ function startCard(){
         ? 'So this paragraph has to' : 'Nothing picked yet, so going on the question alone'}</p>
       ${cmds.map(c => `<p class="wr-cmdname">${esc(c.label)}</p>
         <p class="wr-cmdasks">${esc(c.asks)}</p>`).join('')}
-    </div>` : `<p class="wr-hint mt-2 wr-cmdnone">Pick the command words above and the shapes
-      will follow them.</p>`}
+    </div>` : ((S.question || '').trim()
+      ? `<p class="wr-hint mt-2 wr-cmdnone">No command word spotted in that question. Pick the
+         one it uses and the shapes will follow it.</p>` : '')}
     ${missedCommands().length ? `<p class="wr-cmdmiss">Your question also uses
       <strong>${missedCommands().map(c => esc(c.label)).join('</strong> and <strong>')}</strong>.
-      Worth a look before you start.</p>` : ''}
+      Worth a look before you start.</p>` : ''}`}
   </div>`;
 }
 
@@ -971,6 +1036,11 @@ const speakerBtn = (id, label) => canSpeak()
 /* ---- which shapes to put in front of them ---- */
 
 function suggestedShapes(){
+  const lvl0 = levelOf();
+  /* With no command word and no level there is nothing to base a
+     recommendation on, and a badge reading "suits this level" when no level
+     has been chosen is worse than no badge at all. */
+  if(!activeCommands().length && !lvl0) return [];
   const out = [];
   /* the question's own command word: one verb, and the one that counts */
   for(const c of activeCommands()) for(const id of c.shapes)
@@ -1150,9 +1220,20 @@ function buildPane(){
   if(S.essayOpen) return `<div class="wr-top">${essayPanel()}</div>` +
     `<div class="wr-work"><div class="wr-main">${shapePicker()}${S.shape ? shapeForm() : ''}</div>` +
     ideasRail() + `</div>`;
-  return `<div class="wr-top">${startCard()}${planCard()}</div>` +
-    `<div class="wr-work"><div class="wr-main">${shapePicker()}${S.shape ? shapeForm() : ''}</div>` +
-    ideasRail() + `</div>`;
+  /* One step at a time. Everything used to be on screen at once \u2014 four
+     questions stacked before the student had answered any of them \u2014 which
+     read as a form to fill in rather than a sequence to follow. */
+  const top = `<div class="wr-top">${startCard()}${essayMode() ? planCard() : ''}</div>`;
+  if(!S.mode) return top;
+  /* The shapes wait until there is something to pitch them at \u2014 but never
+     when a shape is already chosen, or opening a planned paragraph would
+     leave the student looking at a page with nothing on it. */
+  if(!S.shape && !levelOf() && !(S.question || '').trim())
+    return top + nextStep();
+  const main = `${shapePicker()}${S.shape ? shapeForm() : ''}`;
+  /* the sentence ideas are for while they write, so they arrive with the box */
+  return top + `<div class="wr-work"><div class="wr-main">${main}</div>` +
+    (S.shape ? ideasRail() : '') + `</div>`;
 }
 
 function shapePicker(){
@@ -1206,7 +1287,8 @@ function shapePicker(){
       const c = activeCommands()[0];
       if(c) return `Marked ones suit a <strong>${esc(c.label)}</strong> question \u2014 a
         starting point, not a rule.`;
-      return `Marked ones suit the level you chose \u2014 a starting point, not a rule.`;
+      return `Marked ones suit ${esc(LEVEL_NAME[levelOf()] || 'your level')} \u2014 a starting
+        point, not a rule.`;
     })()}</p>` : ''}
     ${html}
   </div>`;
@@ -1437,7 +1519,8 @@ function wire(){
       '[data-wrcmd],[data-wrlvl],' +
       '[data-wrplanopenpanel],[data-wrplanclose],[data-wrplanadd],[data-wrplandel],' +
       '[data-wrplanopen],[data-wrplancopy],[data-wressayopen],[data-wressayclose],' +
-      '[data-wressaycopy]');
+      '[data-wressaycopy],[data-wrmode],[data-wrreset0],[data-wrresetpara],' +
+      '[data-wrresetall],[data-wrresetcancel]');
     if(!t) return;
     const d = t.dataset;
 
@@ -1453,6 +1536,25 @@ function wire(){
     if('wrcraft' in d){ recordUse(S.shape);
       copy(craftPrompt(), t, 'Copied \u2014 now open one below'); return; }
     if('wrai' in d){ openSite(d.wrai); return; }
+    if('wrmode' in d){
+      S.mode = d.wrmode;
+      /* nothing is thrown away: a free paragraph and a plan can both exist */
+      if(S.mode === 'paragraph'){ S.planOpen = false; S.essayOpen = false; }
+      S.startOpen = true; save(); render(); return;
+    }
+    if('wrreset0' in d){ S.resetOpen = !S.resetOpen; S.startOpen = true; render(); return; }
+    if('wrresetcancel' in d){ S.resetOpen = false; render(); return; }
+    if('wrresetpara' in d){
+      const k = slotId(); if(k) delete S.answers[k];
+      S.resetOpen = false; save(); render(); return;
+    }
+    if('wrresetall' in d){
+      S.question = ''; S.commands = []; S.level = null; S.plan = []; S.slot = null;
+      S.answers = {}; S.shape = null; S.used = {}; S.recent = [];
+      S.mode = null; S.resetOpen = false; S.planOpen = false; S.essayOpen = false;
+      S.shapeOpen = true; S.startOpen = false;
+      save(); render(); return;
+    }
     if('wressayopen' in d){ S.essayOpen = true; S.planOpen = false; render(); return; }
     if('wressayclose' in d){ S.essayOpen = false; S.planOpen = true; render(); return; }
     if('wressaycopy' in d){ copy(essayText(), t); return; }
@@ -1629,7 +1731,7 @@ function wire(){
 
 load();
 window.Writing = {
-  moves: MOVES, essayText, paragraphOf, planText, slotId, COMMANDS, detectedCommands, activeCommands, missedCommands, levelOf, speak, stopSpeech, canSpeak, craftPrompt, AI_SITES, openSite, exampleLevel, movesFor, liveNote, recordUse, stepsFor, LEVEL_EXPECT, addFrame, blanksLeft, suggestedShapes,
+  moves: MOVES, essayMode, essayText, paragraphOf, planText, slotId, COMMANDS, detectedCommands, activeCommands, missedCommands, levelOf, speak, stopSpeech, canSpeak, craftPrompt, AI_SITES, openSite, exampleLevel, movesFor, liveNote, recordUse, stepsFor, LEVEL_EXPECT, addFrame, blanksLeft, suggestedShapes,
   open: render,
   state: S,
   /* exposed so the tests can check the analyser without driving the UI */
